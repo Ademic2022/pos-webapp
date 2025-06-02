@@ -1,4 +1,4 @@
-import { Customer, Product, SalesData } from "@/interfaces/interface";
+import { Product, SalesData } from "@/interfaces/interface";
 import { SaleType } from "@/types/types";
 
 export const salesData: SalesData[] = [
