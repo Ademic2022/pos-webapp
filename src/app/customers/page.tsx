@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { CustomerFilter } from "@/types/types";
-import { Customer, CustomerTransaction } from "@/interfaces/interface";
+import { Customer } from "@/interfaces/interface";
 import { customers as users, customerTransactions } from "@/data/customers";
 
 const CustomerManagementPage = () => {
@@ -52,6 +52,8 @@ const CustomerManagementPage = () => {
     notes: "",
   });
 
+    console.log(showEditModal);
+    
   // Filter customers based on search and filter criteria
   const filteredCustomers = customers.filter((customer) => {
     const matchesSearch =

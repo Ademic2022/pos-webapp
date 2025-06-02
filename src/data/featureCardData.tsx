@@ -1,4 +1,4 @@
-import { Users, BarChart3, FileText, Truck, ArrowRight } from "lucide-react";
+import { Users, BarChart3, FileText, Truck } from "lucide-react";
 
 interface DashboardCard {
   id: string;
