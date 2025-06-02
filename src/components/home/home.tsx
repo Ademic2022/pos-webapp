@@ -2,7 +2,6 @@
 import React from "react";
 import {
   ShoppingCart,
-  Package,
   TrendingUp,
   ArrowRight,
   Clock,
@@ -14,8 +13,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { cardsData } from "@/data/featureCardData";
+import StockDisplay from "@/utils/stock";
+import CalculatorModal from "@/utils/calculator";
 
 const Home = () => {
+  const [showCalculator, setShowCalculator] = React.useState(false);
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
       {/* Header */}
@@ -140,94 +142,25 @@ const Home = () => {
                     New Sale
                   </Link>
 
-                  <Link
-                    href="/calculator"
+                  <button
+                    onClick={() => setShowCalculator(true)}
                     className="border-2 border-white/30 text-white px-6 py-3 rounded-lg font-semibold hover:bg-white/10 transition-all duration-300 flex items-center justify-center"
                   >
                     <Calculator className="w-5 h-5 mr-2" />
                     Quick Calculator
-                  </Link>
+                  </button>
                 </div>
               </div>
               <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full"></div>
               <div className="absolute -right-16 -bottom-16 w-40 h-40 bg-white/5 rounded-full"></div>
             </div>
+            <CalculatorModal
+              isOpen={showCalculator}
+              onClose={() => setShowCalculator(false)}
+            />
 
             {/* Current Inventory */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg border border-orange-100">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Current Inventory
-                </h2>
-                <button className="text-orange-600 hover:text-orange-700 font-medium">
-                  View All
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-orange-200 rounded-lg flex items-center justify-center">
-                      <Package className="w-6 h-6 text-orange-700" />
-                    </div>
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        Wholesale Drums
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        9 kegs per drum
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-gray-900">45 Units</div>
-                    <div className="text-sm text-green-600">Good Stock</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-amber-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-amber-200 rounded-lg flex items-center justify-center">
-                      <Droplets className="w-6 h-6 text-amber-700" />
-                    </div>
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        Retail Kegs
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        Individual units
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-gray-900">127 Units</div>
-                    <div className="text-sm text-green-600">Good Stock</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-red-200 rounded-lg flex items-center justify-center">
-                      <Bell className="w-6 h-6 text-red-700" />
-                    </div>
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        Empty Containers
-                      </div>
-                      <div className="text-sm text-gray-600">For returns</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-gray-900">8 Units</div>
-                    <div className="text-sm text-red-600">Low Stock</div>
-                  </div>
-                </div>
-              </div>
-
-              <button className="w-full bg-gradient-to-r from-orange-500 to-amber-600 text-white py-3 rounded-lg font-medium hover:from-orange-600 hover:to-amber-700 transition-all duration-300 mt-6">
-                Manage Inventory
-              </button>
-            </div>
+            <StockDisplay totalLitres={2550} />
           </div>
         </div>
       </section>
