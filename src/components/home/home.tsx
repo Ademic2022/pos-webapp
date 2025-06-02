@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import {
   ShoppingCart,
@@ -67,7 +68,9 @@ const Home = () => {
             <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Today's Sales</p>
+                  <p className="text-sm text-gray-600 mb-1">
+                    Today&apos;s Sales
+                  </p>
                   <p className="text-2xl font-bold text-gray-900">₦125,400</p>
                   <p className="text-sm text-green-600">+12% from yesterday</p>
                 </div>
@@ -317,7 +320,7 @@ const Home = () => {
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div>
                     <div className="font-medium text-gray-900">
-                      Kemi's Store
+                      Kemi&apos;s Store
                     </div>
                     <div className="text-sm text-gray-600">5 Retail Kegs</div>
                     <div className="text-xs text-gray-500">Today, 11:45 AM</div>
@@ -377,7 +380,8 @@ const Home = () => {
                       Sales Milestone
                     </div>
                     <div className="text-sm text-blue-600">
-                      Congratulations! You've reached ₦500K in monthly sales
+                      Congratulations! You&apos;ve reached ₦500K in monthly
+                      sales
                     </div>
                     <div className="text-xs text-blue-500 mt-1">2 days ago</div>
                   </div>
