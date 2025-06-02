@@ -238,9 +238,9 @@ const CustomerManagementPage = () => {
           <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Total Revenue</p>
+                <p className="text-sm text-gray-600 mb-1">Stock Alert</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  ₦{customerStats.totalRevenue.toLocaleString()}
+                  {customerStats.totalRevenue}L
                 </p>
                 <p className="text-sm text-green-600 flex items-center">
                   <TrendingUp className="w-4 h-4 mr-1" />

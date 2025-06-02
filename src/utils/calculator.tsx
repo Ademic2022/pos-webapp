@@ -96,13 +96,13 @@ const CalculatorModal: React.FC<CalculatorModalProps> = ({
     setOverwrite(true);
   };
 
-  const handleDelete = () => {
-    if (input.length === 1 || (input.length === 2 && input.startsWith("-"))) {
-      setInput("0");
-    } else {
-      setInput(input.slice(0, -1));
-    }
-  };
+//   const handleDelete = () => {
+//     if (input.length === 1 || (input.length === 2 && input.startsWith("-"))) {
+//       setInput("0");
+//     } else {
+//       setInput(input.slice(0, -1));
+//     }
+//   };
 
   const handlePercentage = () => {
     const value = parseFloat(input);
