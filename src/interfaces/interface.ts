@@ -65,3 +65,47 @@ export interface CustomerTransaction {
   description: string;
   balance: number;
 }
+
+export interface DeliveryHistory {
+  id: number;
+  amount: number;
+  supplier: string;
+  date: string;
+  timestamp: Date;
+  availableStock: number;
+  totalAvailableStock: number;
+  soldStock: number;
+}
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  createdAt: string;
+  isActive: boolean;
+  is_staff: boolean;
+  is_superuser: boolean;
+}
+
+export interface StockStatus {
+  status: string;
+  color: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+export interface StockStatusConfig {
+  bg: string;
+  iconBg: string;
+  iconColor: string;
+  textColor: string;
+  statusText: string;
+}
+
+export interface StockDisplayProps {
+  totalAvailableStock: number;
+  totalDrums: number;
+  totalKegs: number;
+  remainingKegs: number;
+  remainingLitres: number;
+}

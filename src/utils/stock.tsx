@@ -1,30 +1,17 @@
 import React from "react";
 import { Droplet, Package, Droplets } from "lucide-react";
+import Link from "next/link";
+import { StockDisplayProps, StockStatusConfig } from "@/interfaces/interface";
 
 type StockStatus = "low" | "medium" | "high";
 
-interface StockStatusConfig {
-  bg: string;
-  iconBg: string;
-  iconColor: string;
-  textColor: string;
-  statusText: string;
-}
-
-interface StockDisplayProps {
-  totalLitres: number;
-}
-
-const StockDisplay: React.FC<StockDisplayProps> = ({ totalLitres }) => {
-  // Constants
-  const DRUM_CAPACITY = 225;
-  const KEG_CAPACITY = 25;
-  const KEGS_PER_DRUM = DRUM_CAPACITY / KEG_CAPACITY; // 9
-
-  // Calculate drums and kegs
-  const fullDrums = Math.floor(totalLitres / DRUM_CAPACITY);
-  const fullKegs = totalLitres / KEG_CAPACITY;
-
+const StockDisplay: React.FC<StockDisplayProps> = ({
+  totalAvailableStock,
+  totalDrums,
+  totalKegs,
+  remainingKegs,
+  remainingLitres,
+}) => {
   // Calculate stock status
   const getStockStatus = (
     value: number,
@@ -36,9 +23,12 @@ const StockDisplay: React.FC<StockDisplayProps> = ({ totalLitres }) => {
   };
 
   // Status thresholds (adjust these as needed)
-  const litreStatus = getStockStatus(totalLitres, { low: 500, medium: 1500 });
-  const drumStatus = getStockStatus(fullDrums, { low: 10, medium: 30 });
-  const kegStatus = getStockStatus(fullKegs, { low: 20, medium: 50 });
+  const litreStatus = getStockStatus(totalAvailableStock, {
+    low: 500,
+    medium: 1500,
+  });
+  const drumStatus = getStockStatus(totalDrums, { low: 10, medium: 30 });
+  const kegStatus = getStockStatus(totalKegs, { low: 20, medium: 50 });
 
   // Color mappings
   const colorMap: Record<StockStatus, StockStatusConfig> = {
@@ -93,7 +83,7 @@ const StockDisplay: React.FC<StockDisplayProps> = ({ totalLitres }) => {
           </div>
           <div className="text-right">
             <div className="font-bold text-gray-900">
-              {totalLitres.toLocaleString()} L
+              {totalAvailableStock.toLocaleString()} L
             </div>
             <div className={`text-sm ${colorMap[litreStatus].textColor}`}>
               {colorMap[litreStatus].statusText}
@@ -116,12 +106,12 @@ const StockDisplay: React.FC<StockDisplayProps> = ({ totalLitres }) => {
             <div>
               <div className="font-medium text-gray-900">Wholesale Drums</div>
               <div className="text-sm text-gray-600">
-                {KEGS_PER_DRUM} kegs per drum
+                {totalDrums} Drums {Math.floor(remainingKegs / 25)} Kegs
               </div>
             </div>
           </div>
           <div className="text-right">
-            <div className="font-bold text-gray-900">{fullDrums} Drums</div>
+            <div className="font-bold text-gray-900">{totalDrums} Drums</div>
             <div className={`text-sm ${colorMap[drumStatus].textColor}`}>
               {colorMap[drumStatus].statusText}
             </div>
@@ -142,21 +132,24 @@ const StockDisplay: React.FC<StockDisplayProps> = ({ totalLitres }) => {
             </div>
             <div>
               <div className="font-medium text-gray-900">Retail Kegs</div>
-              <div className="text-sm text-gray-600">Individual units</div>
+              <div className="text-sm text-gray-600">
+                {totalKegs} Kegs {remainingLitres} Litres
+              </div>
             </div>
           </div>
           <div className="text-right">
-            <div className="font-bold text-gray-900">{fullKegs} Kegs</div>
+            <div className="font-bold text-gray-900">{totalKegs} Kegs</div>
             <div className={`text-sm ${colorMap[kegStatus].textColor}`}>
               {colorMap[kegStatus].statusText}
             </div>
           </div>
         </div>
       </div>
-
-      <button className="w-full bg-gradient-to-r from-orange-500 to-amber-600 text-white py-3 rounded-lg font-medium hover:from-orange-600 hover:to-amber-700 transition-all duration-300 mt-6">
-        Manage Stock
-      </button>
+      <Link href="/stock">
+        <button className="w-full bg-gradient-to-r from-orange-500 to-amber-600 text-white py-3 rounded-lg font-medium hover:from-orange-600 hover:to-amber-700 transition-all duration-300 mt-6">
+          Manage Stock
+        </button>
+      </Link>
     </div>
   );
 };

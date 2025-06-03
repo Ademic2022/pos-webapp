@@ -1,0 +1,12 @@
+import { User } from "@/interfaces/interface";
+
+export const loggedInUser: User = {
+  id: 1,
+  name: "Ada Okafor",
+  email: "ada.okafor@example.com",
+  phone: "+2348012345678",
+  is_staff: true,
+  is_superuser: false,
+  createdAt: "2024-11-10T08:23:00Z",
+  isActive: true,
+};

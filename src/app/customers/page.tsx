@@ -52,8 +52,8 @@ const CustomerManagementPage = () => {
     notes: "",
   });
 
-    console.log(showEditModal);
-    
+  console.log(showEditModal);
+
   // Filter customers based on search and filter criteria
   const filteredCustomers = customers.filter((customer) => {
     const matchesSearch =

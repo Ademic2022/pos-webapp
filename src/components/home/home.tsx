@@ -15,9 +15,18 @@ import Link from "next/link";
 import { cardsData } from "@/data/featureCardData";
 import StockDisplay from "@/utils/stock";
 import CalculatorModal from "@/utils/calculator";
+import { getFillDetails } from "@/utils/utils";
 
 const Home = () => {
   const [showCalculator, setShowCalculator] = React.useState(false);
+  const {
+    totalDrums,
+    totalKegs,
+    totalAvailableStock,
+    remainingKegs,
+    remainingLitres,
+  } = getFillDetails();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
       {/* Header */}
@@ -160,7 +169,13 @@ const Home = () => {
             />
 
             {/* Current Inventory */}
-            <StockDisplay totalLitres={2550} />
+            <StockDisplay
+              totalAvailableStock={totalAvailableStock}
+              totalDrums={totalDrums}
+              totalKegs={totalKegs}
+              remainingLitres={remainingLitres}
+              remainingKegs={remainingKegs}
+            />
           </div>
         </div>
       </section>
