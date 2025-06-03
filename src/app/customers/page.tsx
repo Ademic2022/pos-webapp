@@ -7,7 +7,6 @@ import {
   Edit3,
   Trash2,
   Phone,
-  Mail,
   DollarSign,
   Download,
   ArrowLeft,
@@ -64,10 +63,6 @@ const CustomerManagementPage = () => {
 
     const matchesFilter = (() => {
       switch (selectedFilter) {
-        case "wholesale":
-          return customer.type === "wholesale";
-        case "retail":
-          return customer.type === "retail";
         case "debt":
           return customer.balance < 0;
         case "active":
@@ -85,8 +80,6 @@ const CustomerManagementPage = () => {
   // Calculate summary statistics
   const customerStats = {
     total: customers.length,
-    wholesale: customers.filter((c) => c.type === "wholesale").length,
-    retail: customers.filter((c) => c.type === "retail").length,
     withDebt: customers.filter((c) => c.balance < 0).length,
     totalDebt: customers.reduce(
       (sum, c) => sum + Math.abs(Math.min(0, c.balance)),
@@ -205,11 +198,6 @@ const CustomerManagementPage = () => {
                 <p className="text-2xl font-bold text-gray-900">
                   {customerStats.total}
                 </p>
-                <p className="text-sm text-blue-600 flex items-center">
-                  <TrendingUp className="w-4 h-4 mr-1" />
-                  {customerStats.wholesale} wholesale, {customerStats.retail}{" "}
-                  retail
-                </p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <Users className="w-6 h-6 text-blue-600" />
@@ -292,33 +280,26 @@ const CustomerManagementPage = () => {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {(
-                [
-                  "all",
-                  "wholesale",
-                  "retail",
-                  "debt",
-                  "active",
-                  "inactive",
-                ] as CustomerFilter[]
-              ).map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setSelectedFilter(filter)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    selectedFilter === filter
-                      ? "bg-orange-500 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-orange-100"
-                  }`}
-                >
-                  {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                  {filter === "debt" && customerStats.withDebt > 0 && (
-                    <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
-                      {customerStats.withDebt}
-                    </span>
-                  )}
-                </button>
-              ))}
+              {(["all", "debt", "active", "inactive"] as CustomerFilter[]).map(
+                (filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => setSelectedFilter(filter)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      selectedFilter === filter
+                        ? "bg-orange-500 text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-orange-100"
+                    }`}
+                  >
+                    {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                    {filter === "debt" && customerStats.withDebt > 0 && (
+                      <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                        {customerStats.withDebt}
+                      </span>
+                    )}
+                  </button>
+                )
+              )}
             </div>
           </div>
         </div>
@@ -334,9 +315,6 @@ const CustomerManagementPage = () => {
                   </th>
                   <th className="text-left py-4 px-6 font-medium text-gray-900">
                     Contact
-                  </th>
-                  <th className="text-left py-4 px-6 font-medium text-gray-900">
-                    Type
                   </th>
                   <th className="text-left py-4 px-6 font-medium text-gray-900">
                     Balance
@@ -388,26 +366,7 @@ const CustomerManagementPage = () => {
                             {customer.phone}
                           </span>
                         </div>
-                        {customer.email && (
-                          <div className="flex items-center space-x-1">
-                            <Mail className="w-4 h-4 text-gray-400" />
-                            <span className="text-gray-600">
-                              {customer.email}
-                            </span>
-                          </div>
-                        )}
                       </div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          customer.type === "wholesale"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-green-100 text-green-800"
-                        }`}
-                      >
-                        {customer.type}
-                      </span>
                     </td>
                     <td className="py-4 px-6">
                       <div
@@ -530,7 +489,8 @@ const CustomerManagementPage = () => {
                     onChange={(e) =>
                       setNewCustomer({ ...newCustomer, name: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
+                    // className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     placeholder="Enter customer name"
                   />
                 </div>
@@ -545,45 +505,10 @@ const CustomerManagementPage = () => {
                     onChange={(e) =>
                       setNewCustomer({ ...newCustomer, phone: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
+                    // className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     placeholder="08123456789"
                   />
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={newCustomer.email}
-                    onChange={(e) =>
-                      setNewCustomer({ ...newCustomer, email: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder="customer@email.com"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Customer Type *
-                  </label>
-                  <select
-                    value={newCustomer.type}
-                    onChange={(e) =>
-                      setNewCustomer({
-                        ...newCustomer,
-                        type: e.target.value as "wholesale" | "retail",
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  >
-                    <option value="retail">Retail</option>
-                    <option value="wholesale">Wholesale</option>
-                  </select>
                 </div>
               </div>
 
@@ -597,7 +522,8 @@ const CustomerManagementPage = () => {
                   onChange={(e) =>
                     setNewCustomer({ ...newCustomer, address: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
+                  // className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="Customer address"
                 />
               </div>
@@ -607,35 +533,25 @@ const CustomerManagementPage = () => {
                   Credit Limit
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2 text-gray-500">₦</span>
+                  <span className="absolute left-4 top-3 text-gray-500">₦</span>
                   <input
                     type="number"
-                    value={newCustomer.creditLimit}
+                    value={
+                      newCustomer.creditLimit === 0
+                        ? ""
+                        : newCustomer.creditLimit
+                    }
                     onChange={(e) =>
                       setNewCustomer({
                         ...newCustomer,
-                        creditLimit: parseInt(e.target.value) || 0,
+                        creditLimit:
+                          e.target.value === "" ? 0 : parseInt(e.target.value),
                       })
                     }
-                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full pl-8 px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
                     placeholder="5000"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Notes
-                </label>
-                <textarea
-                  value={newCustomer.notes}
-                  onChange={(e) =>
-                    setNewCustomer({ ...newCustomer, notes: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  rows={3}
-                  placeholder="Additional notes about the customer"
-                />
               </div>
             </div>
 

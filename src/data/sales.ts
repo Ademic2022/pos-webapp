@@ -1,5 +1,5 @@
 import { Product, SalesData } from "@/interfaces/interface";
-import { SaleType } from "@/types/types";
+import { MeterReading, SaleType } from "@/types/types";
 
 export const salesData: SalesData[] = [
     {
@@ -123,3 +123,43 @@ export const salesData: SalesData[] = [
     ],
   };
 
+
+  // Mock data generator for meter readings
+export const generateMockData = (): MeterReading[] => {
+  const meterNumbers = ["M001", "M002", "M003", "M004", "M005"];
+  const operators = [
+    "John Doe",
+    "Sarah Wilson",
+    "Mike Johnson",
+    "Lisa Brown",
+    "David Clark",
+  ];
+  const mockData: MeterReading[] = [];
+
+  // Generate data for the last 30 days
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+
+    meterNumbers.forEach((meterNumber, index) => {
+      const baseReading = 1000 + i * 50 + index * 200;
+      const dailySales = 45 + Math.random() * 60; // 45-105L daily sales
+      const endReading = baseReading + dailySales;
+      const recordedSales = dailySales + (Math.random() - 0.5) * 6; // ±3L variance
+      const discrepancy = Math.abs(dailySales - recordedSales);
+
+      mockData.push({
+        id: `${meterNumber}-${date.toISOString().split("T")[0]}`,
+        date: date.toISOString().split("T")[0],
+        startReading: baseReading,
+        endReading: endReading,
+        totalSales: recordedSales,
+        discrepancy: discrepancy,
+        status: discrepancy <= 2 ? "valid" : "invalid",
+        operator: operators[index],
+      });
+    });
+  }
+
+  return mockData.reverse();
+};

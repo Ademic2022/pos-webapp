@@ -1,6 +1,7 @@
 import { DRUM_CAPACITY, KEG_CAPACITY } from "@/data/constants";
 import { stockData } from "@/data/stock";
 import { DeliveryHistory } from "@/interfaces/interface";
+import { MeterReading, Stats } from "@/types/types";
 
 export const getLatestAvailableStock = (stockData: DeliveryHistory[]): number => {
   if (!Array.isArray(stockData) || stockData.length === 0) return 0;
@@ -64,3 +65,41 @@ export const getFillColor = (percentage: number) => {
     return 'bg-gradient-to-r from-red-500 to-red-600'; // Critical – red
 };
   
+
+export const calculateStats = (filteredReadings:MeterReading[]): Stats => {
+  const totalReadings = filteredReadings.length;
+  const validReadings = filteredReadings.filter(
+    (r) => r.status === "valid"
+  ).length;
+  const invalidReadings = totalReadings - validReadings;
+  const validPercentage =
+    totalReadings > 0
+      ? ((validReadings / totalReadings) * 100).toFixed(1)
+      : "0";
+  const avgDiscrepancy =
+    totalReadings > 0
+      ? (
+          filteredReadings.reduce((sum, r) => sum + r.discrepancy, 0) /
+          totalReadings
+        ).toFixed(2)
+      : "0";
+
+  return {
+    totalReadings,
+    validReadings,
+    invalidReadings,
+    validPercentage,
+    avgDiscrepancy,
+  };
+};
+
+
+// Helper function to check if a date is within range
+export const isDateInRange = (
+  readingDate: string,
+  start: Date,
+  end: Date
+): boolean => {
+  const reading = new Date(readingDate);
+  return reading >= start && reading <= end;
+};
