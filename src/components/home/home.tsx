@@ -10,6 +10,7 @@ import {
   DollarSign,
   FileText,
   Bell,
+  CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { cardsData } from "@/data/featureCardData";
@@ -142,10 +143,11 @@ const Home = () => {
                 <p className="text-orange-100 mb-6">
                   Start a new transaction for wholesale drums or retail kegs
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4">
+
+                <div className="flex flex-col sm:flex-row flex-wrap gap-4">
                   <Link
                     href="/sales"
-                    className="bg-white text-orange-600 px-6 py-3 rounded-lg font-semibold hover:bg-orange-50 transition-all duration-300 flex items-center justify-center"
+                    className="min-w-[250px] bg-white text-orange-600 px-6 py-3 rounded-lg font-semibold hover:bg-orange-50 transition-all duration-300 flex items-center justify-center"
                   >
                     <ShoppingCart className="w-5 h-5 mr-2" />
                     New Sale
@@ -153,12 +155,21 @@ const Home = () => {
 
                   <button
                     onClick={() => setShowCalculator(true)}
-                    className="border-2 border-white/30 text-white px-6 py-3 rounded-lg font-semibold hover:bg-white/10 transition-all duration-300 flex items-center justify-center"
+                    className="min-w-[250px] border-2 border-white/30 text-white px-6 py-3 rounded-lg font-semibold hover:bg-white/10 transition-all duration-300 flex items-center justify-center"
                   >
                     <Calculator className="w-5 h-5 mr-2" />
                     Quick Calculator
                   </button>
+
+                  <Link
+                    href="validate-sales"
+                    className="min-w-[250px] border-2 border-white/30 text-white px-6 py-3 rounded-lg font-semibold hover:bg-white/10 transition-all duration-300 flex items-center justify-center"
+                  >
+                    <CheckCircle className="w-5 h-5 mr-2" />
+                    Validate Sales
+                  </Link>
                 </div>
+                
               </div>
               <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full"></div>
               <div className="absolute -right-16 -bottom-16 w-40 h-40 bg-white/5 rounded-full"></div>

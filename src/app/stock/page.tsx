@@ -19,6 +19,7 @@ import { stockData } from "@/data/stock";
 import { DeliveryHistory, StockStatus } from "@/interfaces/interface";
 import { loggedInUser } from "@/data/user";
 import {
+  getFillColor,
   getFillDetails,
   getLatestStock,
   getTotalAvailableStock,
@@ -299,7 +300,6 @@ const ManageStock: React.FC = () => {
               </div>
             </div>
 
-            {/* Tank Level Indicator */}
             <div className="mb-6">
               <div className="flex justify-between text-lg text-gray-600 mb-3">
                 <span>Fill Level</span>
@@ -307,7 +307,9 @@ const ManageStock: React.FC = () => {
               </div>
               <div className="w-full bg-gray-200 rounded-full h-6">
                 <div
-                  className="h-6 rounded-full transition-all duration-500 bg-gradient-to-r from-blue-500 to-blue-600"
+                  className={`h-6 rounded-full transition-all duration-500 ${getFillColor(
+                    fillPercentage
+                  )}`}
                   style={{ width: `${Math.min(fillPercentage, 100)}%` }}
                 ></div>
               </div>

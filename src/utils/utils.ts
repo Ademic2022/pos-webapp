@@ -57,3 +57,10 @@ export const getFillDetails = () => {
     };
   };
   
+export const getFillColor = (percentage: number) => {
+    if (percentage >= 80) return 'bg-gradient-to-r from-green-500 to-green-600'; // Full – green
+    if (percentage >= 60) return 'bg-gradient-to-r from-yellow-500 to-yellow-600'; // Moderate – yellow
+    if (percentage >= 25) return 'bg-gradient-to-r from-orange-500 to-orange-600'; // Low – orange
+    return 'bg-gradient-to-r from-red-500 to-red-600'; // Critical – red
+};
+  
