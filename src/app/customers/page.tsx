@@ -126,13 +126,13 @@ const CustomerManagementPage = () => {
 
     // Update transactions (assuming you have a state for transactions)
     const customerId = selectedCustomer.id;
-    const updatedTransactions = {
-      ...customerTransactions,
-      [customerId]: [
-        ...(customerTransactions[customerId] || []),
-        newTransaction,
-      ],
-    };
+    // const updatedTransactions = {
+    //   ...customerTransactions,
+    //   [customerId]: [
+    //     ...(customerTransactions[customerId] || []),
+    //     newTransaction,
+    //   ],
+    // };
 
     // Update state
     setCustomers(updatedCustomers);
