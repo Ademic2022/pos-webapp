@@ -114,15 +114,15 @@ const CustomerManagementPage = () => {
     });
 
     // Create transaction record
-    const newTransaction = {
-      id: `pay-${Date.now()}`,
-      date: new Date().toISOString().split("T")[0],
-      type: "payment",
-      description: `Payment received (${paymentMethod})`,
-      amount: paymentAmount,
-      balance: selectedCustomer.balance + paymentAmount,
-      note: paymentNote,
-    };
+    // const newTransaction = {
+    //   id: `pay-${Date.now()}`,
+    //   date: new Date().toISOString().split("T")[0],
+    //   type: "payment",
+    //   description: `Payment received (${paymentMethod})`,
+    //   amount: paymentAmount,
+    //   balance: selectedCustomer.balance + paymentAmount,
+    //   note: paymentNote,
+    // };
 
     // Update transactions (assuming you have a state for transactions)
     // const customerId = selectedCustomer.id;
