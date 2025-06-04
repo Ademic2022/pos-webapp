@@ -125,7 +125,7 @@ const CustomerManagementPage = () => {
     };
 
     // Update transactions (assuming you have a state for transactions)
-    const customerId = selectedCustomer.id;
+    // const customerId = selectedCustomer.id;
     // const updatedTransactions = {
     //   ...customerTransactions,
     //   [customerId]: [
