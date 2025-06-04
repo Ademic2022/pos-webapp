@@ -1,3 +1,5 @@
+import { STOCK_STATUSES } from "@/data/constants";
+
 export type SaleType = "retail" | "wholesale";
 export type PaymentMethod = "cash" | "credit" | "transfer" | "part_payment";
 export type CustomerFilter =
@@ -35,3 +37,5 @@ export type Stats = {
   validPercentage: string;
   avgDiscrepancy: string;
 };
+
+export type StockStatus = typeof STOCK_STATUSES[number];

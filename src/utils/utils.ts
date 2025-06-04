@@ -1,7 +1,7 @@
-import { DRUM_CAPACITY, KEG_CAPACITY } from "@/data/constants";
+import { DRUM_CAPACITY, KEG_CAPACITY, STOCK_THRESHOLDS } from "@/data/constants";
 import { stockData } from "@/data/stock";
 import { DeliveryHistory } from "@/interfaces/interface";
-import { MeterReading, Stats } from "@/types/types";
+import { MeterReading, Stats, StockStatus } from "@/types/types";
 
 export const getLatestAvailableStock = (stockData: DeliveryHistory[]): number => {
   if (!Array.isArray(stockData) || stockData.length === 0) return 0;
@@ -103,3 +103,24 @@ export const isDateInRange = (
   const reading = new Date(readingDate);
   return reading >= start && reading <= end;
 };
+
+// export const getStockStatus = (
+//   value: number,
+//   thresholds: { low: number; medium: number }
+// ): StockStatus => {
+//   if (value <= thresholds.low) return "low";
+//   if (value <= thresholds.medium) return "medium";
+//   return "high";
+// };
+
+
+export function getStockStatus(
+  value: number,
+  productType: keyof typeof STOCK_THRESHOLDS
+): StockStatus {
+  const { low, medium } = STOCK_THRESHOLDS[productType];
+  
+  if (value <= low) return 'low';
+  if (value <= medium) return 'medium';
+  return 'high';
+}

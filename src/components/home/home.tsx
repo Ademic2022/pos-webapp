@@ -16,7 +16,8 @@ import Link from "next/link";
 import { cardsData } from "@/data/featureCardData";
 import StockDisplay from "@/utils/stock";
 import CalculatorModal from "@/utils/calculator";
-import { getFillDetails } from "@/utils/utils";
+import { getFillDetails, getStockStatus } from "@/utils/utils";
+import { colorMap } from "@/data/constants";
 
 const Home = () => {
   const [showCalculator, setShowCalculator] = React.useState(false);
@@ -27,6 +28,8 @@ const Home = () => {
     remainingKegs,
     remainingLitres,
   } = getFillDetails();
+
+  const litresStatus = getStockStatus(totalAvailableStock, "litres");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
@@ -120,15 +123,29 @@ const Home = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
+            <div
+              className={`rounded-xl p-6 shadow-lg border ${colorMap[litresStatus].bg} border-orange-100`}
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Low Stock Alert</p>
-                  <p className="text-2xl font-bold text-gray-900">3</p>
-                  <p className="text-sm text-red-600">Items need restock</p>
+                  <p
+                    className={`text-sm ${colorMap[litresStatus].textColor} mb-1`}
+                  >
+                    Stock Alert
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {totalAvailableStock} L
+                  </p>
+                  <p className={`text-sm ${colorMap[litresStatus].textColor}`}>
+                    {colorMap[litresStatus].statusText}
+                  </p>
                 </div>
-                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                  <Bell className="w-6 h-6 text-red-600" />
+                <div
+                  className={`w-12 h-12 ${colorMap[litresStatus].iconBg} rounded-lg flex items-center justify-center`}
+                >
+                  <Bell
+                    className={`w-6 h-6 ${colorMap[litresStatus].iconColor}`}
+                  />
                 </div>
               </div>
             </div>
@@ -169,7 +186,6 @@ const Home = () => {
                     Validate Sales
                   </Link>
                 </div>
-                
               </div>
               <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full"></div>
               <div className="absolute -right-16 -bottom-16 w-40 h-40 bg-white/5 rounded-full"></div>
