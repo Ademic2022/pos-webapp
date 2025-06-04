@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Success Enterprise",
-  description: "Manage your groundnut oil distribution business efficiently",
+  title: "Success Enterprise | Pure Groundnut Oil Distribution",
+  description:
+    "Success Enterprise specializes in the production and distribution of high-quality, natural groundnut oil for homes, businesses, and wholesalers. Trust us for purity, consistency, and customer satisfaction.",
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
