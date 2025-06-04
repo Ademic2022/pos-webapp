@@ -15,7 +15,7 @@ import { MeterReading, ValidationResult } from "@/types/types";
 import { generateMockData } from "@/data/sales";
 import { loggedInUser } from "@/data/user";
 import MeterReadingReports from "@/components/reports/validationReport";
-import { dailyMeterReading, stockData } from "@/data/stock";
+import { dailyMeterReading } from "@/data/stock";
 
 const FuelValidationSystem: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"validation" | "reports">(
