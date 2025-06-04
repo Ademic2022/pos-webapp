@@ -18,7 +18,6 @@ import {
   X,
   User,
   Building,
-  CreditCard,
 } from "lucide-react";
 import Link from "next/link";
 import { CustomerFilter } from "@/types/types";

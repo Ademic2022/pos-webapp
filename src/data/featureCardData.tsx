@@ -1,4 +1,4 @@
-import { Users, BarChart3, FileText, Truck } from "lucide-react";
+import { Users, BarChart3, FileText, CreditCard } from "lucide-react";
 
 interface DashboardCard {
   id: string;
@@ -44,13 +44,13 @@ export const cardsData: DashboardCard[] = [
     route: "/transactions",
   },
   {
-    id: "delivery-management",
-    title: "Delivery Management",
-    description: "Schedule and track deliveries for wholesale customers",
-    icon: <Truck className="w-6 h-6 text-white" />,
-    gradientFrom: "from-yellow-500",
-    gradientTo: "to-orange-600",
-    textColor: "text-yellow-600",
-    route: "/deliveries",
+    id: "debt-management",
+    title: "Debt Management",
+    description: "Track and manage customer debts and payment schedules",
+    icon: <CreditCard className="w-6 h-6 text-white" />,
+    gradientFrom: "from-red-500",
+    gradientTo: "to-pink-600",
+    textColor: "text-red-600",
+    route: "/debts",
   },
 ];

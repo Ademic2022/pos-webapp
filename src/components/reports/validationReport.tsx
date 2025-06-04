@@ -443,7 +443,9 @@ const MeterReadingReports = () => {
               <TrendingUp className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 className="font-bold text-blue-800">Today's Discrepancy</h3>
+              <h3 className="font-bold text-blue-800">
+                Today&apos;s Discrepancy
+              </h3>
               <p className="text-sm text-blue-600">Single meter reading</p>
             </div>
           </div>

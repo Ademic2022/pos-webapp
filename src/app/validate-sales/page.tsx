@@ -16,10 +16,8 @@ import { generateMockData } from "@/data/sales";
 import { loggedInUser } from "@/data/user";
 import MeterReadingReports from "@/components/reports/validationReport";
 import { dailyMeterReading, stockData } from "@/data/stock";
-import { getLatestStock } from "@/utils/utils";
 
 const FuelValidationSystem: React.FC = () => {
-  const totalSold = getLatestStock(stockData);
   const [activeTab, setActiveTab] = useState<"validation" | "reports">(
     "validation"
   );
