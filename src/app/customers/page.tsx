@@ -24,6 +24,9 @@ import Link from "next/link";
 import { CustomerFilter } from "@/types/types";
 import { Customer } from "@/interfaces/interface";
 import { customers as users, customerTransactions } from "@/data/customers";
+import PaymentModal from "@/components/modals/paymentModal";
+import TransactionHistoryModal from "@/components/modals/transactionHistoryModal";
+import DeleteCustomerModal from "@/components/modals/deleteCustomerModal";
 
 const CustomerManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -36,6 +39,11 @@ const CustomerManagementPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
   const [showTransactionHistory, setShowTransactionHistory] =
     useState<boolean>(false);
+
+  const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
+  const [paymentMethod, setPaymentMethod] = useState<string>("cash");
+  const [paymentNote, setPaymentNote] = useState<string>("");
 
   // Sample customer data
   const [customers, setCustomers] = useState<Customer[]>(users);
@@ -86,6 +94,54 @@ const CustomerManagementPage = () => {
       0
     ),
     totalRevenue: customers.reduce((sum, c) => sum + c.totalPurchases, 0),
+  };
+
+  const handlePayment = () => {
+    if (!selectedCustomer || paymentAmount <= 0) return;
+
+    // Update customer balance
+    const updatedCustomers = customers.map((customer) => {
+      if (customer.id === selectedCustomer.id) {
+        const newBalance = customer.balance + paymentAmount;
+        return {
+          ...customer,
+          balance: newBalance,
+          totalPurchases:
+            customer.totalPurchases + (paymentAmount > 0 ? paymentAmount : 0),
+          lastPurchase: new Date().toISOString().split("T")[0],
+        };
+      }
+      return customer;
+    });
+
+    // Create transaction record
+    const newTransaction = {
+      id: `pay-${Date.now()}`,
+      date: new Date().toISOString().split("T")[0],
+      type: "payment",
+      description: `Payment received (${paymentMethod})`,
+      amount: paymentAmount,
+      balance: selectedCustomer.balance + paymentAmount,
+      note: paymentNote,
+    };
+
+    // Update transactions (assuming you have a state for transactions)
+    const customerId = selectedCustomer.id;
+    const updatedTransactions = {
+      ...customerTransactions,
+      [customerId]: [
+        ...(customerTransactions[customerId] || []),
+        newTransaction,
+      ],
+    };
+
+    // Update state
+    setCustomers(updatedCustomers);
+    // setCustomerTransactions(updatedTransactions);
+    setShowPaymentModal(false);
+    setPaymentAmount(0);
+    setPaymentMethod("cash");
+    setPaymentNote("");
   };
 
   const handleAddCustomer = () => {
@@ -437,6 +493,18 @@ const CustomerManagementPage = () => {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
+                        {customer.balance < 0 && (
+                          <button
+                            onClick={() => {
+                              setSelectedCustomer(customer);
+                              setShowPaymentModal(true);
+                            }}
+                            className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
+                            title="Record Payment"
+                          >
+                            <DollarSign className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -574,181 +642,42 @@ const CustomerManagementPage = () => {
         </div>
       )}
 
+      {/* Debt Payment Modal */}
+      {showPaymentModal && selectedCustomer && (
+        <PaymentModal
+          show={showPaymentModal}
+          customer={selectedCustomer}
+          paymentAmount={paymentAmount}
+          setPaymentAmount={setPaymentAmount}
+          paymentMethod={paymentMethod}
+          setPaymentMethod={setPaymentMethod}
+          paymentNote={paymentNote}
+          setPaymentNote={setPaymentNote}
+          onClose={() => setShowPaymentModal(false)}
+          onSubmit={handlePayment}
+        />
+      )}
+
       {/* Transaction History Modal */}
       {showTransactionHistory && selectedCustomer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Transaction History
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {selectedCustomer.name}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowTransactionHistory(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6">
-              {/* Customer Summary */}
-              <div className="grid md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <div className="text-sm text-blue-600 mb-1">
-                    Current Balance
-                  </div>
-                  <div
-                    className={`text-lg font-bold ${getBalanceColor(
-                      selectedCustomer.balance
-                    )}`}
-                  >
-                    ₦{Math.abs(selectedCustomer.balance).toLocaleString()}
-                    {selectedCustomer.balance < 0 && (
-                      <span className="text-sm ml-1">(debt)</span>
-                    )}
-                  </div>
-                </div>
-                <div className="bg-green-50 rounded-lg p-4">
-                  <div className="text-sm text-green-600 mb-1">
-                    Total Purchases
-                  </div>
-                  <div className="text-lg font-bold text-green-900">
-                    ₦{selectedCustomer.totalPurchases.toLocaleString()}
-                  </div>
-                </div>
-                <div className="bg-orange-50 rounded-lg p-4">
-                  <div className="text-sm text-orange-600 mb-1">
-                    Credit Limit
-                  </div>
-                  <div className="text-lg font-bold text-orange-900">
-                    ₦{selectedCustomer.creditLimit.toLocaleString()}
-                  </div>
-                </div>
-              </div>
-
-              {/* Transaction List */}
-              <div className="space-y-3">
-                <h4 className="font-medium text-gray-900">
-                  Recent Transactions
-                </h4>
-                {customerTransactions[selectedCustomer.id]?.length ? (
-                  customerTransactions[selectedCustomer.id].map(
-                    (transaction) => (
-                      <div
-                        key={transaction.id}
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                              transaction.type === "sale"
-                                ? "bg-blue-100"
-                                : transaction.type === "payment"
-                                ? "bg-green-100"
-                                : "bg-orange-100"
-                            }`}
-                          >
-                            {transaction.type === "sale" ? (
-                              <Package className="w-4 h-4 text-blue-600" />
-                            ) : transaction.type === "payment" ? (
-                              <DollarSign className="w-4 h-4 text-green-600" />
-                            ) : (
-                              <CreditCard className="w-4 h-4 text-orange-600" />
-                            )}
-                          </div>
-                          <div>
-                            <div className="font-medium text-gray-900">
-                              {transaction.description}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              {transaction.date} • {transaction.id}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div
-                            className={`font-medium ${
-                              transaction.type === "payment"
-                                ? "text-green-600"
-                                : "text-gray-900"
-                            }`}
-                          >
-                            {transaction.type === "payment" ? "+" : ""}₦
-                            {transaction.amount.toLocaleString()}
-                          </div>
-                          <div
-                            className={`text-sm ${getBalanceColor(
-                              transaction.balance
-                            )}`}
-                          >
-                            Balance: ₦
-                            {Math.abs(transaction.balance).toLocaleString()}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  )
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p>No transactions found</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        <TransactionHistoryModal
+          show={showTransactionHistory}
+          customer={selectedCustomer}
+          transactions={customerTransactions}
+          onClose={() => setShowTransactionHistory(false)}
+          onRecordPayment={() => setShowPaymentModal(true)}
+          getBalanceColor={getBalanceColor}
+        />
       )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && selectedCustomer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-md">
-            <div className="p-6">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                  <AlertCircle className="w-5 h-5 text-red-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Delete Customer
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    This action cannot be undone
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-gray-700 mb-6">
-                Are you sure you want to delete{" "}
-                <strong>{selectedCustomer.name}</strong>? All transaction
-                history will be permanently removed.
-              </p>
-
-              <div className="flex justify-end space-x-4">
-                <button
-                  onClick={() => setShowDeleteModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteCustomer}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                >
-                  Delete Customer
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DeleteCustomerModal
+          show={showDeleteModal}
+          customerName={selectedCustomer.name}
+          onClose={() => setShowDeleteModal(false)}
+          onDelete={handleDeleteCustomer}
+        />
       )}
     </div>
   );
