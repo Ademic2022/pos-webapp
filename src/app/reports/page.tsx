@@ -20,6 +20,7 @@ import {
 import Link from "next/link";
 import { ReportFilters } from "@/interfaces/interface";
 import { salesData } from "@/data/sales";
+import { StatsCard } from "@/components/cards/statCard";
 
 const SalesReportPage = () => {
   const [activeTab, setActiveTab] = useState<
@@ -246,76 +247,57 @@ const SalesReportPage = () => {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Total Sales</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  ₦{summary.totalSales.toLocaleString()}
-                </p>
-                <p className="text-sm text-green-600 flex items-center">
-                  <TrendingUp className="w-4 h-4 mr-1" />
-                  +8.2% from last month
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </div>
+          <StatsCard
+            title="Total Sales"
+            value={`₦${summary.totalSales.toLocaleString()}`}
+            change={{
+              value: "+8.2% from last month",
+              icon: TrendingUp,
+              textColor: "text-green-600",
+            }}
+            icon={DollarSign}
+            iconBg="bg-green-100"
+            iconColor="text-green-600"
+          />
 
-          <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Total Transactions</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {summary.totalTransactions}
-                </p>
-                <p className="text-sm text-blue-600 flex items-center">
-                  <TrendingUp className="w-4 h-4 mr-1" />
-                  +12 from yesterday
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Package className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </div>
+          <StatsCard
+            title="Total Transactions"
+            value={summary.totalTransactions}
+            change={{
+              value: "+12 from yesterday",
+              icon: TrendingUp,
+              textColor: "text-blue-600",
+            }}
+            icon={Package}
+            iconBg="bg-blue-100"
+            iconColor="text-blue-600"
+          />
 
-          <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Outstanding Debt</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  ₦{summary.totalOutstanding.toLocaleString()}
-                </p>
-                <p className="text-sm text-red-600 flex items-center">
-                  <TrendingDown className="w-4 h-4 mr-1" />3 customers
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <AlertCircle className="w-6 h-6 text-red-600" />
-              </div>
-            </div>
-          </div>
+          <StatsCard
+            title="Outstanding Debt"
+            value={`₦${summary.totalOutstanding.toLocaleString()}`}
+            change={{
+              value: "3 customers",
+              icon: TrendingDown,
+              textColor: "text-red-600",
+            }}
+            icon={AlertCircle}
+            iconBg="bg-red-100"
+            iconColor="text-red-600"
+          />
 
-          <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Average Sale</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  ₦{summary.averageTransaction.toLocaleString()}
-                </p>
-                <p className="text-sm text-orange-600 flex items-center">
-                  <TrendingUp className="w-4 h-4 mr-1" />
-                  Per transaction
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <BarChart3 className="w-6 h-6 text-orange-600" />
-              </div>
-            </div>
-          </div>
+          <StatsCard
+            title="Average Sale"
+            value={`₦${summary.averageTransaction.toLocaleString()}`}
+            change={{
+              value: "Per transaction",
+              icon: TrendingUp,
+              textColor: "text-orange-600",
+            }}
+            icon={BarChart3}
+            iconBg="bg-orange-100"
+            iconColor="text-orange-600"
+          />
         </div>
 
         {/* Tabs Navigation */}

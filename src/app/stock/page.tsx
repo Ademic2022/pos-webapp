@@ -11,12 +11,15 @@ import {
   Calendar,
   Download,
   Settings,
+  Cylinder,
 } from "lucide-react";
 import Link from "next/link";
 import { dashboardStat } from "@/data/stock";
 import { DeliveryHistory } from "@/interfaces/interface";
 import { loggedInUser } from "@/data/user";
 import { getFillColor, getFillDetails } from "@/utils/utils";
+import { InventoryCard } from "@/components/cards/inventoryCard";
+import { KEG_CAPACITY } from "@/data/constants";
 
 const ManageStock: React.FC = () => {
   const stock = dashboardStat.stockData;
@@ -162,94 +165,48 @@ const ManageStock: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             {/* Total Litres */}
-            <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Droplets className="w-6 h-6 text-blue-600" />
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-gray-900">
-                    {totalAvailableStock.toLocaleString()}
-                  </div>
-                  <div className="text-sm text-gray-600">Litres</div>
-                </div>
-              </div>
-              <div className="text-xs text-gray-500">Total Available</div>
-            </div>
+            <InventoryCard
+              title="Total Available"
+              value={totalAvailableStock}
+              unit="Litres"
+              icon={Droplets}
+              footerText="Total Available"
+            />
 
             {/* Total Drums */}
-            <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <div className="w-6 h-6 bg-green-600 rounded-sm"></div>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-gray-900">
-                    {totalDrums}
-                  </div>
-                  <div className="text-sm text-gray-600">Drums</div>
-                </div>
-              </div>
-              <div className="text-xs text-gray-500">
-                {totalDrums} Drums {Math.floor(remainingKegs / 25)} Kegs
-              </div>
-            </div>
+            <InventoryCard
+              title="Total Drums"
+              value={totalDrums}
+              unit="Drums"
+              icon={Cylinder}
+              iconBg="bg-green-100"
+              iconColor="text-green-600"
+              footerText={`${totalDrums} Drums ${Math.floor(
+                remainingKegs / KEG_CAPACITY
+              )} Kegs`}
+            />
 
             {/* Total Kegs */}
-            <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <div className="w-5 h-6 bg-orange-600 rounded-sm"></div>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-gray-900">
-                    {totalKegs}
-                  </div>
-                  <div className="text-sm text-gray-600">Kegs</div>
-                </div>
-              </div>
-              <div className="text-xs text-gray-500">
-                {totalKegs} Kegs {remainingLitres} Litres
-              </div>
-            </div>
+            <InventoryCard
+              title="Total Kegs"
+              value={totalKegs}
+              unit="Kegs"
+              icon={Cylinder}
+              iconColor="text-orange-600"
+              iconBg="bg-orange-100"
+              footerText={`${totalKegs} Kegs (${remainingLitres} Litres)`}
+            />
 
-            {/* Stock Status */}
-            {/* <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-              <div className="flex items-center justify-between mb-4">
-                <div
-                  className={`w-12 h-12 bg-${stockStatus.color}-100 rounded-lg flex items-center justify-center`}
-                >
-                  <stockStatus.icon
-                    className={`w-6 h-6 text-${stockStatus.color}-600`}
-                  />
-                </div>
-                <div className="text-right">
-                  <div
-                    className={`text-lg font-bold text-${stockStatus.color}-600`}
-                  >
-                    {stockStatus.status}
-                  </div>
-                  <div className="text-sm text-gray-600">Status</div>
-                </div>
-              </div>
-              <div className="text-xs text-gray-500">
-                {fillPercentage.toFixed(1)}% capacity
-              </div>
-            </div> */}
-            <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Droplets className="w-6 h-6 text-blue-600" />
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-gray-900">
-                    {stock?.soldStock.toLocaleString()}
-                  </div>
-                  <div className="text-sm text-gray-600">Litres</div>
-                </div>
-              </div>
-              <div className="text-xs text-gray-500">Total Sold</div>
-            </div>
+            {/* Total Sold */}
+            <InventoryCard
+              title="Total Sold"
+              value={stock?.soldStock || 0}
+              unit="Litres"
+              icon={Droplets}
+              iconBg="bg-blue-100"
+              iconColor="text-blue-600"
+              footerText="Total Sold Stock"
+            />
           </div>
         </div>
 
