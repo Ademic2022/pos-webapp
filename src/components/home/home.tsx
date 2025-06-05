@@ -19,6 +19,7 @@ import CalculatorModal from "@/utils/calculator";
 import { getFillDetails, getStockStatus } from "@/utils/utils";
 import { colorMap } from "@/data/constants";
 import { dashboardStat } from "@/data/stock";
+import { StatsCard } from "../cards/statCard";
 
 const Home = () => {
   const [showCalculator, setShowCalculator] = React.useState(false);
@@ -81,86 +82,56 @@ const Home = () => {
 
           {/* Quick Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-            <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">
-                    Today&apos;s Sales
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    ₦{dashboardStat.totalSales.toLocaleString()}
-                  </p>
-                  <p className="text-sm text-green-600">+12% from yesterday</p>
-                </div>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-            </div>
+            <StatsCard
+              title="Today's Sales"
+              value={`₦${dashboardStat.totalSales.toLocaleString()}`}
+              change={{
+                value: "+12% from yesterday",
+                textColor: "text-green-600",
+                icon: TrendingUp,
+              }}
+              icon={DollarSign}
+              iconColor="text-green-600"
+              iconBg="bg-green-100"
+            />
 
-            <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Transactions</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {dashboardStat.transaction.totalTransactionCount.toLocaleString()}
-                  </p>
-                  <p className="text-sm text-blue-600">
-                    {dashboardStat.transaction.wholeSales.toLocaleString()}{" "}
-                    wholesale,{" "}
-                    {dashboardStat.transaction.retails.toLocaleString()} retail
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <ShoppingCart className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-            </div>
+            <StatsCard
+              title="Transactions"
+              value={dashboardStat.transaction.totalTransactionCount.toLocaleString()}
+              change={{
+                value: `${dashboardStat.transaction.wholeSales.toLocaleString()} wholesale, ${dashboardStat.transaction.retails.toLocaleString()} retail`,
+                textColor: "text-blue-600",
+              }}
+              icon={ShoppingCart}
+              iconBg="bg-blue-100"
+              iconColor="text-blue-600"
+            />
 
-            <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Outstanding Debt</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    ₦{dashboardStat.outstandingDebts.debtValue.toLocaleString()}
-                  </p>
-                  <p className="text-sm text-orange-600">
-                    {dashboardStat.outstandingDebts.customerCount.toLocaleString()}{" "}
-                    customers
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-orange-600" />
-                </div>
-              </div>
-            </div>
+            <StatsCard
+              title="Outstanding Debt"
+              value={`₦${dashboardStat.outstandingDebts.debtValue.toLocaleString()}`}
+              change={{
+                value: `${dashboardStat.outstandingDebts.customerCount.toLocaleString()} customers`,
+                textColor: "text-orange-600",
+              }}
+              icon={FileText}
+              iconBg="bg-orange-100"
+              iconColor="text-orange-600"
+            />
 
-            <div
-              className={`rounded-xl p-6 shadow-lg border ${colorMap[litresStatus].bg} border-orange-100`}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p
-                    className={`text-sm ${colorMap[litresStatus].textColor} mb-1`}
-                  >
-                    Stock Alert
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {totalAvailableStock} L
-                  </p>
-                  <p className={`text-sm ${colorMap[litresStatus].textColor}`}>
-                    {colorMap[litresStatus].statusText}
-                  </p>
-                </div>
-                <div
-                  className={`w-12 h-12 ${colorMap[litresStatus].iconBg} rounded-lg flex items-center justify-center`}
-                >
-                  <Bell
-                    className={`w-6 h-6 ${colorMap[litresStatus].iconColor}`}
-                  />
-                </div>
-              </div>
-            </div>
+            <StatsCard
+              title="Stock Alert"
+              titleColor={colorMap[litresStatus].textColor}
+              cardBg={colorMap[litresStatus].bg}
+              value={`${totalAvailableStock} L`}
+              icon={Bell}
+              iconBg={colorMap[litresStatus].iconBg}
+              iconColor={colorMap[litresStatus].iconColor}
+              change={{
+                value: colorMap[litresStatus].statusText,
+                textColor: colorMap[litresStatus].textColor,
+              }}
+            />
           </div>
 
           {/* Main Action Cards */}
