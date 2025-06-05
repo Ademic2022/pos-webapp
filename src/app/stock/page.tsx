@@ -11,22 +11,15 @@ import {
   Calendar,
   Download,
   Settings,
-  CheckCircle,
-  AlertTriangle,
 } from "lucide-react";
 import Link from "next/link";
-import { stockData } from "@/data/stock";
-import { DeliveryHistory, StockStatus } from "@/interfaces/interface";
+import { dashboardStat } from "@/data/stock";
+import { DeliveryHistory } from "@/interfaces/interface";
 import { loggedInUser } from "@/data/user";
-import {
-  getFillColor,
-  getFillDetails,
-  getLatestStock,
-  getTotalAvailableStock,
-} from "@/utils/utils";
+import { getFillColor, getFillDetails } from "@/utils/utils";
 
 const ManageStock: React.FC = () => {
-  const stock = getLatestStock(stockData);
+  const stock = dashboardStat.stockData;
 
   const [currentStock, setCurrentStock] = useState<number>(
     stock?.totalAvailableStock ?? 0
@@ -43,10 +36,7 @@ const ManageStock: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Mock delivery history
-  const [deliveryHistory, setDeliveryHistory] = useState(stockData);
-
-  // Calculate derived measurements
-  const totalAvailableStock = getTotalAvailableStock(stockData);
+  const [deliveryHistory, setDeliveryHistory] = useState([stock]);
 
   const {
     totalDrums,
@@ -54,22 +44,8 @@ const ManageStock: React.FC = () => {
     remainingKegs,
     remainingLitres,
     fillPercentage,
+    totalAvailableStock,
   } = getFillDetails();
-
-  // Determine stock status
-  const getStockStatus = (): StockStatus => {
-    if (fillPercentage >= 80)
-      return { status: "Excellent", color: "emerald", icon: CheckCircle };
-    if (fillPercentage >= 60)
-      return { status: "Good", color: "green", icon: CheckCircle };
-    if (fillPercentage >= 40)
-      return { status: "Moderate", color: "yellow", icon: AlertTriangle };
-    if (fillPercentage >= 20)
-      return { status: "Low", color: "orange", icon: AlertTriangle };
-    return { status: "Critical", color: "red", icon: AlertTriangle };
-  };
-
-  const stockStatus = getStockStatus();
 
   // Handle stock addition
   const handleAddStock = async () => {
@@ -79,10 +55,8 @@ const ManageStock: React.FC = () => {
     }
 
     const amount = parseFloat(deliveryAmount);
-    if (amount <= 0 || amount > totalAvailableStock) {
-      alert(
-        `Please enter a valid amount between 1 and ${totalAvailableStock} litres`
-      );
+    if (amount <= 0 || amount > currentStock) {
+      alert(`Please enter a valid amount between 1 and ${currentStock} litres`);
       return;
     }
 
@@ -96,8 +70,7 @@ const ManageStock: React.FC = () => {
       id: deliveryHistory.length + 1,
       amount,
       supplier: selectedSupplier,
-      date: deliveryDate,
-      timestamp: new Date(),
+      createdAt: new Date(),
       availableStock: currentStock + amount,
       totalAvailableStock: currentStock + amount, // This could be adjusted based on actual stock sold
       soldStock: 0,
@@ -292,7 +265,7 @@ const ManageStock: React.FC = () => {
                   Main Storage Tank
                 </h3>
                 <p className="text-lg text-gray-600">
-                  {currentStock}L / {stock?.soldStock ?? 0}L
+                  {totalAvailableStock}L / {stock?.soldStock ?? 0}L
                 </p>
               </div>
               <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -332,12 +305,11 @@ const ManageStock: React.FC = () => {
                   Available Capacity (L)
                 </div>
               </div>
-              <div className="text-center p-4 bg-emerald-50 rounded-lg">
-                <span
-                  className={`px-4 py-2 bg-${stockStatus.color}-100 text-${stockStatus.color}-700 rounded-full text-sm font-medium`}
-                >
-                  {stockStatus.status.toUpperCase()} LEVEL
-                </span>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <div className="text-xl font-bold text-green-600 mb-1">
+                  {stock.soldStock.toLocaleString()}
+                </div>
+                <div className="text-sm text-gray-600">Sold Capacity (L)</div>
               </div>
             </div>
           </div>
@@ -462,14 +434,14 @@ const ManageStock: React.FC = () => {
                             +{delivery.amount.toLocaleString()}L
                           </span>
                           <span className="text-sm text-gray-500">
-                            {delivery.timestamp.toLocaleDateString()}
+                            {delivery.createdAt.toLocaleDateString()}
                           </span>
                         </div>
                         <p className="text-sm text-gray-600 mb-1">
                           {delivery.supplier}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {delivery.timestamp.toLocaleTimeString()}
+                          {delivery.createdAt.toLocaleTimeString()}
                         </p>
                       </div>
                     ))}

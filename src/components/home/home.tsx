@@ -18,6 +18,7 @@ import StockDisplay from "@/utils/stock";
 import CalculatorModal from "@/utils/calculator";
 import { getFillDetails, getStockStatus } from "@/utils/utils";
 import { colorMap } from "@/data/constants";
+import { dashboardStat } from "@/data/stock";
 
 const Home = () => {
   const [showCalculator, setShowCalculator] = React.useState(false);
@@ -86,7 +87,9 @@ const Home = () => {
                   <p className="text-sm text-gray-600 mb-1">
                     Today&apos;s Sales
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">₦125,400</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    ₦{dashboardStat.totalSales.toLocaleString()}
+                  </p>
                   <p className="text-sm text-green-600">+12% from yesterday</p>
                 </div>
                 <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -99,9 +102,13 @@ const Home = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Transactions</p>
-                  <p className="text-2xl font-bold text-gray-900">28</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {dashboardStat.transaction.totalTransactionCount.toLocaleString()}
+                  </p>
                   <p className="text-sm text-blue-600">
-                    8 wholesale, 20 retail
+                    {dashboardStat.transaction.wholeSales.toLocaleString()}{" "}
+                    wholesale,{" "}
+                    {dashboardStat.transaction.retails.toLocaleString()} retail
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -114,8 +121,13 @@ const Home = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Outstanding Debt</p>
-                  <p className="text-2xl font-bold text-gray-900">₦45,200</p>
-                  <p className="text-sm text-orange-600">5 customers</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    ₦{dashboardStat.outstandingDebts.debtValue.toLocaleString()}
+                  </p>
+                  <p className="text-sm text-orange-600">
+                    {dashboardStat.outstandingDebts.customerCount.toLocaleString()}{" "}
+                    customers
+                  </p>
                 </div>
                 <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
                   <FileText className="w-6 h-6 text-orange-600" />

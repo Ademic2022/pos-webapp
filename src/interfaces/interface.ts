@@ -70,8 +70,7 @@ export interface DeliveryHistory {
   id: number;
   amount: number;
   supplier: string;
-  date: string;
-  timestamp: Date;
+  createdAt: Date
   availableStock: number;
   totalAvailableStock: number;
   soldStock: number;

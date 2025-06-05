@@ -10,8 +10,8 @@ import {
 } from "lucide-react";
 import { MeterReading } from "@/types/types";
 import { generateMockData } from "@/data/sales";
-import { calculateStats, getLatestStock, isDateInRange } from "@/utils/utils";
-import { stockData } from "@/data/stock";
+import { calculateStats, isDateInRange } from "@/utils/utils";
+import { dashboardStat } from "@/data/stock";
 
 const MeterReadingReports = () => {
   const [mockReadings] = useState<MeterReading[]>(generateMockData());
@@ -22,7 +22,7 @@ const MeterReadingReports = () => {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
-  const latestStock = getLatestStock(stockData);
+  const latestStock = dashboardStat.stockData;
 
   useEffect(() => {
     let filtered = mockReadings;
@@ -43,7 +43,7 @@ const MeterReadingReports = () => {
         isDateInRange(reading.date || reading.date, start, end)
       );
     } else if (dateFilterType === "since_restock" && latestStock) {
-      const restockDate = new Date(latestStock.date);
+      const restockDate = new Date(latestStock.createdAt);
       const today = new Date();
       today.setHours(23, 59, 59, 999);
 
@@ -223,11 +223,12 @@ const MeterReadingReports = () => {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <p className="text-sm text-blue-800">
                   <span className="font-semibold">Last Restock Date:</span>{" "}
-                  {new Date(latestStock.date).toLocaleDateString()}
+                  {new Date(latestStock.createdAt).toLocaleDateString()}
                 </p>
                 <p className="text-xs text-blue-600 mt-1">
                   Showing readings from{" "}
-                  {new Date(latestStock.date).toLocaleDateString()} to today
+                  {new Date(latestStock.createdAt).toLocaleDateString()} to
+                  today
                 </p>
               </div>
             </div>

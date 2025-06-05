@@ -1,4 +1,5 @@
 import { STOCK_STATUSES } from "@/data/constants";
+import { DeliveryHistory } from "@/interfaces/interface";
 
 export type SaleType = "retail" | "wholesale";
 export type PaymentMethod = "cash" | "credit" | "transfer" | "part_payment";
@@ -39,3 +40,23 @@ export type Stats = {
 };
 
 export type StockStatus = typeof STOCK_STATUSES[number];
+
+export type Transactions = {
+  totalTransactionCount: number;
+  wholeSales: number;
+  retails: number;
+};
+export type Debt = {
+  debtValue: number;
+  customerCount: number;
+};
+
+export type DashboardStats = {
+  totalSales: number;
+  transaction: Transactions;
+  outstandingDebts: Debt;
+  stockData: DeliveryHistory;
+  totalLitres: number;
+  totalCustomers: number;
+  totalDeliveries: number;
+};

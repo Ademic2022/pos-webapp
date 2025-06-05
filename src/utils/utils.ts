@@ -1,5 +1,5 @@
 import { DRUM_CAPACITY, KEG_CAPACITY, STOCK_THRESHOLDS } from "@/data/constants";
-import { stockData } from "@/data/stock";
+import { dashboardStat } from "@/data/stock";
 import { DeliveryHistory } from "@/interfaces/interface";
 import { MeterReading, Stats, StockStatus } from "@/types/types";
 
@@ -7,7 +7,7 @@ export const getLatestAvailableStock = (stockData: DeliveryHistory[]): number =>
   if (!Array.isArray(stockData) || stockData.length === 0) return 0;
 
   const latestStock = stockData.reduce((latest, current) =>
-    current.timestamp.getTime() > latest.timestamp.getTime() ? current : latest
+    current.createdAt.getTime() > latest.createdAt.getTime() ? current : latest
   );
 
   return latestStock.totalAvailableStock;
@@ -18,7 +18,7 @@ export const getLatestStock = (stockData: DeliveryHistory[]): DeliveryHistory | 
     if (!Array.isArray(stockData) || stockData.length === 0) return null;
   
     return stockData.reduce((latest, current) =>
-      current.timestamp.getTime() > latest.timestamp.getTime() ? current : latest
+      current.createdAt.getTime() > latest.createdAt.getTime() ? current : latest
     );
   };
 
@@ -27,7 +27,7 @@ export const getTotalAvailableStock = (stockData: DeliveryHistory[]): number => 
     if (!Array.isArray(stockData) || stockData.length === 0) return 0;
   
     const latestStock = stockData.reduce((latest, current) =>
-      current.timestamp.getTime() > latest.timestamp.getTime() ? current : latest
+      current.createdAt.getTime() > latest.createdAt.getTime() ? current : latest
     );
   
     return latestStock.totalAvailableStock - latestStock.soldStock;
@@ -35,8 +35,8 @@ export const getTotalAvailableStock = (stockData: DeliveryHistory[]): number => 
   
 
 export const getFillDetails = () => {
-    const stock = getLatestStock(stockData);
-    const totalAvailableStock = (stock?.totalAvailableStock ?? 0) - (stock?.soldStock ?? 0);
+    const stock = dashboardStat.stockData;
+    const totalAvailableStock = stock.totalAvailableStock;
     const currentStock = stock?.availableStock ?? 0;
 
     const totalDrums = Math.floor(totalAvailableStock / DRUM_CAPACITY);
