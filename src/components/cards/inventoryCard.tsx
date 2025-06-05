@@ -2,7 +2,6 @@ import { LucideIcon } from "lucide-react";
 
 // First, let's update the StatsCard props to accommodate this layout
 interface InventoryCardProps {
-  title: string;
   value: string | number;
   unit: string;
   icon?: LucideIcon;
@@ -13,7 +12,6 @@ interface InventoryCardProps {
 }
 
 export function InventoryCard({
-  title,
   value,
   unit,
   icon: Icon,
