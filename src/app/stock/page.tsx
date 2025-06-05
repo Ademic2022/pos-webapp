@@ -166,7 +166,6 @@ const ManageStock: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             {/* Total Litres */}
             <InventoryCard
-              title="Total Available"
               value={totalAvailableStock}
               unit="Litres"
               icon={Droplets}
@@ -175,7 +174,6 @@ const ManageStock: React.FC = () => {
 
             {/* Total Drums */}
             <InventoryCard
-              title="Total Drums"
               value={totalDrums}
               unit="Drums"
               icon={Cylinder}
@@ -188,7 +186,6 @@ const ManageStock: React.FC = () => {
 
             {/* Total Kegs */}
             <InventoryCard
-              title="Total Kegs"
               value={totalKegs}
               unit="Kegs"
               icon={Cylinder}
@@ -199,7 +196,6 @@ const ManageStock: React.FC = () => {
 
             {/* Total Sold */}
             <InventoryCard
-              title="Total Sold"
               value={stock?.soldStock || 0}
               unit="Litres"
               icon={Droplets}
