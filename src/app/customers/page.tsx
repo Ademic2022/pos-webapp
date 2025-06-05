@@ -26,6 +26,7 @@ import { customers as users, customerTransactions } from "@/data/customers";
 import PaymentModal from "@/components/modals/paymentModal";
 import TransactionHistoryModal from "@/components/modals/transactionHistoryModal";
 import DeleteCustomerModal from "@/components/modals/deleteCustomerModal";
+import { StatsCard } from "@/components/cards/statCard";
 
 const CustomerManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -246,78 +247,56 @@ const CustomerManagementPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Total Customers</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {customerStats.total}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </div>
+          <StatsCard
+            title="Total Customers"
+            value={customerStats.total}
+            icon={Users}
+            iconBg="bg-blue-100"
+            iconColor="text-blue-600"
+          />
 
-          <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Outstanding Debt</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  ₦{customerStats.totalDebt.toLocaleString()}
-                </p>
-                <p className="text-sm text-red-600 flex items-center">
-                  <AlertCircle className="w-4 h-4 mr-1" />
-                  {customerStats.withDebt} customers
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-red-600" />
-              </div>
-            </div>
-          </div>
+          <StatsCard
+            title="Outstanding Debt"
+            value={`₦${customerStats.totalDebt.toLocaleString()}`}
+            change={{
+              value: `${customerStats.withDebt} customers`,
+              icon: AlertCircle,
+              textColor: "text-red-600",
+            }}
+            icon={DollarSign}
+            iconBg="bg-red-100"
+            iconColor="text-red-600"
+          />
 
-          <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Stock Alert</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {customerStats.totalRevenue}L
-                </p>
-                <p className="text-sm text-green-600 flex items-center">
-                  <TrendingUp className="w-4 h-4 mr-1" />
-                  Lifetime value
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <Package className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </div>
+          <StatsCard
+            title="Stock Alert"
+            value={`${customerStats.totalRevenue}L`}
+            change={{
+              value: "Lifetime value",
+              icon: TrendingUp,
+              textColor: "text-green-600",
+            }}
+            icon={Package}
+            iconBg="bg-green-100"
+            iconColor="text-green-600"
+          />
 
-          <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Active Customers</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {customers.filter((c) => c.status === "active").length}
-                </p>
-                <p className="text-sm text-orange-600 flex items-center">
-                  <CheckCircle className="w-4 h-4 mr-1" />
-                  {(
-                    (customers.filter((c) => c.status === "active").length /
-                      customerStats.total) *
-                    100
-                  ).toFixed(1)}
-                  % active rate
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-orange-600" />
-              </div>
-            </div>
-          </div>
+          <StatsCard
+            title="Active Customers"
+            value={customers.filter((c) => c.status === "active").length}
+            change={{
+              value: `${(
+                (customers.filter((c) => c.status === "active").length /
+                  customerStats.total) *
+                100
+              ).toFixed(1)}% active rate`,
+              icon: CheckCircle,
+              textColor: "text-orange-600",
+            }}
+            icon={CheckCircle}
+            iconBg="bg-orange-100"
+            iconColor="text-orange-600"
+          />
         </div>
 
         {/* Search and Filters */}
