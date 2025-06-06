@@ -159,7 +159,7 @@ const TransactionHistoryPage: React.FC = () => {
 
   // Filter and sort transactions
   const filteredAndSortedTransactions = useMemo(() => {
-    let filtered = mockTransactions.filter((transaction) => {
+    const filtered = mockTransactions.filter((transaction) => {
       const matchesSearch =
         transaction.customerName
           .toLowerCase()
