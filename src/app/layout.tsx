@@ -24,11 +24,12 @@ export const metadata: Metadata = {
     title: "Success Enterprise | Pure Groundnut Oil Distribution",
     description:
       "Premium groundnut oil for homes, restaurants, and retailers. Experience unmatched purity and flavor from Success Enterprise.",
-    url: "https://www.successenterprise.com",
+    url: "https://successenterprise.vercel.app",
     siteName: "Success Enterprise",
+    locale: "en_US",
     images: [
       {
-        url: "/og-image.jpg",
+        url: "https://successenterprise.vercel.app/successent.webp",
         width: 1200,
         height: 630,
         alt: "Bottles of pure groundnut oil by Success Enterprise",
@@ -41,7 +42,8 @@ export const metadata: Metadata = {
     title: "Success Enterprise | Pure Groundnut Oil Distribution",
     description:
       "High-quality, natural groundnut oil you can trust. Distributed by Success Enterprise.",
-    images: ["/og-image.jpg"],
+    images: ["https://successenterprise.vercel.app/successent.webp"],
+    // creator: "@SuccessEnterprise", // optional if available
   },
 };
 
