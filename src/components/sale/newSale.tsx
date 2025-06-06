@@ -23,6 +23,10 @@ import { Customer, Product, CartItem } from "@/interfaces/interface";
 import { SaleType, PaymentMethod } from "@/types/types";
 import { customers } from "@/data/customers";
 import { products } from "@/data/sales";
+import { checkStockAvailability } from "@/utils/stockManager";
+import { KEG_CAPACITY } from "@/data/constants";
+import { dashboardStat } from "@/data/stock";
+import TransactionId from "../TransactionId";
 
 const NewSalePage = () => {
   const [saleType, setSaleType] = useState<SaleType>("retail");
@@ -47,8 +51,36 @@ const NewSalePage = () => {
       customer.phone.includes(searchTerm)
   );
 
+  const totalStockLiters = dashboardStat.stockData.totalAvailableStock;
+
   const addToCart = (product: Product) => {
+    const unitKegs = parseInt(product.unit);
+
+    // Check stock availability for this product
+    const { isAvailable, remainingStock } = checkStockAvailability(
+      unitKegs,
+      totalStockLiters,
+      cartItems
+    );
+
+    // Don't add if out of stock
+    if (!isAvailable || product.stock === 0) {
+      return;
+    }
+
+    // Check if adding one more unit would exceed available stock
     const existingItem = cartItems.find((item) => item.id === product.id);
+
+    // Calculate how many more units of this product we can add
+    // Each unit consumes unitKegs * KEG_CAPACITY liters
+    const litersPerUnit = unitKegs * KEG_CAPACITY;
+    const maxUnitsCanAdd = Math.floor(remainingStock / litersPerUnit);
+
+    // Don't add if we can't add any more units
+    if (maxUnitsCanAdd < 1) {
+      return;
+    }
+
     if (existingItem) {
       setCartItems(
         cartItems.map((item) =>
@@ -62,18 +94,6 @@ const NewSalePage = () => {
     }
   };
 
-  const updateQuantity = (productId: string, newQuantity: number) => {
-    if (newQuantity === 0) {
-      setCartItems(cartItems.filter((item) => item.id !== productId));
-    } else {
-      setCartItems(
-        cartItems.map((item) =>
-          item.id === productId ? { ...item, quantity: newQuantity } : item
-        )
-      );
-    }
-  };
-
   const calculateSubtotal = (): number => {
     return cartItems.reduce(
       (total, item) => total + item.price * item.quantity,
@@ -81,6 +101,47 @@ const NewSalePage = () => {
     );
   };
 
+  const updateQuantity = (productId: string, newQuantity: number) => {
+    if (newQuantity === 0) {
+      setCartItems(cartItems.filter((item) => item.id !== productId));
+      return;
+    }
+
+    // Find the product to check stock limits when increasing quantity
+    const cartItem = cartItems.find((item) => item.id === productId);
+    if (!cartItem) return;
+
+    // Find the original product data
+    const product = products[saleType].find((p) => p.id === productId);
+    if (!product) return;
+
+    // If increasing quantity, check stock availability
+    if (newQuantity > cartItem.quantity) {
+      const unitKegs = parseInt(product.unit);
+
+      const { remainingStock } = checkStockAvailability(
+        unitKegs,
+        totalStockLiters,
+        cartItems
+      );
+
+      // Calculate how many liters this new quantity would consume
+      const litersPerUnit = unitKegs * KEG_CAPACITY;
+      const additionalLitersNeeded =
+        (newQuantity - cartItem.quantity) * litersPerUnit;
+
+      // Don't allow increasing if it would exceed available stock
+      if (additionalLitersNeeded > remainingStock) {
+        return;
+      }
+    }
+
+    setCartItems(
+      cartItems.map((item) =>
+        item.id === productId ? { ...item, quantity: newQuantity } : item
+      )
+    );
+  };
   const calculateDiscount = (): number => {
     const subtotal = calculateSubtotal();
     if (discountType === "percentage") {
@@ -119,6 +180,27 @@ const NewSalePage = () => {
     }, 3000);
   };
 
+  // Calculate remaining stock for display
+  const calculateRemainingStock = (): number => {
+    const usedLiters = cartItems.reduce((total, item) => {
+      const itemLiters = parseInt(item.unit) * KEG_CAPACITY * item.quantity;
+      return total + itemLiters;
+    }, 0);
+
+    return totalStockLiters - usedLiters;
+  };
+
+  const remainingStock = calculateRemainingStock();
+
+  // Calculate total kegs in cart for display
+  const calculateTotalKegsInCart = (): number => {
+    return cartItems.reduce((total, item) => {
+      return total + parseInt(item.unit) * item.quantity;
+    }, 0);
+  };
+
+  const totalKegsInCart = calculateTotalKegsInCart();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
       {/* Header */}
@@ -141,9 +223,7 @@ const NewSalePage = () => {
                 </div>
               </div>
             </div>
-            <div className="text-sm text-gray-600">
-              Transaction ID: #SE{Date.now().toString().slice(-6)}
-            </div>
+            <TransactionId />
           </div>
         </div>
       </header>
@@ -181,7 +261,7 @@ const NewSalePage = () => {
                 >
                   <div className="flex items-center justify-center space-x-2">
                     <Package className="w-5 h-5" />
-                    <span className="font-medium">Wholesale (Drums)</span>
+                    <span className="font-medium">Wholesale (9 Kegs/Drum)</span>
                   </div>
                 </button>
               </div>
@@ -238,52 +318,82 @@ const NewSalePage = () => {
             <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">
                 {saleType === "wholesale"
-                  ? "Wholesale Products"
-                  : "Retail Products"}
+                  ? "Wholesale Products (9 Kegs/Drum)"
+                  : `Retail Products (${remainingStock}L remaining, ${totalKegsInCart} kegs in cart)`}
               </h2>
 
               <div className="grid md:grid-cols-2 gap-4">
-                {products[saleType].map((product) => (
-                  <div
-                    key={product.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:border-orange-300 transition-colors"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h3 className="font-medium text-gray-900">
-                          {product.name}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          ₦{product.price.toLocaleString()} per {product.unit}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm text-gray-600">Stock</div>
-                        <div
-                          className={`font-medium ${
-                            product.stock < 10
-                              ? "text-red-600"
-                              : "text-green-600"
-                          }`}
-                        >
-                          {product.stock}
+                {products[saleType].map((product) => {
+                  const unitKegs = parseInt(product.unit);
+
+                  // Check stock availability for this product
+                  const { isAvailable, remainingStock } =
+                    checkStockAvailability(
+                      unitKegs,
+                      totalStockLiters,
+                      cartItems
+                    );
+
+                  // Determine if product is out of stock
+                  const isOutOfStock = !isAvailable || product.stock === 0;
+
+                  // Calculate how many units of this product can be added
+                  const litersPerUnit = unitKegs * KEG_CAPACITY;
+                  const availableProductUnits = Math.floor(
+                    remainingStock / litersPerUnit
+                  );
+
+                  return (
+                    <div
+                      key={product.id}
+                      className="border border-gray-200 rounded-lg p-4 hover:border-orange-300 transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h3 className="font-medium text-gray-900">
+                            {product.name}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            ₦{product.price.toLocaleString()} per {product.unit}{" "}
+                            keg{unitKegs !== 1 ? "s" : ""}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm text-gray-600">Available</div>
+                          <div
+                            className={`font-medium ${
+                              isOutOfStock || availableProductUnits < 1
+                                ? "text-red-600"
+                                : "text-green-600"
+                            }`}
+                          >
+                            {isOutOfStock
+                              ? "Out of stock"
+                              : `${availableProductUnits} unit${
+                                  availableProductUnits !== 1 ? "s" : ""
+                                }`}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <button
-                      onClick={() => addToCart(product)}
-                      disabled={product.stock === 0}
-                      className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
-                        product.stock === 0
-                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                          : "bg-orange-500 text-white hover:bg-orange-600"
-                      }`}
-                    >
-                      {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
-                    </button>
-                  </div>
-                ))}
+                      <button
+                        onClick={() => addToCart(product)}
+                        disabled={isOutOfStock || availableProductUnits < 1}
+                        className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
+                          isOutOfStock || availableProductUnits < 1
+                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            : "bg-orange-500 text-white hover:bg-orange-600"
+                        }`}
+                      >
+                        {isOutOfStock || availableProductUnits < 1
+                          ? "Out of Stock"
+                          : `Add to Cart (${unitKegs} keg${
+                              unitKegs !== 1 ? "s" : ""
+                            })`}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -292,7 +402,9 @@ const NewSalePage = () => {
           <div className="space-y-6">
             {/* Cart */}
             <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Cart</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                Cart ({totalKegsInCart} kegs)
+              </h2>
 
               {cartItems.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
@@ -302,49 +414,57 @@ const NewSalePage = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {cartItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-900 text-sm">
-                          {item.name}
+                  {cartItems.map((item) => {
+                    const unitKegs = parseInt(item.unit);
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900 text-sm">
+                            {item.name}
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            ₦{item.price.toLocaleString()} per {unitKegs} keg
+                            {unitKegs !== 1 ? "s" : ""}
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-600">
-                          ₦{item.price.toLocaleString()} each
-                        </div>
-                      </div>
 
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() =>
-                            updateQuantity(item.id, item.quantity - 1)
-                          }
-                          className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded hover:bg-gray-50"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <span className="w-8 text-center font-medium">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() =>
-                            updateQuantity(item.id, item.quantity + 1)
-                          }
-                          className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded hover:bg-gray-50"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity - 1)
+                            }
+                            className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded hover:bg-gray-50"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="w-8 text-center font-medium">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity + 1)
+                            }
+                            className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded hover:bg-gray-50"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
 
-                      <div className="text-right ml-3">
-                        <div className="font-medium text-gray-900">
-                          ₦{(item.price * item.quantity).toLocaleString()}
+                        <div className="text-right ml-3">
+                          <div className="font-medium text-gray-900">
+                            ₦{(item.price * item.quantity).toLocaleString()}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {unitKegs * item.quantity} keg
+                            {unitKegs * item.quantity !== 1 ? "s" : ""}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
