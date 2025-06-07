@@ -21,8 +21,14 @@ import Link from "next/link";
 import { ReportFilters } from "@/interfaces/interface";
 import { salesData } from "@/data/sales";
 import { StatsCard } from "@/components/cards/statCard";
+import { usePageLoading } from "@/hooks/usePageLoading";
 
 const SalesReportPage = () => {
+  usePageLoading({
+    text: "Loading reports",
+    minDuration: 750,
+  });
+
   const [activeTab, setActiveTab] = useState<
     "overview" | "transactions" | "customers"
   >("overview");

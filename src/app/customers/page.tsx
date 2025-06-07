@@ -25,8 +25,14 @@ import { Customer } from "@/interfaces/interface";
 import { customers as users } from "@/data/customers";
 import AddCustomerModal from "@/components/modals/addCustomerModal";
 import { StatsCard } from "@/components/cards/statCard";
+import { usePageLoading } from "@/hooks/usePageLoading";
 
 const CustomerManagementPage = () => {
+  usePageLoading({
+    text: "Loading customers",
+    minDuration: 600,
+  });
+
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedFilter, setSelectedFilter] = useState<CustomerFilter>("all");

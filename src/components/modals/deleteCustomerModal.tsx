@@ -1,11 +1,13 @@
-import React from "react";
-import { AlertCircle } from "lucide-react";
+"use client";
+import React, { useState } from "react";
+import { AlertCircle, Loader2 } from "lucide-react";
+import { useAsyncLoading } from "@/hooks/usePageLoading";
 
 interface Props {
   show: boolean;
   customerName: string;
   onClose: () => void;
-  onDelete: () => void;
+  onDelete: () => Promise<void> | void;
 }
 
 const DeleteCustomerModal: React.FC<Props> = ({
@@ -14,6 +16,21 @@ const DeleteCustomerModal: React.FC<Props> = ({
   onClose,
   onDelete,
 }) => {
+  const { withLoading } = useAsyncLoading();
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      await withLoading(async () => {
+        await onDelete();
+      }, "Deleting customer...");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
   if (!show) return null;
 
   return (
@@ -47,10 +64,12 @@ const DeleteCustomerModal: React.FC<Props> = ({
               Cancel
             </button>
             <button
-              onClick={onDelete}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-red-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
-              Delete Customer
+              {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isDeleting ? "Deleting..." : "Delete Customer"}
             </button>
           </div>
         </div>

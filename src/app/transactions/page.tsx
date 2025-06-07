@@ -18,6 +18,7 @@ import {
   XCircle,
   Droplets,
 } from "lucide-react";
+import { usePageLoading } from "@/hooks/usePageLoading";
 
 // Type definitions
 interface Transaction {
@@ -139,6 +140,11 @@ const mockTransactions: Transaction[] = [
 ];
 
 const TransactionHistoryPage: React.FC = () => {
+  usePageLoading({
+    text: "Loading transactions",
+    minDuration: 650,
+  });
+
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);

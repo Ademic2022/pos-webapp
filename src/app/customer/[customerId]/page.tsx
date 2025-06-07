@@ -35,6 +35,7 @@ import {
   customerTransactions,
 } from "@/data/customers";
 import { StatsCard } from "@/components/cards/statCard";
+import { usePageLoading } from "@/hooks/usePageLoading";
 
 interface TransactionFilters {
   dateRange: "all" | "week" | "month" | "quarter" | "year";
@@ -48,6 +49,11 @@ interface SortOptions {
 }
 
 const CustomerDetailPage = () => {
+  usePageLoading({
+    text: "Loading customer details",
+    minDuration: 600,
+  });
+
   const params = useParams();
   const customerId = params.customerId as string;
 

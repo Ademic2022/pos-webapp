@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   AlertTriangle,
   CheckCircle,
@@ -16,8 +16,14 @@ import { generateMockData } from "@/data/sales";
 import { loggedInUser } from "@/data/user";
 import MeterReadingReports from "@/components/reports/validationReport";
 import { dailyMeterReading } from "@/data/stock";
+import { usePageLoading } from "@/hooks/usePageLoading";
 
 const FuelValidationSystem: React.FC = () => {
+  usePageLoading({
+    text: "Loading validation system",
+    minDuration: 700,
+  });
+
   const [activeTab, setActiveTab] = useState<"validation" | "reports">(
     "validation"
   );
@@ -35,7 +41,7 @@ const FuelValidationSystem: React.FC = () => {
   const [mockReadings] = useState<MeterReading[]>(generateMockData());
   useState<MeterReading[]>(mockReadings);
 
-  const calculateValidation = (): ValidationResult => {
+  const calculateValidation = useCallback((): ValidationResult => {
     if (!endReading) return null;
 
     const meterDifference = parseFloat(endReading) - startReading;
@@ -52,7 +58,7 @@ const FuelValidationSystem: React.FC = () => {
       status,
       withinTolerance: discrepancy <= tolerance,
     };
-  };
+  }, [endReading, startReading, totalSales, tolerance]);
 
   const saveReading = () => {
     if (!validation || !endReading) return;
@@ -77,8 +83,9 @@ const FuelValidationSystem: React.FC = () => {
   };
 
   useEffect(() => {
-    setValidation(calculateValidation());
-  }, [startReading, endReading, totalSales, tolerance, calculateValidation]);
+    const calculatedValidation = calculateValidation();
+    setValidation(calculatedValidation);
+  }, [calculateValidation]);
 
   const getStatusColor = (status: "valid" | "invalid" | null): string => {
     switch (status) {

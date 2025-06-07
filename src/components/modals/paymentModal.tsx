@@ -1,5 +1,7 @@
-import React from "react";
-import { X } from "lucide-react";
+"use client";
+import React, { useState } from "react";
+import { X, Loader2 } from "lucide-react";
+import { useAsyncLoading } from "@/hooks/usePageLoading";
 
 interface Customer {
   name: string;
@@ -16,7 +18,7 @@ interface PaymentModalProps {
   paymentNote: string;
   setPaymentNote: (value: string) => void;
   onClose: () => void;
-  onSubmit: () => void;
+  onSubmit: () => Promise<void> | void;
 }
 
 const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -31,6 +33,21 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   onClose,
   onSubmit,
 }) => {
+  const { withLoading } = useAsyncLoading();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      await withLoading(async () => {
+        await onSubmit();
+      }, "Processing payment...");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   if (!show || !customer) return null;
 
   return (
@@ -112,11 +129,12 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
             Cancel
           </button>
           <button
-            onClick={onSubmit}
-            disabled={!paymentAmount || paymentAmount <= 0}
-            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            onClick={handleSubmit}
+            disabled={!paymentAmount || paymentAmount <= 0 || isSubmitting}
+            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
-            Record Payment
+            {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isSubmitting ? "Processing..." : "Record Payment"}
           </button>
         </div>
       </div>

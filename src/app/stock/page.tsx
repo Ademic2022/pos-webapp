@@ -20,8 +20,14 @@ import { loggedInUser } from "@/data/user";
 import { getFillColor, getFillDetails } from "@/utils/utils";
 import { InventoryCard } from "@/components/cards/inventoryCard";
 import { KEG_CAPACITY } from "@/data/constants";
+import { usePageLoading } from "@/hooks/usePageLoading";
 
 const ManageStock: React.FC = () => {
+  usePageLoading({
+    text: "Loading stock data",
+    minDuration: 600,
+  });
+
   const stock = dashboardStat.stockData;
 
   const [currentStock, setCurrentStock] = useState<number>(

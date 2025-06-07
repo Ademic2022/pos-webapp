@@ -1,14 +1,15 @@
 "use client";
-import React from "react";
-import { X } from "lucide-react";
+import React, { useState } from "react";
+import { X, Loader2 } from "lucide-react";
 import { Customer } from "@/interfaces/interface";
+import { useAsyncLoading } from "@/hooks/usePageLoading";
 
 interface AddCustomerModalProps {
   show: boolean;
   newCustomer: Partial<Customer>;
   setNewCustomer: (customer: Partial<Customer>) => void;
   onClose: () => void;
-  onSubmit: () => void;
+  onSubmit: () => Promise<void> | void;
   validationError?: string;
 }
 
@@ -20,6 +21,21 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
   onSubmit,
   validationError,
 }) => {
+  const { withLoading } = useAsyncLoading();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      await withLoading(async () => {
+        await onSubmit();
+      }, "Adding customer...");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   if (!show) return null;
 
   return (
@@ -143,11 +159,12 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
             Cancel
           </button>
           <button
-            onClick={onSubmit}
-            disabled={!newCustomer.name || !newCustomer.phone}
-            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            onClick={handleSubmit}
+            disabled={!newCustomer.name || !newCustomer.phone || isSubmitting}
+            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
-            Add Customer
+            {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isSubmitting ? "Adding..." : "Add Customer"}
           </button>
         </div>
       </div>
