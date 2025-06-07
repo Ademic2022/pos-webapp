@@ -175,9 +175,10 @@ const NewSalePage = () => {
 
   const calculateRemainingBalance = (): number => {
     const totalToPay =
-      selectedCustomer && getCustomerDebt() > 0
+      selectedCustomer && (getCustomerDebt() > 0 || getCustomerCredit() > 0)
         ? calculateGrandTotal()
         : calculateTotal();
+
     if (paymentMethod === "part_payment") {
       return Math.max(0, totalToPay - partPaymentAmount);
     }
@@ -191,10 +192,45 @@ const NewSalePage = () => {
     return Math.abs(selectedCustomer.balance);
   };
 
+  const getCustomerCredit = (): number => {
+    if (!selectedCustomer || selectedCustomer.balance <= 0) {
+      return 0;
+    }
+    return selectedCustomer.balance;
+  };
+
   const calculateGrandTotal = (): number => {
     const currentTotal = calculateTotal();
     const customerDebt = getCustomerDebt();
-    return currentTotal + customerDebt;
+    const customerCredit = getCustomerCredit();
+
+    // If customer has debt, add it to current total
+    if (customerDebt > 0) {
+      return currentTotal + customerDebt;
+    }
+
+    // If customer has credit, deduct it from current total
+    if (customerCredit > 0) {
+      return Math.max(0, currentTotal - customerCredit);
+    }
+
+    return currentTotal;
+  };
+
+  const calculateRemainingCredit = (): number => {
+    if (!selectedCustomer || selectedCustomer.balance <= 0) {
+      return 0;
+    }
+
+    const currentTotal = calculateTotal();
+    const customerCredit = getCustomerCredit();
+
+    // If credit is more than the current total, return the remaining credit
+    if (customerCredit > currentTotal) {
+      return customerCredit - currentTotal;
+    }
+
+    return 0;
   };
 
   const handleSaleComplete = () => {
@@ -428,6 +464,25 @@ const NewSalePage = () => {
                           </div>
                           <div className="text-sm text-red-600">
                             This will be added to the current sale total
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedCustomer.balance > 0 && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <div className="flex items-center space-x-2">
+                        <Check className="w-5 h-5 text-green-600" />
+                        <div>
+                          <div className="font-medium text-green-800">
+                            Available Credit
+                          </div>
+                          <div className="text-lg font-bold text-green-700">
+                            ₦{selectedCustomer.balance.toLocaleString()}
+                          </div>
+                          <div className="text-sm text-green-600">
+                            This will be deducted from the current sale total
                           </div>
                         </div>
                       </div>
@@ -792,7 +847,8 @@ const NewSalePage = () => {
                         }
                         placeholder="Enter part payment amount"
                         max={
-                          selectedCustomer && getCustomerDebt() > 0
+                          selectedCustomer &&
+                          (getCustomerDebt() > 0 || getCustomerCredit() > 0)
                             ? calculateGrandTotal()
                             : calculateTotal()
                         }
@@ -885,6 +941,37 @@ const NewSalePage = () => {
                           ₦{calculateGrandTotal().toLocaleString()}
                         </span>
                       </div>
+                    </div>
+                  )}
+
+                  {selectedCustomer && getCustomerCredit() > 0 && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-green-700">
+                          Customer Available Credit:
+                        </span>
+                        <span className="font-medium text-green-700">
+                          ₦{getCustomerCredit().toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-lg font-bold border-t border-green-200 pt-2 mt-2">
+                        <span className="text-green-800">
+                          Amount Due (after credit):
+                        </span>
+                        <span className="text-green-800">
+                          ₦{calculateGrandTotal().toLocaleString()}
+                        </span>
+                      </div>
+                      {calculateRemainingCredit() > 0 && (
+                        <div className="flex justify-between items-center text-sm border-t border-green-200 pt-2 mt-2">
+                          <span className="text-green-700">
+                            Remaining Credit After Sale:
+                          </span>
+                          <span className="font-medium text-green-700">
+                            ₦{calculateRemainingCredit().toLocaleString()}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1016,6 +1103,11 @@ const NewSalePage = () => {
                     {customer.balance < 0 && (
                       <div className="text-sm text-red-600">
                         Debt: ₦{Math.abs(customer.balance).toLocaleString()}
+                      </div>
+                    )}
+                    {customer.balance > 0 && (
+                      <div className="text-sm text-green-600">
+                        Credit: ₦{customer.balance.toLocaleString()}
                       </div>
                     )}
                     <div className="text-xs text-gray-500 capitalize">

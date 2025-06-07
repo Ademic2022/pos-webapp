@@ -8,7 +8,7 @@ export const customers: Customer[] = [
     email: "adebayo@motors.com",
     address: "Lagos Island, Lagos State",
     type: "wholesale",
-    balance: 0,
+    balance: 100000,
     creditLimit: 50000,
     totalPurchases: 450000,
     lastPurchase: "2025-06-02",
