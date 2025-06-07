@@ -5,8 +5,6 @@ import {
   Users,
   Search,
   Plus,
-  Edit3,
-  Trash2,
   Phone,
   DollarSign,
   Download,
@@ -24,9 +22,7 @@ import {
 import Link from "next/link";
 import { CustomerFilter } from "@/types/types";
 import { Customer } from "@/interfaces/interface";
-import { customers as users, customerTransactions } from "@/data/customers";
-import PaymentModal from "@/components/modals/paymentModal";
-import DeleteCustomerModal from "@/components/modals/deleteCustomerModal";
+import { customers as users } from "@/data/customers";
 import AddCustomerModal from "@/components/modals/addCustomerModal";
 import { StatsCard } from "@/components/cards/statCard";
 
@@ -34,17 +30,8 @@ const CustomerManagementPage = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedFilter, setSelectedFilter] = useState<CustomerFilter>("all");
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
-    null
-  );
-  const [showAddModal, setShowAddModal] = useState<boolean>(false);
-  const [showEditModal, setShowEditModal] = useState<boolean>(false);
-  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
 
-  const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
-  const [paymentAmount, setPaymentAmount] = useState<number>(0);
-  const [paymentMethod, setPaymentMethod] = useState<string>("cash");
-  const [paymentNote, setPaymentNote] = useState<string>("");
+  const [showAddModal, setShowAddModal] = useState<boolean>(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -63,8 +50,6 @@ const CustomerManagementPage = () => {
     creditLimit: 5000,
     notes: "",
   });
-
-  console.log(showEditModal);
 
   // Filter customers based on search and filter criteria
   const filteredCustomers = customers.filter((customer) => {
@@ -112,33 +97,6 @@ const CustomerManagementPage = () => {
     totalRevenue: customers.reduce((sum, c) => sum + c.totalPurchases, 0),
   };
 
-  const handlePayment = () => {
-    if (!selectedCustomer || paymentAmount <= 0) return;
-
-    // Update customer balance
-    const updatedCustomers = customers.map((customer) => {
-      if (customer.id === selectedCustomer.id) {
-        const newBalance = customer.balance + paymentAmount;
-        return {
-          ...customer,
-          balance: newBalance,
-          totalPurchases:
-            customer.totalPurchases + (paymentAmount > 0 ? paymentAmount : 0),
-          lastPurchase: new Date().toISOString().split("T")[0],
-        };
-      }
-      return customer;
-    });
-
-    // Update state
-    setCustomers(updatedCustomers);
-    // setCustomerTransactions(updatedTransactions);
-    setShowPaymentModal(false);
-    setPaymentAmount(0);
-    setPaymentMethod("cash");
-    setPaymentNote("");
-  };
-
   const handleAddCustomer = () => {
     const customer: Customer = {
       id: Math.max(...customers.map((c) => c.id)) + 1,
@@ -167,14 +125,6 @@ const CustomerManagementPage = () => {
       notes: "",
     });
     setShowAddModal(false);
-  };
-
-  const handleDeleteCustomer = () => {
-    if (selectedCustomer) {
-      setCustomers(customers.filter((c) => c.id !== selectedCustomer.id));
-      setSelectedCustomer(null);
-      setShowDeleteModal(false);
-    }
   };
 
   const getStatusColor = (status: string): string => {
@@ -450,38 +400,6 @@ const CustomerManagementPage = () => {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => {
-                            setSelectedCustomer(customer);
-                            setShowEditModal(true);
-                          }}
-                          className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors"
-                          title="Edit Customer"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedCustomer(customer);
-                            setShowDeleteModal(true);
-                          }}
-                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                          title="Delete Customer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                        {customer.balance < 0 && (
-                          <button
-                            onClick={() => {
-                              setSelectedCustomer(customer);
-                              setShowPaymentModal(true);
-                            }}
-                            className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
-                            title="Record Payment"
-                          >
-                            <DollarSign className="w-4 h-4" />
-                          </button>
-                        )}
                       </div>
                     </td>
                   </tr>
@@ -602,32 +520,6 @@ const CustomerManagementPage = () => {
         onSubmit={handleAddCustomer}
         validationError=""
       />
-
-      {/* Debt Payment Modal */}
-      {showPaymentModal && selectedCustomer && (
-        <PaymentModal
-          show={showPaymentModal}
-          customer={selectedCustomer}
-          paymentAmount={paymentAmount}
-          setPaymentAmount={setPaymentAmount}
-          paymentMethod={paymentMethod}
-          setPaymentMethod={setPaymentMethod}
-          paymentNote={paymentNote}
-          setPaymentNote={setPaymentNote}
-          onClose={() => setShowPaymentModal(false)}
-          onSubmit={handlePayment}
-        />
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && selectedCustomer && (
-        <DeleteCustomerModal
-          show={showDeleteModal}
-          customerName={selectedCustomer.name}
-          onClose={() => setShowDeleteModal(false)}
-          onDelete={handleDeleteCustomer}
-        />
-      )}
     </div>
   );
 };

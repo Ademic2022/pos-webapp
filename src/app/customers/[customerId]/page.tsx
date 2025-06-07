@@ -268,14 +268,14 @@ const CustomerDetailPage = () => {
           <div className="flex justify-between items-center py-4">
             {/* Breadcrumb Navigation */}
             <div className="flex items-center space-x-4">
-              <Link href="/customer">
+              <Link href="/customers">
                 <button className="p-2 hover:bg-orange-100 rounded-lg transition-colors">
                   <ArrowLeft className="w-5 h-5 text-gray-600" />
                 </button>
               </Link>
               <nav className="flex items-center space-x-2 text-sm">
                 <Link
-                  href="/customer"
+                  href="/customers"
                   className="text-orange-600 hover:text-orange-700"
                 >
                   Customers
