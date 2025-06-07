@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Users,
   Search,
@@ -25,12 +26,12 @@ import { CustomerFilter } from "@/types/types";
 import { Customer } from "@/interfaces/interface";
 import { customers as users, customerTransactions } from "@/data/customers";
 import PaymentModal from "@/components/modals/paymentModal";
-import TransactionHistoryModal from "@/components/modals/transactionHistoryModal";
 import DeleteCustomerModal from "@/components/modals/deleteCustomerModal";
 import AddCustomerModal from "@/components/modals/addCustomerModal";
 import { StatsCard } from "@/components/cards/statCard";
 
 const CustomerManagementPage = () => {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedFilter, setSelectedFilter] = useState<CustomerFilter>("all");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
@@ -39,8 +40,6 @@ const CustomerManagementPage = () => {
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
-  const [showTransactionHistory, setShowTransactionHistory] =
-    useState<boolean>(false);
 
   const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
@@ -444,8 +443,7 @@ const CustomerManagementPage = () => {
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => {
-                            setSelectedCustomer(customer);
-                            setShowTransactionHistory(true);
+                            router.push(`/customers/${customer.id}`);
                           }}
                           className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                           title="View Transaction History"
@@ -618,18 +616,6 @@ const CustomerManagementPage = () => {
           setPaymentNote={setPaymentNote}
           onClose={() => setShowPaymentModal(false)}
           onSubmit={handlePayment}
-        />
-      )}
-
-      {/* Transaction History Modal */}
-      {showTransactionHistory && selectedCustomer && (
-        <TransactionHistoryModal
-          show={showTransactionHistory}
-          customer={selectedCustomer}
-          transactions={customerTransactions}
-          onClose={() => setShowTransactionHistory(false)}
-          onRecordPayment={() => setShowPaymentModal(true)}
-          getBalanceColor={getBalanceColor}
         />
       )}
 
