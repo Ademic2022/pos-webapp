@@ -72,9 +72,6 @@ const CustomerDetailPage = () => {
   const [selectedTransaction, setSelectedTransaction] =
     useState<CustomerTransaction | null>(null);
 
-  // Loading and error states
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
   if (!customer) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 flex items-center justify-center">
