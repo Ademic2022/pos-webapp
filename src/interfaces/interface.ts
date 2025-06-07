@@ -18,6 +18,8 @@ export interface SalesData {
     amountPaid: number;
     balance: number;
     status: "paid" | "partial" | "pending";
+    // For part payments, track the payment method used for the partial amount
+    partPaymentMethod?: "cash" | "transfer";
 }
   
 export interface ReportFilters {

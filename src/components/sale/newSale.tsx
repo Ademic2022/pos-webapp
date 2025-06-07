@@ -43,6 +43,9 @@ const NewSalePage = () => {
     "amount"
   );
   const [partPaymentAmount, setPartPaymentAmount] = useState<number>(0);
+  const [partPaymentMethod, setPartPaymentMethod] = useState<
+    "cash" | "transfer"
+  >("cash");
   const [showDiscountInput, setShowDiscountInput] = useState<boolean>(false);
 
   const filteredCustomers = customers.filter(
@@ -176,6 +179,7 @@ const NewSalePage = () => {
       setDiscountAmount(0);
       setDiscountType("amount");
       setPartPaymentAmount(0);
+      setPartPaymentMethod("cash");
       setShowDiscountInput(false);
     }, 3000);
   };
@@ -615,6 +619,41 @@ const NewSalePage = () => {
                 {/* Part Payment Input */}
                 {paymentMethod === "part_payment" && (
                   <div className="mt-4 space-y-3">
+                    {/* Part Payment Method Selection */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        Part Payment Method
+                      </label>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => setPartPaymentMethod("cash")}
+                          className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                            partPaymentMethod === "cash"
+                              ? "bg-green-500 text-white"
+                              : "bg-gray-100 text-gray-600 hover:bg-green-100"
+                          }`}
+                        >
+                          <div className="flex items-center justify-center space-x-2">
+                            <Banknote className="w-4 h-4" />
+                            <span>Cash</span>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => setPartPaymentMethod("transfer")}
+                          className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                            partPaymentMethod === "transfer"
+                              ? "bg-blue-500 text-white"
+                              : "bg-gray-100 text-gray-600 hover:bg-blue-100"
+                          }`}
+                        >
+                          <div className="flex items-center justify-center space-x-2">
+                            <CreditCard className="w-4 h-4" />
+                            <span>Transfer</span>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="relative">
                       <input
                         type="number"
@@ -635,6 +674,14 @@ const NewSalePage = () => {
 
                     {partPaymentAmount > 0 && (
                       <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-purple-700">
+                            Payment Method:
+                          </span>
+                          <span className="font-medium text-purple-900 capitalize">
+                            {partPaymentMethod}
+                          </span>
+                        </div>
                         <div className="flex justify-between items-center text-sm">
                           <span className="text-purple-700">Payment:</span>
                           <span className="font-medium text-purple-900">
@@ -835,7 +882,7 @@ const NewSalePage = () => {
             </h3>
             <p className="text-gray-600 mb-4">
               {paymentMethod === "part_payment" && partPaymentAmount > 0
-                ? `Part payment of ₦${partPaymentAmount.toLocaleString()} processed successfully!`
+                ? `Part payment of ₦${partPaymentAmount.toLocaleString()} via ${partPaymentMethod} processed successfully!`
                 : `Transaction processed successfully for ₦${calculateTotal().toLocaleString()}`}
             </p>
             {paymentMethod === "part_payment" &&
