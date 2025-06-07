@@ -97,7 +97,7 @@ const CustomerDetailPage = () => {
 
   // Filter and sort transactions
   const filteredAndSortedTransactions = useMemo(() => {
-    let filtered = transactions.filter((transaction) => {
+    const filtered = transactions.filter((transaction) => {
       const matchesSearch =
         transaction.description
           .toLowerCase()
