@@ -174,11 +174,27 @@ const NewSalePage = () => {
   };
 
   const calculateRemainingBalance = (): number => {
-    const total = calculateTotal();
+    const totalToPay =
+      selectedCustomer && getCustomerDebt() > 0
+        ? calculateGrandTotal()
+        : calculateTotal();
     if (paymentMethod === "part_payment") {
-      return Math.max(0, total - partPaymentAmount);
+      return Math.max(0, totalToPay - partPaymentAmount);
     }
     return 0;
+  };
+
+  const getCustomerDebt = (): number => {
+    if (!selectedCustomer || selectedCustomer.balance >= 0) {
+      return 0;
+    }
+    return Math.abs(selectedCustomer.balance);
+  };
+
+  const calculateGrandTotal = (): number => {
+    const currentTotal = calculateTotal();
+    const customerDebt = getCustomerDebt();
+    return currentTotal + customerDebt;
   };
 
   const handleSaleComplete = () => {
@@ -378,33 +394,53 @@ const NewSalePage = () => {
               </div>
 
               {selectedCustomer ? (
-                <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
-                  <div>
-                    <div className="font-medium text-gray-900">
-                      {selectedCustomer.name}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {selectedCustomer.phone}
-                    </div>
-                    {selectedCustomer.balance < 0 && (
-                      <div className="text-sm text-red-600">
-                        Outstanding: ₦
-                        {Math.abs(selectedCustomer.balance).toLocaleString()}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
+                    <div>
+                      <div className="font-medium text-gray-900">
+                        {selectedCustomer.name}
                       </div>
-                    )}
+                      <div className="text-sm text-gray-600">
+                        {selectedCustomer.phone}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setSelectedCustomer(null)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setSelectedCustomer(null)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+
+                  {selectedCustomer.balance < 0 && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <div className="flex items-center space-x-2">
+                        <AlertCircle className="w-5 h-5 text-red-600" />
+                        <div>
+                          <div className="font-medium text-red-800">
+                            Outstanding Debt
+                          </div>
+                          <div className="text-lg font-bold text-red-700">
+                            ₦
+                            {Math.abs(
+                              selectedCustomer.balance
+                            ).toLocaleString()}
+                          </div>
+                          <div className="text-sm text-red-600">
+                            This will be added to the current sale total
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
-                <div className="p-4 border-2 border-dashed border-gray-300 rounded-lg text-center text-gray-500">
-                  <Users className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                  <p>No customer selected</p>
-                  <p className="text-sm">Optional for cash sales</p>
+                <div className="p-4 border-2 border-dashed border-red-300 rounded-lg text-center text-red-500">
+                  <Users className="w-8 h-8 mx-auto mb-2 text-red-400" />
+                  <p className="font-medium">Customer required</p>
+                  <p className="text-sm">
+                    Please select a customer to complete sale
+                  </p>
                 </div>
               )}
             </div>
@@ -755,7 +791,11 @@ const NewSalePage = () => {
                           )
                         }
                         placeholder="Enter part payment amount"
-                        max={calculateTotal()}
+                        max={
+                          selectedCustomer && getCustomerDebt() > 0
+                            ? calculateGrandTotal()
+                            : calculateTotal()
+                        }
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       />
                       <span className="absolute right-3 top-3 text-gray-500">
@@ -827,6 +867,27 @@ const NewSalePage = () => {
                     </div>
                   </div>
 
+                  {selectedCustomer && getCustomerDebt() > 0 && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-red-700">
+                          Customer Outstanding Debt:
+                        </span>
+                        <span className="font-medium text-red-700">
+                          ₦{getCustomerDebt().toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-lg font-bold border-t border-red-200 pt-2 mt-2">
+                        <span className="text-red-800">
+                          Grand Total (including debt):
+                        </span>
+                        <span className="text-red-800">
+                          ₦{calculateGrandTotal().toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {paymentMethod === "part_payment" &&
                     partPaymentAmount > 0 && (
                       <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
@@ -847,26 +908,25 @@ const NewSalePage = () => {
                       </div>
                     )}
 
-                  {paymentMethod === "credit" && !selectedCustomer && (
+                  {!selectedCustomer && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                       <div className="flex items-center space-x-2 text-red-700">
                         <AlertCircle className="w-4 h-4" />
                         <span className="text-sm">
-                          Customer required for credit sales
+                          Customer must be selected to complete sale
                         </span>
                       </div>
                     </div>
                   )}
 
                   {paymentMethod === "part_payment" &&
-                    (!selectedCustomer || partPaymentAmount === 0) && (
+                    selectedCustomer &&
+                    partPaymentAmount === 0 && (
                       <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                         <div className="flex items-center space-x-2 text-red-700">
                           <AlertCircle className="w-4 h-4" />
                           <span className="text-sm">
-                            {!selectedCustomer
-                              ? "Customer required for part payment"
-                              : "Enter part payment amount"}
+                            Enter part payment amount
                           </span>
                         </div>
                       </div>
@@ -875,14 +935,14 @@ const NewSalePage = () => {
                   <button
                     onClick={handleSaleComplete}
                     disabled={
-                      (paymentMethod === "credit" && !selectedCustomer) ||
+                      !selectedCustomer ||
                       (paymentMethod === "part_payment" &&
-                        (!selectedCustomer || partPaymentAmount === 0))
+                        partPaymentAmount === 0)
                     }
                     className={`w-full py-4 px-6 rounded-lg font-semibold transition-all ${
-                      (paymentMethod === "credit" && !selectedCustomer) ||
+                      !selectedCustomer ||
                       (paymentMethod === "part_payment" &&
-                        (!selectedCustomer || partPaymentAmount === 0))
+                        partPaymentAmount === 0)
                         ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                         : "bg-gradient-to-r from-orange-500 to-amber-600 text-white hover:from-orange-600 hover:to-amber-700 transform hover:scale-105"
                     }`}
