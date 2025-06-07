@@ -27,6 +27,7 @@ import { checkStockAvailability } from "@/utils/stockManager";
 import { KEG_CAPACITY } from "@/data/constants";
 import { dashboardStat } from "@/data/stock";
 import TransactionId from "../TransactionId";
+import AddCustomerModal from "../modals/addCustomerModal";
 
 const NewSalePage = () => {
   const [saleType, setSaleType] = useState<SaleType>("retail");
@@ -47,6 +48,19 @@ const NewSalePage = () => {
     "cash" | "transfer"
   >("cash");
   const [showDiscountInput, setShowDiscountInput] = useState<boolean>(false);
+  const [showAddCustomerModal, setShowAddCustomerModal] =
+    useState<boolean>(false);
+  const [newCustomer, setNewCustomer] = useState<Partial<Customer>>({
+    name: "",
+    phone: "",
+    email: "",
+    address: "",
+    type: "retail",
+    creditLimit: 5000,
+    notes: "",
+  });
+  const [customerValidationError, setCustomerValidationError] =
+    useState<string>("");
 
   const filteredCustomers = customers.filter(
     (customer) =>
@@ -181,7 +195,72 @@ const NewSalePage = () => {
       setPartPaymentAmount(0);
       setPartPaymentMethod("cash");
       setShowDiscountInput(false);
+      setCustomerValidationError("");
     }, 3000);
+  };
+
+  const handleAddNewCustomer = () => {
+    // Clear previous validation errors
+    setCustomerValidationError("");
+
+    if (!newCustomer.name || !newCustomer.phone) {
+      setCustomerValidationError("Name and phone number are required");
+      return;
+    }
+
+    // Check if customer with same phone already exists
+    const existingCustomer = customers.find(
+      (c) => c.phone === newCustomer.phone
+    );
+    if (existingCustomer) {
+      setCustomerValidationError(
+        "A customer with this phone number already exists"
+      );
+      return;
+    }
+
+    // Generate a new customer ID (in a real app, this would come from the backend)
+    const newId = Math.max(...customers.map((c) => c.id)) + 1;
+
+    const customerToAdd: Customer = {
+      id: newId,
+      name: newCustomer.name,
+      phone: newCustomer.phone,
+      email: newCustomer.email || "",
+      address: newCustomer.address || "",
+      type: (newCustomer.type as "wholesale" | "retail") || "retail",
+      balance: 0,
+      creditLimit: newCustomer.creditLimit || 5000,
+      totalPurchases: 0,
+      lastPurchase: new Date().toISOString().split("T")[0],
+      joinDate: new Date().toISOString().split("T")[0],
+      status: "active" as const,
+      notes: newCustomer.notes || "",
+    };
+
+    // In a real app, you would add this to your database
+    // For now, we'll just add it to the local customers array
+    customers.push(customerToAdd);
+
+    // Select the new customer and close modals
+    setSelectedCustomer(customerToAdd);
+    setShowAddCustomerModal(false);
+    setShowCustomerModal(false);
+
+    // Auto-set sale type based on customer type
+    setSaleType(customerToAdd.type === "wholesale" ? "wholesale" : "retail");
+
+    // Reset the form
+    setNewCustomer({
+      name: "",
+      phone: "",
+      email: "",
+      address: "",
+      type: "retail",
+      creditLimit: 5000,
+      notes: "",
+    });
+    setCustomerValidationError("");
   };
 
   // Calculate remaining stock for display
@@ -273,17 +352,29 @@ const NewSalePage = () => {
 
             {/* Customer Selection */}
             <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-900">
                   Customer
                 </h2>
-                <button
-                  onClick={() => setShowCustomerModal(true)}
-                  className="text-orange-600 hover:text-orange-700 font-medium text-sm flex items-center"
-                >
-                  <UserPlus className="w-4 h-4 mr-1" />
-                  Select Customer
-                </button>
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => {
+                      setShowAddCustomerModal(true);
+                      setShowCustomerModal(false);
+                    }}
+                    className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center space-x-2 text-sm font-medium shadow-sm"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>Add New</span>
+                  </button>
+                  <button
+                    onClick={() => setShowCustomerModal(true)}
+                    className="text-orange-600 hover:text-orange-700 font-medium text-sm flex items-center transition-colors"
+                  >
+                    <UserPlus className="w-4 h-4 mr-1" />
+                    Select Customer
+                  </button>
+                </div>
               </div>
 
               {selectedCustomer ? (
@@ -841,34 +932,65 @@ const NewSalePage = () => {
             </div>
 
             <div className="max-h-64 overflow-y-auto space-y-2">
-              {filteredCustomers.map((customer) => (
-                <button
-                  key={customer.id}
-                  onClick={() => {
-                    setSelectedCustomer(customer);
-                    setShowCustomerModal(false);
-                    setSearchTerm("");
-                  }}
-                  className="w-full p-3 text-left border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors"
-                >
-                  <div className="font-medium text-gray-900">
-                    {customer.name}
-                  </div>
-                  <div className="text-sm text-gray-600">{customer.phone}</div>
-                  {customer.balance < 0 && (
-                    <div className="text-sm text-red-600">
-                      Debt: ₦{Math.abs(customer.balance).toLocaleString()}
+              {filteredCustomers.length > 0 ? (
+                filteredCustomers.map((customer) => (
+                  <button
+                    key={customer.id}
+                    onClick={() => {
+                      setSelectedCustomer(customer);
+                      setShowCustomerModal(false);
+                      setSearchTerm("");
+                      // Auto-set sale type based on customer type
+                      setSaleType(
+                        customer.type === "wholesale" ? "wholesale" : "retail"
+                      );
+                    }}
+                    className="w-full p-3 text-left border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors"
+                  >
+                    <div className="font-medium text-gray-900">
+                      {customer.name}
                     </div>
-                  )}
-                  <div className="text-xs text-gray-500 capitalize">
-                    {customer.type} customer
-                  </div>
-                </button>
-              ))}
+                    <div className="text-sm text-gray-600">
+                      {customer.phone}
+                    </div>
+                    {customer.balance < 0 && (
+                      <div className="text-sm text-red-600">
+                        Debt: ₦{Math.abs(customer.balance).toLocaleString()}
+                      </div>
+                    )}
+                    <div className="text-xs text-gray-500 capitalize">
+                      {customer.type} customer
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Users className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                  <p>No customers found</p>
+                  <p className="text-sm mb-4">Try a different search term</p>
+                  <button
+                    onClick={() => setShowAddCustomerModal(true)}
+                    className="inline-flex items-center px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 transition-colors duration-200"
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Add New Customer
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
+
+      {/* Add New Customer Modal */}
+      <AddCustomerModal
+        show={showAddCustomerModal}
+        newCustomer={newCustomer}
+        setNewCustomer={setNewCustomer}
+        onClose={() => setShowAddCustomerModal(false)}
+        onSubmit={handleAddNewCustomer}
+        validationError={customerValidationError}
+      />
 
       {/* Success Confirmation */}
       {showConfirmation && (
