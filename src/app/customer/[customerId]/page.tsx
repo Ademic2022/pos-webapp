@@ -22,6 +22,7 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   FileText,
   Receipt,
   Edit3,
@@ -711,12 +712,12 @@ const CustomerDetailPage = () => {
                       className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
                     >
                       Date
-                      <ChevronLeft
-                        className={`w-4 h-4 ml-1 transform ${
+                      <ChevronDown
+                        className={`w-4 h-4 ml-1 transform transition-transform ${
                           sortBy.field === "date"
                             ? sortBy.direction === "asc"
-                              ? "rotate-90"
-                              : "-rotate-90"
+                              ? "rotate-180"
+                              : "rotate-0"
                             : "opacity-40"
                         }`}
                       />
@@ -728,12 +729,12 @@ const CustomerDetailPage = () => {
                       className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
                     >
                       Type
-                      <ChevronLeft
-                        className={`w-4 h-4 ml-1 transform ${
+                      <ChevronDown
+                        className={`w-4 h-4 ml-1 transform transition-transform ${
                           sortBy.field === "type"
                             ? sortBy.direction === "asc"
-                              ? "rotate-90"
-                              : "-rotate-90"
+                              ? "rotate-180"
+                              : "rotate-0"
                             : "opacity-40"
                         }`}
                       />
@@ -748,12 +749,12 @@ const CustomerDetailPage = () => {
                       className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 ml-auto"
                     >
                       Amount
-                      <ChevronLeft
-                        className={`w-4 h-4 ml-1 transform ${
+                      <ChevronDown
+                        className={`w-4 h-4 ml-1 transform transition-transform ${
                           sortBy.field === "amount"
                             ? sortBy.direction === "asc"
-                              ? "rotate-90"
-                              : "-rotate-90"
+                              ? "rotate-180"
+                              : "rotate-0"
                             : "opacity-40"
                         }`}
                       />
