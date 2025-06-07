@@ -393,7 +393,7 @@ const CustomerManagementPage = () => {
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => {
-                            router.push(`/customers/${customer.id}`);
+                            router.push(`/customer/${customer.id}`);
                           }}
                           className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                           title="View Transaction History"

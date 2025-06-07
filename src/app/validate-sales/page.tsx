@@ -78,7 +78,7 @@ const FuelValidationSystem: React.FC = () => {
 
   useEffect(() => {
     setValidation(calculateValidation());
-  }, [startReading, endReading, totalSales, tolerance]);
+  }, [startReading, endReading, totalSales, tolerance, calculateValidation]);
 
   const getStatusColor = (status: "valid" | "invalid" | null): string => {
     switch (status) {

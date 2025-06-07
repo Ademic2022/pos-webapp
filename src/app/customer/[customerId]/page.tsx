@@ -53,7 +53,11 @@ const CustomerDetailPage = () => {
 
   // Find customer data
   const customer = customerData.find((c) => c.id.toString() === customerId);
-  const transactions = customerTransactions[parseInt(customerId)] || [];
+
+  // Memoize transactions to fix dependency warnings
+  const transactions = useMemo(() => {
+    return customerTransactions[parseInt(customerId)] || [];
+  }, [customerId]);
 
   // State for filters and pagination
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -71,29 +75,6 @@ const CustomerDetailPage = () => {
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [selectedTransaction, setSelectedTransaction] =
     useState<CustomerTransaction | null>(null);
-
-  if (!customer) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-8 h-8 text-red-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Customer Not Found
-          </h2>
-          <p className="text-gray-600 mb-6">
-            The customer you&apos;re looking for doesn&apos;t exist.
-          </p>
-          <Link href="/customers">
-            <button className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
-              Back to Customers
-            </button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   // Filter and sort transactions
   const filteredAndSortedTransactions = useMemo(() => {
@@ -173,7 +154,7 @@ const CustomerDetailPage = () => {
     return filtered;
   }, [transactions, searchTerm, filters, sortBy]);
 
-  // Pagination
+  // Pagination calculations
   const totalPages = Math.ceil(
     filteredAndSortedTransactions.length / itemsPerPage
   );
@@ -211,6 +192,30 @@ const CustomerDetailPage = () => {
           : null,
     };
   }, [transactions]);
+
+  // Early return after all hooks are declared
+  if (!customer) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Customer Not Found
+          </h2>
+          <p className="text-gray-600 mb-6">
+            The customer you&apos;re looking for doesn&apos;t exist.
+          </p>
+          <Link href="/customers">
+            <button className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+              Back to Customers
+            </button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const getTransactionTypeIcon = (type: string) => {
     switch (type) {
