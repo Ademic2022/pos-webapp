@@ -62,10 +62,18 @@ export interface CartItem extends Product {
 export interface CustomerTransaction {
   id: string;
   date: string;
-  type: "sale" | "payment" | "credit";
+  type: "sale" | "payment" | "credit" | "return";
   amount: number;
   description: string;
   balance: number;
+  originalTransactionId?: string; // For returns, reference to original sale
+  returnReason?: string; // For returns
+  returnedItems?: Array<{
+    name: string;
+    quantity: number;
+    price: number;
+    total: number;
+  }>; // For returns
 }
 
 export interface DeliveryHistory {

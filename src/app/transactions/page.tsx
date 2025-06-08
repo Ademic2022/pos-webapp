@@ -17,12 +17,15 @@ import {
   CheckCircle,
   XCircle,
   Droplets,
+  RotateCcw,
+  Package,
 } from "lucide-react";
 import { usePageLoading } from "@/hooks/usePageLoading";
 
 // Type definitions
 interface Transaction {
   id: string;
+  type: "sale" | "payment" | "credit" | "return";
   customerName: string;
   customerType: "wholesale" | "retail";
   date: string;
@@ -44,6 +47,7 @@ interface TransactionItem {
 
 interface FilterOptions {
   dateRange: "today" | "week" | "month" | "custom" | "all";
+  transactionType: "all" | "sale" | "payment" | "credit" | "return";
   customerType: "all" | "wholesale" | "retail";
   paymentStatus: "all" | "paid" | "pending" | "overdue";
   paymentMethod: "all" | "cash" | "transfer" | "credit";
@@ -58,6 +62,7 @@ interface SortOptions {
 const mockTransactions: Transaction[] = [
   {
     id: "TXN-2025-001234",
+    type: "sale",
     customerName: "Adebayo Motors",
     customerType: "wholesale",
     date: "2025-06-05",
@@ -71,6 +76,7 @@ const mockTransactions: Transaction[] = [
   },
   {
     id: "TXN-2025-001233",
+    type: "sale",
     customerName: "Mrs. Fatima",
     customerType: "retail",
     date: "2025-06-05",
@@ -83,7 +89,22 @@ const mockTransactions: Transaction[] = [
     reference: "REF-FAT-003",
   },
   {
+    id: "RET-2025-001001",
+    type: "return",
+    customerName: "Kemi's Store",
+    customerType: "retail",
+    date: "2025-06-05",
+    time: "11:45",
+    items: [{ type: "keg", quantity: 2, unitPrice: 1500, totalPrice: 3000 }],
+    totalAmount: 3000,
+    paymentStatus: "paid",
+    paymentMethod: "cash",
+    salesPerson: "John Doe",
+    reference: "RET-KEM-001",
+  },
+  {
     id: "TXN-2025-001232",
+    type: "sale",
     customerName: "Kemi's Store",
     customerType: "retail",
     date: "2025-06-05",
@@ -96,7 +117,22 @@ const mockTransactions: Transaction[] = [
     reference: "REF-KEM-008",
   },
   {
+    id: "PMT-2025-001001",
+    type: "payment",
+    customerName: "Taiwo Enterprises",
+    customerType: "wholesale",
+    date: "2025-06-04",
+    time: "16:20",
+    items: [],
+    totalAmount: 15000,
+    paymentStatus: "paid",
+    paymentMethod: "transfer",
+    salesPerson: "Jane Smith",
+    reference: "PMT-TAI-001",
+  },
+  {
     id: "TXN-2025-001231",
+    type: "sale",
     customerName: "Taiwo Enterprises",
     customerType: "wholesale",
     date: "2025-06-04",
@@ -109,7 +145,22 @@ const mockTransactions: Transaction[] = [
     reference: "REF-TAI-012",
   },
   {
+    id: "RET-2025-001002",
+    type: "return",
+    customerName: "Adebayo Motors",
+    customerType: "wholesale",
+    date: "2025-06-04",
+    time: "10:30",
+    items: [{ type: "drum", quantity: 1, unitPrice: 9000, totalPrice: 9000 }],
+    totalAmount: 9000,
+    paymentStatus: "paid",
+    paymentMethod: "transfer",
+    salesPerson: "John Doe",
+    reference: "RET-ADM-001",
+  },
+  {
     id: "TXN-2025-001230",
+    type: "sale",
     customerName: "Blessing Oil Depot",
     customerType: "wholesale",
     date: "2025-06-04",
@@ -126,6 +177,7 @@ const mockTransactions: Transaction[] = [
   },
   {
     id: "TXN-2025-001229",
+    type: "sale",
     customerName: "Mama Tinu",
     customerType: "retail",
     date: "2025-06-03",
@@ -151,6 +203,7 @@ const TransactionHistoryPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [filters, setFilters] = useState<FilterOptions>({
     dateRange: "all",
+    transactionType: "all",
     customerType: "all",
     paymentStatus: "all",
     paymentMethod: "all",
@@ -173,6 +226,10 @@ const TransactionHistoryPage: React.FC = () => {
         transaction.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         transaction.reference.toLowerCase().includes(searchTerm.toLowerCase());
 
+      const matchesTransactionType =
+        filters.transactionType === "all" ||
+        transaction.type === filters.transactionType;
+
       const matchesCustomerType =
         filters.customerType === "all" ||
         transaction.customerType === filters.customerType;
@@ -190,6 +247,7 @@ const TransactionHistoryPage: React.FC = () => {
 
       return (
         matchesSearch &&
+        matchesTransactionType &&
         matchesCustomerType &&
         matchesPaymentStatus &&
         matchesPaymentMethod &&
@@ -272,6 +330,36 @@ const TransactionHistoryPage: React.FC = () => {
     }
   };
 
+  const getTransactionTypeIcon = (type: string): React.ReactNode => {
+    switch (type) {
+      case "sale":
+        return <Package className="w-4 h-4" />;
+      case "payment":
+        return <DollarSign className="w-4 h-4" />;
+      case "credit":
+        return <CreditCard className="w-4 h-4" />;
+      case "return":
+        return <RotateCcw className="w-4 h-4" />;
+      default:
+        return <Package className="w-4 h-4" />;
+    }
+  };
+
+  const getTransactionTypeColor = (type: string): string => {
+    switch (type) {
+      case "sale":
+        return "text-blue-600 bg-blue-100";
+      case "payment":
+        return "text-green-600 bg-green-100";
+      case "credit":
+        return "text-orange-600 bg-orange-100";
+      case "return":
+        return "text-red-600 bg-red-100";
+      default:
+        return "text-gray-600 bg-gray-100";
+    }
+  };
+
   const handleSort = (field: SortOptions["field"]): void => {
     setSortBy((prev) => ({
       field,
@@ -283,6 +371,7 @@ const TransactionHistoryPage: React.FC = () => {
   const resetFilters = (): void => {
     setFilters({
       dateRange: "all",
+      transactionType: "all",
       customerType: "all",
       paymentStatus: "all",
       paymentMethod: "all",
@@ -356,10 +445,47 @@ const TransactionHistoryPage: React.FC = () => {
             </button>
           </div>
 
+          {/* Quick Transaction Type Filters */}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <span className="text-sm font-medium text-gray-700 mr-2 self-center">
+              Quick filters:
+            </span>
+            {[
+              { key: "all", label: "All Types", icon: null },
+              { key: "sale", label: "Sales", icon: Package },
+              { key: "payment", label: "Payments", icon: DollarSign },
+              { key: "credit", label: "Credits", icon: CreditCard },
+              { key: "return", label: "Returns", icon: RotateCcw },
+            ].map((filter) => {
+              const Icon = filter.icon;
+              const isActive = filters.transactionType === filter.key;
+              return (
+                <button
+                  key={filter.key}
+                  onClick={() =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      transactionType:
+                        filter.key as FilterOptions["transactionType"],
+                    }))
+                  }
+                  className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                    isActive
+                      ? "bg-orange-100 text-orange-700 border border-orange-200"
+                      : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
+                  }`}
+                >
+                  {Icon && <Icon className="w-3 h-3 mr-1" />}
+                  {filter.label}
+                </button>
+              );
+            })}
+          </div>
+
           {/* Advanced Filters */}
           {showFilters && (
             <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Date Range
@@ -379,6 +505,29 @@ const TransactionHistoryPage: React.FC = () => {
                     <option value="week">This Week</option>
                     <option value="month">This Month</option>
                     <option value="custom">Custom Range</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Transaction Type
+                  </label>
+                  <select
+                    value={filters.transactionType}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        transactionType: e.target
+                          .value as FilterOptions["transactionType"],
+                      }))
+                    }
+                    className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
+                  >
+                    <option value="all">All Types</option>
+                    <option value="sale">Sales</option>
+                    <option value="payment">Payments</option>
+                    <option value="credit">Credits</option>
+                    <option value="return">Returns</option>
                   </select>
                 </div>
 
@@ -489,6 +638,9 @@ const TransactionHistoryPage: React.FC = () => {
                       <ArrowUpDown className="w-4 h-4 ml-1" />
                     </button>
                   </th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">
+                    Type
+                  </th>
                   <th className="px-6 py-4 text-left">
                     <button
                       onClick={() => handleSort("customer")}
@@ -541,6 +693,18 @@ const TransactionHistoryPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTransactionTypeColor(
+                          transaction.type
+                        )}`}
+                      >
+                        {getTransactionTypeIcon(transaction.type)}
+                        <span className="ml-1 capitalize">
+                          {transaction.type}
+                        </span>
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
                           {transaction.customerName}
@@ -560,7 +724,20 @@ const TransactionHistoryPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-bold text-gray-900">
+                      <div
+                        className={`text-sm font-bold ${
+                          transaction.type === "return"
+                            ? "text-red-600"
+                            : transaction.type === "payment"
+                            ? "text-green-600"
+                            : "text-gray-900"
+                        }`}
+                      >
+                        {transaction.type === "payment"
+                          ? "+"
+                          : transaction.type === "return"
+                          ? "-"
+                          : ""}
                         ₦{transaction.totalAmount.toLocaleString()}
                       </div>
                     </td>
@@ -660,6 +837,21 @@ const TransactionHistoryPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 mb-2">
+                    Transaction Type
+                  </h3>
+                  <span
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getTransactionTypeColor(
+                      selectedTransaction.type
+                    )}`}
+                  >
+                    {getTransactionTypeIcon(selectedTransaction.type)}
+                    <span className="ml-1 capitalize">
+                      {selectedTransaction.type}
+                    </span>
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">
                     Reference
                   </h3>
                   <p className="text-gray-900">
@@ -742,7 +934,20 @@ const TransactionHistoryPage: React.FC = () => {
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <p className="text-sm text-gray-600">Total Amount</p>
-                    <p className="text-xl font-bold text-gray-900">
+                    <p
+                      className={`text-xl font-bold ${
+                        selectedTransaction.type === "return"
+                          ? "text-red-600"
+                          : selectedTransaction.type === "payment"
+                          ? "text-green-600"
+                          : "text-gray-900"
+                      }`}
+                    >
+                      {selectedTransaction.type === "payment"
+                        ? "+"
+                        : selectedTransaction.type === "return"
+                        ? "-"
+                        : ""}
                       ₦{selectedTransaction.totalAmount.toLocaleString()}
                     </p>
                   </div>

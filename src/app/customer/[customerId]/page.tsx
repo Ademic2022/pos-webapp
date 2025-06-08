@@ -27,6 +27,7 @@ import {
   Receipt,
   Edit3,
   MoreHorizontal,
+  RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -40,7 +41,7 @@ import { usePageLoading } from "@/hooks/usePageLoading";
 
 interface TransactionFilters {
   dateRange: "all" | "week" | "month" | "quarter" | "year";
-  type: "all" | "sale" | "payment" | "credit";
+  type: "all" | "sale" | "payment" | "credit" | "return";
   amountRange: "all" | "0-1000" | "1000-5000" | "5000-10000" | "10000+";
 }
 
@@ -232,6 +233,8 @@ const CustomerDetailPage = () => {
         return <DollarSign className="w-4 h-4" />;
       case "credit":
         return <CreditCard className="w-4 h-4" />;
+      case "return":
+        return <RotateCcw className="w-4 h-4" />;
       default:
         return <FileText className="w-4 h-4" />;
     }
@@ -245,6 +248,8 @@ const CustomerDetailPage = () => {
         return "text-green-600 bg-green-100";
       case "credit":
         return "text-orange-600 bg-orange-100";
+      case "return":
+        return "text-red-600 bg-red-100";
       default:
         return "text-gray-600 bg-gray-100";
     }

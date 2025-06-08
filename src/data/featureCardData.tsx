@@ -1,4 +1,10 @@
-import { Users, BarChart3, FileText, CreditCard } from "lucide-react";
+import {
+  Users,
+  BarChart3,
+  FileText,
+  CreditCard,
+  RotateCcw,
+} from "lucide-react";
 
 interface DashboardCard {
   id: string;
@@ -52,5 +58,15 @@ export const cardsData: DashboardCard[] = [
     gradientTo: "to-pink-600",
     textColor: "text-red-600",
     route: "/debts",
+  },
+  {
+    id: "returns-management",
+    title: "Returns Management",
+    description: "Process product returns and refunds for transactions",
+    icon: <RotateCcw className="w-6 h-6 text-white" />,
+    gradientFrom: "from-orange-500",
+    gradientTo: "to-amber-600",
+    textColor: "text-orange-600",
+    route: "/returns",
   },
 ];

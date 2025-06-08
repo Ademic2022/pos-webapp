@@ -1,5 +1,5 @@
 import React from "react";
-import { X, DollarSign, Package, CreditCard } from "lucide-react";
+import { X, DollarSign, Package, CreditCard, RotateCcw } from "lucide-react";
 // import { Customer } from "@/interfaces/interface";
 
 interface Customer {
@@ -12,7 +12,7 @@ interface Customer {
 
 interface Transaction {
   id: string | number;
-  type: "sale" | "payment" | "credit";
+  type: "sale" | "payment" | "credit" | "return";
   description: string;
   date: string;
   amount: number;
@@ -39,6 +39,36 @@ const TransactionHistoryModal: React.FC<Props> = ({
   if (!show || !customer) return null;
 
   const customerTxns = transactions[customer.id] || [];
+
+  const getTransactionTypeIcon = (type: string) => {
+    switch (type) {
+      case "sale":
+        return <Package className="w-4 h-4" />;
+      case "payment":
+        return <DollarSign className="w-4 h-4" />;
+      case "credit":
+        return <CreditCard className="w-4 h-4" />;
+      case "return":
+        return <RotateCcw className="w-4 h-4" />;
+      default:
+        return <Package className="w-4 h-4" />;
+    }
+  };
+
+  const getTransactionTypeColor = (type: string) => {
+    switch (type) {
+      case "sale":
+        return "text-blue-600 bg-blue-100";
+      case "payment":
+        return "text-green-600 bg-green-100";
+      case "credit":
+        return "text-orange-600 bg-orange-100";
+      case "return":
+        return "text-red-600 bg-red-100";
+      default:
+        return "text-gray-600 bg-gray-100";
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -117,21 +147,11 @@ const TransactionHistoryModal: React.FC<Props> = ({
                 >
                   <div className="flex items-center space-x-3">
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        txn.type === "sale"
-                          ? "bg-blue-100"
-                          : txn.type === "payment"
-                          ? "bg-green-100"
-                          : "bg-orange-100"
-                      }`}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center ${getTransactionTypeColor(
+                        txn.type
+                      )}`}
                     >
-                      {txn.type === "sale" ? (
-                        <Package className="w-4 h-4 text-blue-600" />
-                      ) : txn.type === "payment" ? (
-                        <DollarSign className="w-4 h-4 text-green-600" />
-                      ) : (
-                        <CreditCard className="w-4 h-4 text-orange-600" />
-                      )}
+                      {getTransactionTypeIcon(txn.type)}
                     </div>
                     <div>
                       <div className="font-medium text-gray-900">
@@ -147,11 +167,17 @@ const TransactionHistoryModal: React.FC<Props> = ({
                       className={`font-medium ${
                         txn.type === "payment"
                           ? "text-green-600"
+                          : txn.type === "return"
+                          ? "text-red-600"
                           : "text-gray-900"
                       }`}
                     >
-                      {txn.type === "payment" ? "+" : ""}₦
-                      {txn.amount.toLocaleString()}
+                      {txn.type === "payment"
+                        ? "+"
+                        : txn.type === "return"
+                        ? "-"
+                        : ""}
+                      ₦{txn.amount.toLocaleString()}
                     </div>
                     <div className={`text-sm ${getBalanceColor(txn.balance)}`}>
                       Balance: ₦{Math.abs(txn.balance).toLocaleString()}
