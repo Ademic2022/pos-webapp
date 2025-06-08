@@ -30,7 +30,6 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
         email: customer.email || "",
         address: customer.address || "",
         type: customer.type,
-        status: customer.status,
         creditLimit: customer.creditLimit,
         notes: customer.notes || "",
       });
@@ -90,7 +89,6 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
         email: formData.email?.trim() || "",
         address: formData.address?.trim() || "",
         type: formData.type || customer.type,
-        status: formData.status || customer.status,
         creditLimit: formData.creditLimit || customer.creditLimit,
         notes: formData.notes?.trim() || "",
       };
@@ -201,7 +199,7 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
             />
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-1 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Customer Type
@@ -218,26 +216,6 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
               >
                 <option value="retail">Retail Customer</option>
                 <option value="wholesale">Wholesale Customer</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
-              </label>
-              <select
-                value={formData.status || "active"}
-                onChange={(e) =>
-                  handleInputChange(
-                    "status",
-                    e.target.value as "active" | "inactive" | "blocked"
-                  )
-                }
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="blocked">Blocked</option>
               </select>
             </div>
           </div>
