@@ -19,6 +19,7 @@ import CalculatorModal from "@/utils/calculator";
 import { getFillDetails, getStockStatus } from "@/utils/utils";
 import { colorMap } from "@/data/constants";
 import { dashboardStat } from "@/data/stock";
+import ProfileDropdown from "@/components/ui/ProfileDropdown";
 import { StatsCard } from "../cards/statCard";
 
 const Home = () => {
@@ -57,11 +58,11 @@ const Home = () => {
               </div>
               <div className="flex items-center space-x-2">
                 <Bell className="w-5 h-5 text-gray-600" />
-                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-orange-700">
-                    SE
-                  </span>
-                </div>
+                <ProfileDropdown
+                  userName="Store Employee"
+                  userInitials="SE"
+                  userEmail="employee@store.com"
+                />
               </div>
             </nav>
           </div>
