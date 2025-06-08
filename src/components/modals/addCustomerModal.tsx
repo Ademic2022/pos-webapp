@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { X, Loader2 } from "lucide-react";
 import { Customer } from "@/interfaces/interface";
 import { useAsyncLoading } from "@/hooks/usePageLoading";
+import ProtectedElement from "@/components/auth/ProtectedElement";
 
 interface AddCustomerModalProps {
   show: boolean;
@@ -158,14 +159,16 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
           >
             Cancel
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={!newCustomer.name || !newCustomer.phone || isSubmitting}
-            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-          >
-            {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-            {isSubmitting ? "Adding..." : "Add Customer"}
-          </button>
+          <ProtectedElement requiredPermission="EDIT_CUSTOMER_DETAILS">
+            <button
+              onClick={handleSubmit}
+              disabled={!newCustomer.name || !newCustomer.phone || isSubmitting}
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            >
+              {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isSubmitting ? "Adding..." : "Add Customer"}
+            </button>
+          </ProtectedElement>
         </div>
       </div>
     </div>

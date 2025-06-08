@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useAsyncLoading } from "@/hooks/usePageLoading";
+import ProtectedElement from "@/components/auth/ProtectedElement";
 
 interface Props {
   show: boolean;
@@ -63,14 +64,16 @@ const DeleteCustomerModal: React.FC<Props> = ({
             >
               Cancel
             </button>
-            <button
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-red-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-            >
-              {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
-              {isDeleting ? "Deleting..." : "Delete Customer"}
-            </button>
+            <ProtectedElement requiredPermission="EDIT_CUSTOMER_DETAILS">
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-red-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              >
+                {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isDeleting ? "Deleting..." : "Delete Customer"}
+              </button>
+            </ProtectedElement>
           </div>
         </div>
       </div>

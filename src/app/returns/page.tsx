@@ -24,6 +24,7 @@ import { customers, customerTransactions } from "@/data/customers";
 import ReturnModal from "@/components/modals/returnModal";
 import ProcessReturnModal from "@/components/modals/processReturnModal";
 import { ReturnAnalyticsEngine } from "@/utils/returnAnalytics";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 // Local interfaces for analytics
 interface AnalyticsSalesData {
@@ -557,715 +558,724 @@ const ReturnsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
-                  <ArrowLeft className="w-5 h-5 text-orange-600" />
-                </button>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Returns Management
-                </h1>
-                <p className="text-sm text-gray-600">
-                  Process product returns and refunds
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={handleAnalytics}
-                className="flex items-center space-x-2 px-4 py-2 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
-              >
-                <TrendingUp className="w-4 h-4" />
-                <span>Analytics</span>
-              </button>
-              <button
-                onClick={exportReturns}
-                className="flex items-center space-x-2 px-4 py-2 border border-orange-200 text-orange-700 rounded-lg hover:bg-orange-50 transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                <span>Export</span>
-              </button>
-              <button
-                onClick={handleNewReturn}
-                className="flex items-center space-x-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-              >
-                <RotateCcw className="w-4 h-4" />
-                <span>New Return</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Quick Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg p-4 border border-orange-100 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Returns</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {summaryStats.total}
-                </p>
-              </div>
-              <RotateCcw className="w-8 h-8 text-orange-500" />
-            </div>
-          </div>
-          <div className="bg-white rounded-lg p-4 border border-blue-100 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Pending</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {summaryStats.pending}
-                </p>
-              </div>
-              <Clock className="w-8 h-8 text-blue-500" />
-            </div>
-          </div>
-          <div className="bg-white rounded-lg p-4 border border-green-100 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Processed</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {summaryStats.processed}
-                </p>
-              </div>
-              <CheckCircle className="w-8 h-8 text-green-500" />
-            </div>
-          </div>
-          <div className="bg-white rounded-lg p-4 border border-purple-100 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Value</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  ₦{summaryStats.totalValue.toLocaleString()}
-                </p>
-              </div>
-              <DollarSign className="w-8 h-8 text-purple-500" />
-            </div>
-          </div>
-        </div>
-
-        {/* Search and Filters */}
-        <div className="bg-white rounded-xl shadow-lg border border-orange-100 p-6 mb-6">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search returns by customer, ID, transaction ID, or reason..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                />
-              </div>
-            </div>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center space-x-2 px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Filter className="w-5 h-5" />
-              <span>Filters</span>
-            </button>
-          </div>
-
-          {/* Filter Options */}
-          {showFilters && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <ProtectedRoute requiredPermission="PROCESS_RETURNS">
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+        {/* Header */}
+        <header className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-4">
+              <div className="flex items-center space-x-4">
+                <Link href="/">
+                  <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
+                    <ArrowLeft className="w-5 h-5 text-orange-600" />
+                  </button>
+                </Link>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Status
-                  </label>
-                  <select
-                    value={filters.status}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        status: e.target.value as FilterOptions["status"],
-                      }))
-                    }
-                    className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="processed">Processed</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Date Range
-                  </label>
-                  <select
-                    value={filters.dateRange}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        dateRange: e.target.value as FilterOptions["dateRange"],
-                      }))
-                    }
-                    className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
-                  >
-                    <option value="all">All Time</option>
-                    <option value="today">Today</option>
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Customer Type
-                  </label>
-                  <select
-                    value={filters.customerType}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        customerType: e.target
-                          .value as FilterOptions["customerType"],
-                      }))
-                    }
-                    className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
-                  >
-                    <option value="all">All Types</option>
-                    <option value="wholesale">Wholesale</option>
-                    <option value="retail">Retail</option>
-                  </select>
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    Returns Management
+                  </h1>
+                  <p className="text-sm text-gray-600">
+                    Process product returns and refunds
+                  </p>
                 </div>
               </div>
-
-              <div className="mt-4 flex justify-end">
+              <div className="flex items-center space-x-3">
                 <button
-                  onClick={resetFilters}
-                  className="px-4 py-2 text-orange-600 border border-orange-200 rounded-lg hover:bg-orange-50 transition-colors"
+                  onClick={handleAnalytics}
+                  className="flex items-center space-x-2 px-4 py-2 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
                 >
-                  Reset Filters
+                  <TrendingUp className="w-4 h-4" />
+                  <span>Analytics</span>
                 </button>
+                <button
+                  onClick={exportReturns}
+                  className="flex items-center space-x-2 px-4 py-2 border border-orange-200 text-orange-700 rounded-lg hover:bg-orange-50 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Export</span>
+                </button>
+                <button
+                  onClick={handleNewReturn}
+                  className="flex items-center space-x-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>New Return</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Quick Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white rounded-lg p-4 border border-orange-100 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total Returns</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {summaryStats.total}
+                  </p>
+                </div>
+                <RotateCcw className="w-8 h-8 text-orange-500" />
+              </div>
+            </div>
+            <div className="bg-white rounded-lg p-4 border border-blue-100 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Pending</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {summaryStats.pending}
+                  </p>
+                </div>
+                <Clock className="w-8 h-8 text-blue-500" />
+              </div>
+            </div>
+            <div className="bg-white rounded-lg p-4 border border-green-100 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Processed</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {summaryStats.processed}
+                  </p>
+                </div>
+                <CheckCircle className="w-8 h-8 text-green-500" />
+              </div>
+            </div>
+            <div className="bg-white rounded-lg p-4 border border-purple-100 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total Value</p>
+                  <p className="text-2xl font-bold text-purple-600">
+                    ₦{summaryStats.totalValue.toLocaleString()}
+                  </p>
+                </div>
+                <DollarSign className="w-8 h-8 text-purple-500" />
+              </div>
+            </div>
+          </div>
+
+          {/* Search and Filters */}
+          <div className="bg-white rounded-xl shadow-lg border border-orange-100 p-6 mb-6">
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    placeholder="Search returns by customer, ID, transaction ID, or reason..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center space-x-2 px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <Filter className="w-5 h-5" />
+                <span>Filters</span>
+              </button>
+            </div>
+
+            {/* Filter Options */}
+            {showFilters && (
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Status
+                    </label>
+                    <select
+                      value={filters.status}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          status: e.target.value as FilterOptions["status"],
+                        }))
+                      }
+                      className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="pending">Pending</option>
+                      <option value="approved">Approved</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="processed">Processed</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Date Range
+                    </label>
+                    <select
+                      value={filters.dateRange}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          dateRange: e.target
+                            .value as FilterOptions["dateRange"],
+                        }))
+                      }
+                      className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    >
+                      <option value="all">All Time</option>
+                      <option value="today">Today</option>
+                      <option value="week">This Week</option>
+                      <option value="month">This Month</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Customer Type
+                    </label>
+                    <select
+                      value={filters.customerType}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          customerType: e.target
+                            .value as FilterOptions["customerType"],
+                        }))
+                      }
+                      className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    >
+                      <option value="all">All Types</option>
+                      <option value="wholesale">Wholesale</option>
+                      <option value="retail">Retail</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={resetFilters}
+                    className="px-4 py-2 text-orange-600 border border-orange-200 rounded-lg hover:bg-orange-50 transition-colors"
+                  >
+                    Reset Filters
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Results Summary */}
+          <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <p className="text-gray-600">
+              Showing {filteredAndSortedReturns.length} of{" "}
+              {mockReturnRequests.length} returns
+            </p>
+            <div className="text-sm text-red-600 font-medium">
+              Total Refund Value: -₦
+              {filteredAndSortedReturns
+                .reduce((sum, r) => sum + r.totalRefundAmount, 0)
+                .toLocaleString()}
+            </div>
+          </div>
+
+          {/* Bulk Actions */}
+          {selectedReturns.length > 0 && (
+            <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="text-sm text-blue-700">
+                  {selectedReturns.length} return
+                  {selectedReturns.length > 1 ? "s" : ""} selected
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleBulkApprove}
+                    className="flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Approve All</span>
+                  </button>
+                  <button
+                    onClick={handleBulkReject}
+                    className="flex items-center space-x-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    <span>Reject All</span>
+                  </button>
+                  <button
+                    onClick={() => setSelectedReturns([])}
+                    className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                  >
+                    Clear Selection
+                  </button>
+                </div>
               </div>
             </div>
           )}
-        </div>
 
-        {/* Results Summary */}
-        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <p className="text-gray-600">
-            Showing {filteredAndSortedReturns.length} of{" "}
-            {mockReturnRequests.length} returns
-          </p>
-          <div className="text-sm text-red-600 font-medium">
-            Total Refund Value: -₦
-            {filteredAndSortedReturns
-              .reduce((sum, r) => sum + r.totalRefundAmount, 0)
-              .toLocaleString()}
+          {/* Returns Table */}
+          <div className="bg-white rounded-xl shadow-lg border border-orange-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-4 text-left">
+                      <input
+                        type="checkbox"
+                        checked={
+                          selectedReturns.length ===
+                            filteredAndSortedReturns.length &&
+                          filteredAndSortedReturns.length > 0
+                        }
+                        onChange={handleSelectAll}
+                        className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                      />
+                    </th>
+                    <th className="px-6 py-4 text-left">
+                      <button
+                        onClick={() => handleSort("date")}
+                        className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
+                      >
+                        Request Date
+                        <Calendar className="w-4 h-4 ml-1" />
+                      </button>
+                    </th>
+                    <th className="px-6 py-4 text-left">
+                      <button
+                        onClick={() => handleSort("customer")}
+                        className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
+                      >
+                        Customer
+                        <User className="w-4 h-4 ml-1" />
+                      </button>
+                    </th>
+                    <th className="px-6 py-4 text-left">
+                      <span className="text-sm font-medium text-gray-700">
+                        Original Transaction
+                      </span>
+                    </th>
+                    <th className="px-6 py-4 text-left">
+                      <span className="text-sm font-medium text-gray-700">
+                        Return Items
+                      </span>
+                    </th>
+                    <th className="px-6 py-4 text-left">
+                      <button
+                        onClick={() => handleSort("amount")}
+                        className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
+                      >
+                        Refund Amount
+                        <DollarSign className="w-4 h-4 ml-1" />
+                      </button>
+                    </th>
+                    <th className="px-6 py-4 text-left">
+                      <button
+                        onClick={() => handleSort("status")}
+                        className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
+                      >
+                        Status
+                        <AlertCircle className="w-4 h-4 ml-1" />
+                      </button>
+                    </th>
+                    <th className="px-6 py-4 text-center">
+                      <span className="text-sm font-medium text-gray-700">
+                        Actions
+                      </span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredAndSortedReturns.map((returnRequest) => (
+                    <tr key={returnRequest.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedReturns.includes(returnRequest.id)}
+                          onChange={() => handleSelectReturn(returnRequest.id)}
+                          className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                        />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {new Date(
+                            returnRequest.requestDate
+                          ).toLocaleDateString()}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          ID: {returnRequest.id}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {returnRequest.customerName}
+                        </div>
+                        <div className="text-xs text-gray-500 capitalize">
+                          {
+                            customers.find(
+                              (c) => c.id === returnRequest.customerId
+                            )?.type
+                          }{" "}
+                          customer
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">
+                          {returnRequest.originalTransactionId}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(
+                            returnRequest.originalDate
+                          ).toLocaleDateString()}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">
+                          {returnRequest.returnItems.map((item, index) => (
+                            <div key={index}>
+                              {item.quantity} {item.name}
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-bold text-red-600">
+                          -₦{returnRequest.totalRefundAmount.toLocaleString()}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                            returnRequest.status
+                          )}`}
+                        >
+                          {getStatusIcon(returnRequest.status)}
+                          <span className="ml-1 capitalize">
+                            {returnRequest.status}
+                          </span>
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex items-center justify-center space-x-2">
+                          <button
+                            onClick={() => setSelectedReturn(returnRequest)}
+                            className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors"
+                            title="View Details"
+                          >
+                            <Receipt className="w-4 h-4" />
+                          </button>
+                          {returnRequest.status === "pending" && (
+                            <button
+                              onClick={() => handleProcessReturn(returnRequest)}
+                              className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
+                              title="Process Return"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {filteredAndSortedReturns.length === 0 && (
+              <div className="text-center py-12">
+                <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No returns found
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  {searchTerm ||
+                  filters.status !== "all" ||
+                  filters.dateRange !== "all"
+                    ? "Try adjusting your search or filters"
+                    : "No return requests have been made yet"}
+                </p>
+                {!searchTerm &&
+                  filters.status === "all" &&
+                  filters.dateRange === "all" && (
+                    <button
+                      onClick={handleNewReturn}
+                      className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                    >
+                      Create First Return
+                    </button>
+                  )}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Bulk Actions */}
-        {selectedReturns.length > 0 && (
-          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="text-sm text-blue-700">
-                {selectedReturns.length} return
-                {selectedReturns.length > 1 ? "s" : ""} selected
+        {/* Return Modal */}
+        <ReturnModal
+          show={showReturnModal}
+          onClose={() => setShowReturnModal(false)}
+          customers={customers}
+          customerTransactions={customerTransactions}
+        />
+
+        {/* Process Return Modal */}
+        <ProcessReturnModal
+          show={showProcessModal}
+          returnRequest={selectedReturn}
+          onClose={() => {
+            setShowProcessModal(false);
+            setSelectedReturn(null);
+          }}
+          onProcess={() => {
+            // Handle return processing
+            setShowProcessModal(false);
+            setSelectedReturn(null);
+          }}
+        />
+
+        {/* Return Details Modal */}
+        {selectedReturn && !showProcessModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Return Details
+                  </h3>
+                  <button
+                    onClick={() => setSelectedReturn(null)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <XCircle className="w-6 h-6" />
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-2">
+
+              <div className="p-6 space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-1">
+                      Return ID
+                    </h4>
+                    <p className="text-gray-900">{selectedReturn.id}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-1">
+                      Status
+                    </h4>
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                        selectedReturn.status
+                      )}`}
+                    >
+                      {getStatusIcon(selectedReturn.status)}
+                      <span className="ml-1 capitalize">
+                        {selectedReturn.status}
+                      </span>
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-1">
+                      Customer
+                    </h4>
+                    <p className="text-gray-900">
+                      {selectedReturn.customerName}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-1">
+                      Original Transaction
+                    </h4>
+                    <p className="text-gray-900">
+                      {selectedReturn.originalTransactionId}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-1">
+                      Request Date
+                    </h4>
+                    <p className="text-gray-900">
+                      {new Date(
+                        selectedReturn.requestDate
+                      ).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-1">
+                      Original Date
+                    </h4>
+                    <p className="text-gray-900">
+                      {new Date(
+                        selectedReturn.originalDate
+                      ).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">
+                    Return Reason
+                  </h4>
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {selectedReturn.reason}
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">
+                    Return Items
+                  </h4>
+                  <div className="space-y-2">
+                    {selectedReturn.returnItems.map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {item.name}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            Quantity: {item.quantity}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium text-gray-900">
+                            ₦{item.total.toLocaleString()}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            ₦{item.price.toLocaleString()} each
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <div className="flex justify-between items-center text-lg font-bold">
+                    <span>Total Refund Amount:</span>
+                    <span className="text-red-600">
+                      -₦{selectedReturn.totalRefundAmount.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                {selectedReturn.notes && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">
+                      Notes
+                    </h4>
+                    <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                      {selectedReturn.notes}
+                    </p>
+                  </div>
+                )}
+
+                {selectedReturn.processedBy && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 mb-1">
+                        Processed By
+                      </h4>
+                      <p className="text-gray-900">
+                        {selectedReturn.processedBy}
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 mb-1">
+                        Processed Date
+                      </h4>
+                      <p className="text-gray-900">
+                        {selectedReturn.processedDate &&
+                          new Date(
+                            selectedReturn.processedDate
+                          ).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
                 <button
-                  onClick={handleBulkApprove}
-                  className="flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                  onClick={() => setSelectedReturn(null)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
                 >
-                  <CheckCircle className="w-4 h-4" />
-                  <span>Approve All</span>
+                  Close
                 </button>
-                <button
-                  onClick={handleBulkReject}
-                  className="flex items-center space-x-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
-                >
-                  <XCircle className="w-4 h-4" />
-                  <span>Reject All</span>
-                </button>
-                <button
-                  onClick={() => setSelectedReturns([])}
-                  className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
-                >
-                  Clear Selection
-                </button>
+                {selectedReturn.status === "pending" && (
+                  <button
+                    onClick={() => handleProcessReturn(selectedReturn)}
+                    className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                  >
+                    Process Return
+                  </button>
+                )}
               </div>
             </div>
           </div>
         )}
 
-        {/* Returns Table */}
-        <div className="bg-white rounded-xl shadow-lg border border-orange-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-4 text-left">
-                    <input
-                      type="checkbox"
-                      checked={
-                        selectedReturns.length ===
-                          filteredAndSortedReturns.length &&
-                        filteredAndSortedReturns.length > 0
-                      }
-                      onChange={handleSelectAll}
-                      className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                    />
-                  </th>
-                  <th className="px-6 py-4 text-left">
-                    <button
-                      onClick={() => handleSort("date")}
-                      className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
-                    >
-                      Request Date
-                      <Calendar className="w-4 h-4 ml-1" />
-                    </button>
-                  </th>
-                  <th className="px-6 py-4 text-left">
-                    <button
-                      onClick={() => handleSort("customer")}
-                      className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
-                    >
-                      Customer
-                      <User className="w-4 h-4 ml-1" />
-                    </button>
-                  </th>
-                  <th className="px-6 py-4 text-left">
-                    <span className="text-sm font-medium text-gray-700">
-                      Original Transaction
-                    </span>
-                  </th>
-                  <th className="px-6 py-4 text-left">
-                    <span className="text-sm font-medium text-gray-700">
-                      Return Items
-                    </span>
-                  </th>
-                  <th className="px-6 py-4 text-left">
-                    <button
-                      onClick={() => handleSort("amount")}
-                      className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
-                    >
-                      Refund Amount
-                      <DollarSign className="w-4 h-4 ml-1" />
-                    </button>
-                  </th>
-                  <th className="px-6 py-4 text-left">
-                    <button
-                      onClick={() => handleSort("status")}
-                      className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
-                    >
-                      Status
-                      <AlertCircle className="w-4 h-4 ml-1" />
-                    </button>
-                  </th>
-                  <th className="px-6 py-4 text-center">
-                    <span className="text-sm font-medium text-gray-700">
-                      Actions
-                    </span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredAndSortedReturns.map((returnRequest) => (
-                  <tr key={returnRequest.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedReturns.includes(returnRequest.id)}
-                        onChange={() => handleSelectReturn(returnRequest.id)}
-                        className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {new Date(
-                          returnRequest.requestDate
-                        ).toLocaleDateString()}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        ID: {returnRequest.id}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {returnRequest.customerName}
-                      </div>
-                      <div className="text-xs text-gray-500 capitalize">
-                        {
-                          customers.find(
-                            (c) => c.id === returnRequest.customerId
-                          )?.type
-                        }{" "}
-                        customer
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {returnRequest.originalTransactionId}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {new Date(
-                          returnRequest.originalDate
-                        ).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {returnRequest.returnItems.map((item, index) => (
-                          <div key={index}>
-                            {item.quantity} {item.name}
-                          </div>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-bold text-red-600">
-                        -₦{returnRequest.totalRefundAmount.toLocaleString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                          returnRequest.status
-                        )}`}
-                      >
-                        {getStatusIcon(returnRequest.status)}
-                        <span className="ml-1 capitalize">
-                          {returnRequest.status}
-                        </span>
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center space-x-2">
-                        <button
-                          onClick={() => setSelectedReturn(returnRequest)}
-                          className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors"
-                          title="View Details"
-                        >
-                          <Receipt className="w-4 h-4" />
-                        </button>
-                        {returnRequest.status === "pending" && (
-                          <button
-                            onClick={() => handleProcessReturn(returnRequest)}
-                            className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
-                            title="Process Return"
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredAndSortedReturns.length === 0 && (
-            <div className="text-center py-12">
-              <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No returns found
-              </h3>
-              <p className="text-gray-500 mb-4">
-                {searchTerm ||
-                filters.status !== "all" ||
-                filters.dateRange !== "all"
-                  ? "Try adjusting your search or filters"
-                  : "No return requests have been made yet"}
-              </p>
-              {!searchTerm &&
-                filters.status === "all" &&
-                filters.dateRange === "all" && (
+        {/* Analytics Modal */}
+        {showAnalytics && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Return Analytics Dashboard
+                  </h2>
                   <button
-                    onClick={handleNewReturn}
-                    className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                    onClick={() => setShowAnalytics(false)}
+                    className="text-gray-400 hover:text-gray-600"
                   >
-                    Create First Return
+                    <XCircle className="w-6 h-6" />
                   </button>
-                )}
+                </div>
+              </div>
+
+              <div className="p-6">
+                <ReturnAnalyticsDashboard
+                  returns={mockReturnRequests}
+                  salesData={Object.values(customerTransactions)
+                    .flat()
+                    .map((tx) => ({
+                      id: tx.id,
+                      customerId: parseInt(
+                        Object.keys(customerTransactions).find((custId) =>
+                          customerTransactions[parseInt(custId)].some(
+                            (t) => t.id === tx.id
+                          )
+                        ) || "0"
+                      ),
+                      date: tx.date,
+                      total: tx.amount,
+                      items: [],
+                    }))}
+                  dateRange={{ start: new Date(2025, 0, 1), end: new Date() }}
+                />
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Return Modal */}
+        <ReturnModal
+          show={showReturnModal}
+          onClose={() => setShowReturnModal(false)}
+          customers={customers}
+          customerTransactions={customerTransactions}
+        />
+
+        {/* Process Return Modal */}
+        <ProcessReturnModal
+          show={showProcessModal}
+          onClose={() => setShowProcessModal(false)}
+          returnRequest={selectedReturn}
+          onProcess={() => {
+            setShowProcessModal(false);
+            setSelectedReturn(null);
+            // In real app, process the return with decision and notes
+          }}
+        />
       </div>
-
-      {/* Return Modal */}
-      <ReturnModal
-        show={showReturnModal}
-        onClose={() => setShowReturnModal(false)}
-        customers={customers}
-        customerTransactions={customerTransactions}
-      />
-
-      {/* Process Return Modal */}
-      <ProcessReturnModal
-        show={showProcessModal}
-        returnRequest={selectedReturn}
-        onClose={() => {
-          setShowProcessModal(false);
-          setSelectedReturn(null);
-        }}
-        onProcess={() => {
-          // Handle return processing
-          setShowProcessModal(false);
-          setSelectedReturn(null);
-        }}
-      />
-
-      {/* Return Details Modal */}
-      {selectedReturn && !showProcessModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Return Details
-                </h3>
-                <button
-                  onClick={() => setSelectedReturn(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XCircle className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-1">
-                    Return ID
-                  </h4>
-                  <p className="text-gray-900">{selectedReturn.id}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-1">
-                    Status
-                  </h4>
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                      selectedReturn.status
-                    )}`}
-                  >
-                    {getStatusIcon(selectedReturn.status)}
-                    <span className="ml-1 capitalize">
-                      {selectedReturn.status}
-                    </span>
-                  </span>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-1">
-                    Customer
-                  </h4>
-                  <p className="text-gray-900">{selectedReturn.customerName}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-1">
-                    Original Transaction
-                  </h4>
-                  <p className="text-gray-900">
-                    {selectedReturn.originalTransactionId}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-1">
-                    Request Date
-                  </h4>
-                  <p className="text-gray-900">
-                    {new Date(selectedReturn.requestDate).toLocaleDateString()}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-1">
-                    Original Date
-                  </h4>
-                  <p className="text-gray-900">
-                    {new Date(selectedReturn.originalDate).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">
-                  Return Reason
-                </h4>
-                <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                  {selectedReturn.reason}
-                </p>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">
-                  Return Items
-                </h4>
-                <div className="space-y-2">
-                  {selectedReturn.returnItems.map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
-                    >
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {item.name}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          Quantity: {item.quantity}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-medium text-gray-900">
-                          ₦{item.total.toLocaleString()}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          ₦{item.price.toLocaleString()} each
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <div className="flex justify-between items-center text-lg font-bold">
-                  <span>Total Refund Amount:</span>
-                  <span className="text-red-600">
-                    -₦{selectedReturn.totalRefundAmount.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-
-              {selectedReturn.notes && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">
-                    Notes
-                  </h4>
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {selectedReturn.notes}
-                  </p>
-                </div>
-              )}
-
-              {selectedReturn.processedBy && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-1">
-                      Processed By
-                    </h4>
-                    <p className="text-gray-900">
-                      {selectedReturn.processedBy}
-                    </p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-1">
-                      Processed Date
-                    </h4>
-                    <p className="text-gray-900">
-                      {selectedReturn.processedDate &&
-                        new Date(
-                          selectedReturn.processedDate
-                        ).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
-              <button
-                onClick={() => setSelectedReturn(null)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-              >
-                Close
-              </button>
-              {selectedReturn.status === "pending" && (
-                <button
-                  onClick={() => handleProcessReturn(selectedReturn)}
-                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
-                >
-                  Process Return
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Analytics Modal */}
-      {showAnalytics && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">
-                  Return Analytics Dashboard
-                </h2>
-                <button
-                  onClick={() => setShowAnalytics(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XCircle className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6">
-              <ReturnAnalyticsDashboard
-                returns={mockReturnRequests}
-                salesData={Object.values(customerTransactions)
-                  .flat()
-                  .map((tx) => ({
-                    id: tx.id,
-                    customerId: parseInt(
-                      Object.keys(customerTransactions).find((custId) =>
-                        customerTransactions[parseInt(custId)].some(
-                          (t) => t.id === tx.id
-                        )
-                      ) || "0"
-                    ),
-                    date: tx.date,
-                    total: tx.amount,
-                    items: [],
-                  }))}
-                dateRange={{ start: new Date(2025, 0, 1), end: new Date() }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Return Modal */}
-      <ReturnModal
-        show={showReturnModal}
-        onClose={() => setShowReturnModal(false)}
-        customers={customers}
-        customerTransactions={customerTransactions}
-      />
-
-      {/* Process Return Modal */}
-      <ProcessReturnModal
-        show={showProcessModal}
-        onClose={() => setShowProcessModal(false)}
-        returnRequest={selectedReturn}
-        onProcess={() => {
-          setShowProcessModal(false);
-          setSelectedReturn(null);
-          // In real app, process the return with decision and notes
-        }}
-      />
-    </div>
+    </ProtectedRoute>
   );
 };
 

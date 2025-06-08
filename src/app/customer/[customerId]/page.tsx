@@ -38,6 +38,7 @@ import {
 import { StatsCard } from "@/components/cards/statCard";
 import { usePageLoading } from "@/hooks/usePageLoading";
 import EditCustomerModal from "@/components/modals/editCustomerModal";
+import ProtectedElement from "@/components/auth/ProtectedElement";
 
 interface TransactionFilters {
   dateRange: "all" | "week" | "month" | "quarter" | "year";
@@ -345,12 +346,14 @@ const CustomerDetailPage = () => {
 
             {/* Actions */}
             <div className="flex items-center space-x-3">
-              <button
-                onClick={handleOpenEditModal}
-                className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors"
-              >
-                <Edit3 className="w-5 h-5" />
-              </button>
+              <ProtectedElement requiredPermission="EDIT_CUSTOMER_DETAILS">
+                <button
+                  onClick={handleOpenEditModal}
+                  className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors"
+                >
+                  <Edit3 className="w-5 h-5" />
+                </button>
+              </ProtectedElement>
             </div>
           </div>
         </div>
@@ -515,18 +518,22 @@ const CustomerDetailPage = () => {
                     </button>
                   </Link>
                   {currentCustomer.balance < 0 && (
-                    <button className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm">
-                      <DollarSign className="w-4 h-4" />
-                      <span>Record Payment</span>
-                    </button>
+                    <ProtectedElement requiredPermission="VIEW_FINANCIAL_DATA">
+                      <button className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm">
+                        <DollarSign className="w-4 h-4" />
+                        <span>Record Payment</span>
+                      </button>
+                    </ProtectedElement>
                   )}
-                  <button
-                    onClick={exportTransactions}
-                    className="w-full flex items-center justify-center space-x-2 px-4 py-2 border border-orange-200 text-orange-700 rounded-lg hover:bg-orange-50 transition-colors text-sm"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>Export Data</span>
-                  </button>
+                  <ProtectedElement requiredPermission="VIEW_FINANCIAL_DATA">
+                    <button
+                      onClick={exportTransactions}
+                      className="w-full flex items-center justify-center space-x-2 px-4 py-2 border border-orange-200 text-orange-700 rounded-lg hover:bg-orange-50 transition-colors text-sm"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Export Data</span>
+                    </button>
+                  </ProtectedElement>
                 </div>
               </div>
             </div>
@@ -611,13 +618,15 @@ const CustomerDetailPage = () => {
                   <Filter className="w-4 h-4" />
                   <span className="text-sm">Filters</span>
                 </button>
-                <button
-                  onClick={exportTransactions}
-                  className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors flex items-center space-x-2"
-                >
-                  <Download className="w-4 h-4" />
-                  <span className="text-sm">Export</span>
-                </button>
+                <ProtectedElement requiredPermission="VIEW_FINANCIAL_DATA">
+                  <button
+                    onClick={exportTransactions}
+                    className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors flex items-center space-x-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span className="text-sm">Export</span>
+                  </button>
+                </ProtectedElement>
               </div>
             </div>
           </div>

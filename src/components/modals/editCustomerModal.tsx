@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { X, User, Building, Loader2 } from "lucide-react";
 import { Customer } from "@/interfaces/interface";
+import ProtectedElement from "@/components/auth/ProtectedElement";
 
 interface EditCustomerModalProps {
   isOpen: boolean;
@@ -267,14 +268,16 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
           >
             Cancel
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={!formData.name || !formData.phone || isSubmitting}
-            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-          >
-            {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-            {isSubmitting ? "Saving..." : "Save Changes"}
-          </button>
+          <ProtectedElement requiredPermission="EDIT_CUSTOMER_DETAILS">
+            <button
+              onClick={handleSubmit}
+              disabled={!formData.name || !formData.phone || isSubmitting}
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            >
+              {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isSubmitting ? "Saving..." : "Save Changes"}
+            </button>
+          </ProtectedElement>
         </div>
       </div>
     </div>

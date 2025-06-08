@@ -21,6 +21,8 @@ import {
   Package,
 } from "lucide-react";
 import { usePageLoading } from "@/hooks/usePageLoading";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import ProtectedElement from "@/components/auth/ProtectedElement";
 
 // Type definitions
 interface Transaction {
@@ -381,617 +383,626 @@ const TransactionHistoryPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center">
-                <Droplets className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">
-                  Transaction History
-                </h1>
-                <p className="text-xs text-orange-600">
-                  Complete transaction records
-                </p>
+    <ProtectedRoute requiredPermission="VIEW_FINANCIAL_DATA">
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+        {/* Header */}
+        <header className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center">
+                  <Droplets className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">
+                    Transaction History
+                  </h1>
+                  <p className="text-xs text-orange-600">
+                    Complete transaction records
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Transaction History
-          </h1>
-          <p className="text-gray-600">
-            View and manage all your business transactions
-          </p>
-        </div>
-
-        {/* Search and Filter Bar */}
-        <div className="bg-white rounded-xl shadow-lg border border-orange-100 p-6 mb-8">
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search by customer name, transaction ID, or reference..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* Filter Toggle */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="px-6 py-3 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors flex items-center"
-            >
-              <Filter className="w-5 h-5 mr-2" />
-              Filters
-            </button>
-
-            {/* Export */}
-            <button className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
-              <Download className="w-5 h-5 mr-2" />
-              Export
-            </button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Page Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Transaction History
+            </h1>
+            <p className="text-gray-600">
+              View and manage all your business transactions
+            </p>
           </div>
 
-          {/* Quick Transaction Type Filters */}
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="text-sm font-medium text-gray-700 mr-2 self-center">
-              Quick filters:
-            </span>
-            {[
-              { key: "all", label: "All Types", icon: null },
-              { key: "sale", label: "Sales", icon: Package },
-              { key: "payment", label: "Payments", icon: DollarSign },
-              { key: "credit", label: "Credits", icon: CreditCard },
-              { key: "return", label: "Returns", icon: RotateCcw },
-            ].map((filter) => {
-              const Icon = filter.icon;
-              const isActive = filters.transactionType === filter.key;
-              return (
-                <button
-                  key={filter.key}
-                  onClick={() =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      transactionType:
-                        filter.key as FilterOptions["transactionType"],
-                    }))
-                  }
-                  className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                    isActive
-                      ? "bg-orange-100 text-orange-700 border border-orange-200"
-                      : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
-                  }`}
-                >
-                  {Icon && <Icon className="w-3 h-3 mr-1" />}
-                  {filter.label}
+          {/* Search and Filter Bar */}
+          <div className="bg-white rounded-xl shadow-lg border border-orange-100 p-6 mb-8">
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* Search */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search by customer name, transaction ID, or reference..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Filter Toggle */}
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="px-6 py-3 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors flex items-center"
+              >
+                <Filter className="w-5 h-5 mr-2" />
+                Filters
+              </button>
+
+              {/* Export */}
+              <ProtectedElement requiredPermission="VIEW_FINANCIAL_DATA">
+                <button className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                  <Download className="w-5 h-5 mr-2" />
+                  Export
                 </button>
-              );
-            })}
-          </div>
-
-          {/* Advanced Filters */}
-          {showFilters && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Date Range
-                  </label>
-                  <select
-                    value={filters.dateRange}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        dateRange: e.target.value as FilterOptions["dateRange"],
-                      }))
-                    }
-                    className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
-                  >
-                    <option value="all">All Time</option>
-                    <option value="today">Today</option>
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
-                    <option value="custom">Custom Range</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Transaction Type
-                  </label>
-                  <select
-                    value={filters.transactionType}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        transactionType: e.target
-                          .value as FilterOptions["transactionType"],
-                      }))
-                    }
-                    className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
-                  >
-                    <option value="all">All Types</option>
-                    <option value="sale">Sales</option>
-                    <option value="payment">Payments</option>
-                    <option value="credit">Credits</option>
-                    <option value="return">Returns</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Customer Type
-                  </label>
-                  <select
-                    value={filters.customerType}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        customerType: e.target
-                          .value as FilterOptions["customerType"],
-                      }))
-                    }
-                    className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
-                  >
-                    <option value="all">All Types</option>
-                    <option value="wholesale">Wholesale</option>
-                    <option value="retail">Retail</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Payment Status
-                  </label>
-                  <select
-                    value={filters.paymentStatus}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        paymentStatus: e.target
-                          .value as FilterOptions["paymentStatus"],
-                      }))
-                    }
-                    className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="paid">Paid</option>
-                    <option value="pending">Pending</option>
-                    <option value="overdue">Overdue</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Payment Method
-                  </label>
-                  <select
-                    value={filters.paymentMethod}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        paymentMethod: e.target
-                          .value as FilterOptions["paymentMethod"],
-                      }))
-                    }
-                    className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
-                  >
-                    <option value="all">All Methods</option>
-                    <option value="cash">Cash</option>
-                    <option value="transfer">Transfer</option>
-                    <option value="credit">Credit</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="mt-4 flex justify-end">
-                <button
-                  onClick={resetFilters}
-                  className="px-4 py-2 text-orange-600 border border-orange-200 rounded-lg hover:bg-orange-50 transition-colors"
-                >
-                  Reset Filters
-                </button>
-              </div>
+              </ProtectedElement>
             </div>
-          )}
-        </div>
 
-        {/* Results Summary */}
-        <div className="mb-6 flex justify-between items-center">
-          <p className="text-gray-600">
-            Showing {paginatedTransactions.length} of{" "}
-            {filteredAndSortedTransactions.length} transactions
-          </p>
-          <div className="text-sm text-gray-600">
-            Total Value: ₦
-            {filteredAndSortedTransactions
-              .reduce((sum, t) => sum + t.totalAmount, 0)
-              .toLocaleString()}
+            {/* Quick Transaction Type Filters */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="text-sm font-medium text-gray-700 mr-2 self-center">
+                Quick filters:
+              </span>
+              {[
+                { key: "all", label: "All Types", icon: null },
+                { key: "sale", label: "Sales", icon: Package },
+                { key: "payment", label: "Payments", icon: DollarSign },
+                { key: "credit", label: "Credits", icon: CreditCard },
+                { key: "return", label: "Returns", icon: RotateCcw },
+              ].map((filter) => {
+                const Icon = filter.icon;
+                const isActive = filters.transactionType === filter.key;
+                return (
+                  <button
+                    key={filter.key}
+                    onClick={() =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        transactionType:
+                          filter.key as FilterOptions["transactionType"],
+                      }))
+                    }
+                    className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                      isActive
+                        ? "bg-orange-100 text-orange-700 border border-orange-200"
+                        : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
+                    }`}
+                  >
+                    {Icon && <Icon className="w-3 h-3 mr-1" />}
+                    {filter.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Advanced Filters */}
+            {showFilters && (
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Date Range
+                    </label>
+                    <select
+                      value={filters.dateRange}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          dateRange: e.target
+                            .value as FilterOptions["dateRange"],
+                        }))
+                      }
+                      className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    >
+                      <option value="all">All Time</option>
+                      <option value="today">Today</option>
+                      <option value="week">This Week</option>
+                      <option value="month">This Month</option>
+                      <option value="custom">Custom Range</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Transaction Type
+                    </label>
+                    <select
+                      value={filters.transactionType}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          transactionType: e.target
+                            .value as FilterOptions["transactionType"],
+                        }))
+                      }
+                      className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    >
+                      <option value="all">All Types</option>
+                      <option value="sale">Sales</option>
+                      <option value="payment">Payments</option>
+                      <option value="credit">Credits</option>
+                      <option value="return">Returns</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Customer Type
+                    </label>
+                    <select
+                      value={filters.customerType}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          customerType: e.target
+                            .value as FilterOptions["customerType"],
+                        }))
+                      }
+                      className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    >
+                      <option value="all">All Types</option>
+                      <option value="wholesale">Wholesale</option>
+                      <option value="retail">Retail</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Payment Status
+                    </label>
+                    <select
+                      value={filters.paymentStatus}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          paymentStatus: e.target
+                            .value as FilterOptions["paymentStatus"],
+                        }))
+                      }
+                      className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="paid">Paid</option>
+                      <option value="pending">Pending</option>
+                      <option value="overdue">Overdue</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Payment Method
+                    </label>
+                    <select
+                      value={filters.paymentMethod}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          paymentMethod: e.target
+                            .value as FilterOptions["paymentMethod"],
+                        }))
+                      }
+                      className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    >
+                      <option value="all">All Methods</option>
+                      <option value="cash">Cash</option>
+                      <option value="transfer">Transfer</option>
+                      <option value="credit">Credit</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={resetFilters}
+                    className="px-4 py-2 text-orange-600 border border-orange-200 rounded-lg hover:bg-orange-50 transition-colors"
+                  >
+                    Reset Filters
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
 
-        {/* Transactions Table */}
-        <div className="bg-white rounded-xl shadow-lg border border-orange-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-4 text-left">
-                    <button
-                      onClick={() => handleSort("date")}
-                      className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
-                    >
-                      Date & Time
-                      <ArrowUpDown className="w-4 h-4 ml-1" />
-                    </button>
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">
-                    Type
-                  </th>
-                  <th className="px-6 py-4 text-left">
-                    <button
-                      onClick={() => handleSort("customer")}
-                      className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
-                    >
-                      Customer
-                      <ArrowUpDown className="w-4 h-4 ml-1" />
-                    </button>
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">
-                    Items
-                  </th>
-                  <th className="px-6 py-4 text-left">
-                    <button
-                      onClick={() => handleSort("amount")}
-                      className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
-                    >
-                      Amount
-                      <ArrowUpDown className="w-4 h-4 ml-1" />
-                    </button>
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">
-                    Payment
-                  </th>
-                  <th className="px-6 py-4 text-left">
-                    <button
-                      onClick={() => handleSort("status")}
-                      className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
-                    >
-                      Status
-                      <ArrowUpDown className="w-4 h-4 ml-1" />
-                    </button>
-                  </th>
-                  <th className="px-6 py-4 text-center text-sm font-medium text-gray-700">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {paginatedTransactions.map((transaction) => (
-                  <tr key={transaction.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {new Date(transaction.date).toLocaleDateString()}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {transaction.time}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTransactionTypeColor(
-                          transaction.type
-                        )}`}
+          {/* Results Summary */}
+          <div className="mb-6 flex justify-between items-center">
+            <p className="text-gray-600">
+              Showing {paginatedTransactions.length} of{" "}
+              {filteredAndSortedTransactions.length} transactions
+            </p>
+            <div className="text-sm text-gray-600">
+              Total Value: ₦
+              {filteredAndSortedTransactions
+                .reduce((sum, t) => sum + t.totalAmount, 0)
+                .toLocaleString()}
+            </div>
+          </div>
+
+          {/* Transactions Table */}
+          <div className="bg-white rounded-xl shadow-lg border border-orange-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-4 text-left">
+                      <button
+                        onClick={() => handleSort("date")}
+                        className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
                       >
-                        {getTransactionTypeIcon(transaction.type)}
-                        <span className="ml-1 capitalize">
-                          {transaction.type}
-                        </span>
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {transaction.customerName}
-                        </div>
-                        <div className="text-sm text-gray-500 capitalize">
-                          {transaction.customerType}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {transaction.items.map((item, index) => (
-                          <div key={index}>
-                            {item.quantity} {item.type}(s)
+                        Date & Time
+                        <ArrowUpDown className="w-4 h-4 ml-1" />
+                      </button>
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">
+                      Type
+                    </th>
+                    <th className="px-6 py-4 text-left">
+                      <button
+                        onClick={() => handleSort("customer")}
+                        className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
+                      >
+                        Customer
+                        <ArrowUpDown className="w-4 h-4 ml-1" />
+                      </button>
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">
+                      Items
+                    </th>
+                    <th className="px-6 py-4 text-left">
+                      <button
+                        onClick={() => handleSort("amount")}
+                        className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
+                      >
+                        Amount
+                        <ArrowUpDown className="w-4 h-4 ml-1" />
+                      </button>
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">
+                      Payment
+                    </th>
+                    <th className="px-6 py-4 text-left">
+                      <button
+                        onClick={() => handleSort("status")}
+                        className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
+                      >
+                        Status
+                        <ArrowUpDown className="w-4 h-4 ml-1" />
+                      </button>
+                    </th>
+                    <th className="px-6 py-4 text-center text-sm font-medium text-gray-700">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {paginatedTransactions.map((transaction) => (
+                    <tr key={transaction.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {new Date(transaction.date).toLocaleDateString()}
                           </div>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
+                          <div className="text-sm text-gray-500">
+                            {transaction.time}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTransactionTypeColor(
+                            transaction.type
+                          )}`}
+                        >
+                          {getTransactionTypeIcon(transaction.type)}
+                          <span className="ml-1 capitalize">
+                            {transaction.type}
+                          </span>
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {transaction.customerName}
+                          </div>
+                          <div className="text-sm text-gray-500 capitalize">
+                            {transaction.customerType}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">
+                          {transaction.items.map((item, index) => (
+                            <div key={index}>
+                              {item.quantity} {item.type}(s)
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div
+                          className={`text-sm font-bold ${
+                            transaction.type === "return"
+                              ? "text-red-600"
+                              : transaction.type === "payment"
+                              ? "text-green-600"
+                              : "text-gray-900"
+                          }`}
+                        >
+                          {transaction.type === "payment"
+                            ? "+"
+                            : transaction.type === "return"
+                            ? "-"
+                            : ""}
+                          ₦{transaction.totalAmount.toLocaleString()}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-2">
+                          {getPaymentMethodIcon(transaction.paymentMethod)}
+                          <span className="text-sm text-gray-700 capitalize">
+                            {transaction.paymentMethod}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(
+                            transaction.paymentStatus
+                          )}`}
+                        >
+                          {getPaymentStatusIcon(transaction.paymentStatus)}
+                          <span className="ml-1 capitalize">
+                            {transaction.paymentStatus}
+                          </span>
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <button
+                          onClick={() => setSelectedTransaction(transaction)}
+                          className="text-orange-600 hover:text-orange-800 p-1 rounded"
+                        >
+                          <Eye className="w-5 h-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                <div className="text-sm text-gray-700">
+                  Page {currentPage} of {totalPages}
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(1, prev - 1))
+                    }
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Transaction Detail Modal */}
+        {selectedTransaction && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Transaction Details
+                  </h2>
+                  <button
+                    onClick={() => setSelectedTransaction(null)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <XCircle className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Transaction Info */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">
+                      Transaction ID
+                    </h3>
+                    <p className="text-gray-900 font-mono">
+                      {selectedTransaction.id}
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">
+                      Transaction Type
+                    </h3>
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getTransactionTypeColor(
+                        selectedTransaction.type
+                      )}`}
+                    >
+                      {getTransactionTypeIcon(selectedTransaction.type)}
+                      <span className="ml-1 capitalize">
+                        {selectedTransaction.type}
+                      </span>
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">
+                      Reference
+                    </h3>
+                    <p className="text-gray-900">
+                      {selectedTransaction.reference}
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">
+                      Date & Time
+                    </h3>
+                    <p className="text-gray-900">
+                      {new Date(selectedTransaction.date).toLocaleDateString()}{" "}
+                      at {selectedTransaction.time}
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">
+                      Sales Person
+                    </h3>
+                    <p className="text-gray-900">
+                      {selectedTransaction.salesPerson}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Customer Info */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Customer Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Name</p>
+                      <p className="font-medium">
+                        {selectedTransaction.customerName}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Type</p>
+                      <p className="font-medium capitalize">
+                        {selectedTransaction.customerType}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Items */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Items Purchased
+                  </h3>
+                  <div className="space-y-3">
+                    {selectedTransaction.items.map((item, index) => (
                       <div
-                        className={`text-sm font-bold ${
-                          transaction.type === "return"
+                        key={index}
+                        className="flex justify-between items-center bg-gray-50 rounded-lg p-3"
+                      >
+                        <div>
+                          <p className="font-medium capitalize">{item.type}</p>
+                          <p className="text-sm text-gray-600">
+                            {item.quantity} unit(s) × ₦
+                            {item.unitPrice.toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold">
+                            ₦{item.totalPrice.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Payment Details */}
+                <div className="bg-orange-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Payment Details
+                  </h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Total Amount</p>
+                      <p
+                        className={`text-xl font-bold ${
+                          selectedTransaction.type === "return"
                             ? "text-red-600"
-                            : transaction.type === "payment"
+                            : selectedTransaction.type === "payment"
                             ? "text-green-600"
                             : "text-gray-900"
                         }`}
                       >
-                        {transaction.type === "payment"
+                        {selectedTransaction.type === "payment"
                           ? "+"
-                          : transaction.type === "return"
+                          : selectedTransaction.type === "return"
                           ? "-"
                           : ""}
-                        ₦{transaction.totalAmount.toLocaleString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
+                        ₦{selectedTransaction.totalAmount.toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Payment Method</p>
                       <div className="flex items-center space-x-2">
-                        {getPaymentMethodIcon(transaction.paymentMethod)}
-                        <span className="text-sm text-gray-700 capitalize">
-                          {transaction.paymentMethod}
+                        {getPaymentMethodIcon(
+                          selectedTransaction.paymentMethod
+                        )}
+                        <span className="font-medium capitalize">
+                          {selectedTransaction.paymentMethod}
                         </span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Status</p>
                       <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(
-                          transaction.paymentStatus
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getPaymentStatusColor(
+                          selectedTransaction.paymentStatus
                         )}`}
                       >
-                        {getPaymentStatusIcon(transaction.paymentStatus)}
+                        {getPaymentStatusIcon(
+                          selectedTransaction.paymentStatus
+                        )}
                         <span className="ml-1 capitalize">
-                          {transaction.paymentStatus}
+                          {selectedTransaction.paymentStatus}
                         </span>
                       </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => setSelectedTransaction(transaction)}
-                        className="text-orange-600 hover:text-orange-800 p-1 rounded"
-                      >
-                        <Eye className="w-5 h-5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-              <div className="text-sm text-gray-700">
-                Page {currentPage} of {totalPages}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(1, prev - 1))
-                  }
-                  disabled={currentPage === 1}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* Transaction Detail Modal */}
-      {selectedTransaction && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">
-                  Transaction Details
-                </h2>
+              <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
                 <button
                   onClick={() => setSelectedTransaction(null)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
                 >
-                  <XCircle className="w-6 h-6" />
+                  Close
+                </button>
+                <button className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                  Print Receipt
                 </button>
               </div>
             </div>
-
-            <div className="p-6 space-y-6">
-              {/* Transaction Info */}
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">
-                    Transaction ID
-                  </h3>
-                  <p className="text-gray-900 font-mono">
-                    {selectedTransaction.id}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">
-                    Transaction Type
-                  </h3>
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getTransactionTypeColor(
-                      selectedTransaction.type
-                    )}`}
-                  >
-                    {getTransactionTypeIcon(selectedTransaction.type)}
-                    <span className="ml-1 capitalize">
-                      {selectedTransaction.type}
-                    </span>
-                  </span>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">
-                    Reference
-                  </h3>
-                  <p className="text-gray-900">
-                    {selectedTransaction.reference}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">
-                    Date & Time
-                  </h3>
-                  <p className="text-gray-900">
-                    {new Date(selectedTransaction.date).toLocaleDateString()} at{" "}
-                    {selectedTransaction.time}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">
-                    Sales Person
-                  </h3>
-                  <p className="text-gray-900">
-                    {selectedTransaction.salesPerson}
-                  </p>
-                </div>
-              </div>
-
-              {/* Customer Info */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                  Customer Information
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Name</p>
-                    <p className="font-medium">
-                      {selectedTransaction.customerName}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Type</p>
-                    <p className="font-medium capitalize">
-                      {selectedTransaction.customerType}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Items */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                  Items Purchased
-                </h3>
-                <div className="space-y-3">
-                  {selectedTransaction.items.map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between items-center bg-gray-50 rounded-lg p-3"
-                    >
-                      <div>
-                        <p className="font-medium capitalize">{item.type}</p>
-                        <p className="text-sm text-gray-600">
-                          {item.quantity} unit(s) × ₦
-                          {item.unitPrice.toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold">
-                          ₦{item.totalPrice.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Payment Details */}
-              <div className="bg-orange-50 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                  Payment Details
-                </h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Total Amount</p>
-                    <p
-                      className={`text-xl font-bold ${
-                        selectedTransaction.type === "return"
-                          ? "text-red-600"
-                          : selectedTransaction.type === "payment"
-                          ? "text-green-600"
-                          : "text-gray-900"
-                      }`}
-                    >
-                      {selectedTransaction.type === "payment"
-                        ? "+"
-                        : selectedTransaction.type === "return"
-                        ? "-"
-                        : ""}
-                      ₦{selectedTransaction.totalAmount.toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Payment Method</p>
-                    <div className="flex items-center space-x-2">
-                      {getPaymentMethodIcon(selectedTransaction.paymentMethod)}
-                      <span className="font-medium capitalize">
-                        {selectedTransaction.paymentMethod}
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Status</p>
-                    <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getPaymentStatusColor(
-                        selectedTransaction.paymentStatus
-                      )}`}
-                    >
-                      {getPaymentStatusIcon(selectedTransaction.paymentStatus)}
-                      <span className="ml-1 capitalize">
-                        {selectedTransaction.paymentStatus}
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
-              <button
-                onClick={() => setSelectedTransaction(null)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-              >
-                Close
-              </button>
-              <button className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
-                Print Receipt
-              </button>
-            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </ProtectedRoute>
   );
 };
 

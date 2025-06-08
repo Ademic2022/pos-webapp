@@ -2,6 +2,7 @@
 
 import React from "react";
 import { X, Package } from "lucide-react";
+import ProtectedElement from "@/components/auth/ProtectedElement";
 
 interface EditPriceModalProps {
   isOpen: boolean;
@@ -99,12 +100,14 @@ const EditPriceModal: React.FC<EditPriceModalProps> = ({
             >
               Cancel
             </button>
-            <button
-              onClick={onSave}
-              className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-            >
-              Save Changes
-            </button>
+            <ProtectedElement requiredPermission="EDIT_PRICES">
+              <button
+                onClick={onSave}
+                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+              >
+                Save Changes
+              </button>
+            </ProtectedElement>
           </div>
         </div>
       </div>
