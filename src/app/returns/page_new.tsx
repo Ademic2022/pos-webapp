@@ -19,8 +19,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePageLoading } from "@/hooks/usePageLoading";
-import { customers, customerTransactions } from "@/data/customers";
-import { Customer, CustomerTransaction } from "@/interfaces/interface";
+import { customers } from "@/data/customers";
+import { Customer } from "@/interfaces/interface";
 
 // Type definitions for returns
 interface ReturnRequest {
