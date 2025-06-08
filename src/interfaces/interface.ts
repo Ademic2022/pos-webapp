@@ -68,6 +68,7 @@ export interface CustomerTransaction {
   balance: number;
   originalTransactionId?: string; // For returns, reference to original sale
   returnReason?: string; // For returns
+  status?: "pending" | "approved" | "rejected" | "processed"; // For returns
   returnedItems?: Array<{
     name: string;
     quantity: number;

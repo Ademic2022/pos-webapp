@@ -93,7 +93,6 @@ export const customers: Customer[] = [
   },
 ];
 
-
 export const customerTransactions: Record<number, CustomerTransaction[]> = {
   1: [
     {
@@ -131,6 +130,44 @@ export const customerTransactions: Record<number, CustomerTransaction[]> = {
       balance: -2500,
     },
     {
+      id: "RET001",
+      date: "2025-06-01",
+      type: "return",
+      amount: 1500,
+      description: "Returned 1 Keg - Defective",
+      balance: -1000,
+      originalTransactionId: "TXN002",
+      returnReason: "Defective product",
+      status: "processed",
+      returnedItems: [
+        {
+          name: "Keg",
+          quantity: 1,
+          price: 1500,
+          total: 1500,
+        },
+      ],
+    },
+    {
+      id: "RET003",
+      date: "2025-06-03",
+      type: "return",
+      amount: 1500,
+      description: "Return Request - 1 Keg - Customer Dissatisfied",
+      balance: -2500,
+      originalTransactionId: "TXN002",
+      returnReason: "Customer dissatisfied with quality",
+      status: "pending",
+      returnedItems: [
+        {
+          name: "Keg",
+          quantity: 1,
+          price: 1500,
+          total: 1500,
+        },
+      ],
+    },
+    {
       id: "TXN012",
       date: "2025-05-28",
       type: "payment",
@@ -149,11 +186,84 @@ export const customerTransactions: Record<number, CustomerTransaction[]> = {
       balance: -7500,
     },
     {
+      id: "RET002",
+      date: "2025-05-31",
+      type: "return",
+      amount: 3000,
+      description: "Returned 2 Kegs - Wrong size",
+      balance: -4500,
+      originalTransactionId: "TXN003",
+      returnReason: "Wrong size ordered",
+      returnedItems: [
+        {
+          name: "Keg",
+          quantity: 2,
+          price: 1500,
+          total: 3000,
+        },
+      ],
+    },
+    {
       id: "TXN008",
       date: "2025-05-20",
       type: "payment",
       amount: 3000,
       description: "Cash Payment",
+      balance: 0,
+    },
+  ],
+  4: [
+    {
+      id: "TXN004",
+      date: "2025-06-01",
+      type: "sale",
+      amount: 45000,
+      description: "5 Wholesale Drums",
+      balance: -15000,
+    },
+    {
+      id: "RET004",
+      date: "2025-06-03",
+      type: "return",
+      amount: 9000,
+      description: "Return Request - 1 Drum - Damaged in transit",
+      balance: -24000,
+      originalTransactionId: "TXN004",
+      returnReason: "Damaged in transit",
+      status: "pending",
+      returnedItems: [
+        {
+          name: "Wholesale Drum",
+          quantity: 1,
+          price: 9000,
+          total: 9000,
+        },
+      ],
+    },
+    {
+      id: "TXN013",
+      date: "2025-05-25",
+      type: "payment",
+      amount: 30000,
+      description: "Bank Transfer",
+      balance: 0,
+    },
+  ],
+  5: [
+    {
+      id: "TXN005",
+      date: "2025-06-01",
+      type: "sale",
+      amount: 27000,
+      description: "3 Wholesale Drums",
+      balance: 0,
+    },
+    {
+      id: "TXN014",
+      date: "2025-05-15",
+      type: "sale",
+      amount: 36000,
+      description: "4 Wholesale Drums",
       balance: 0,
     },
   ],

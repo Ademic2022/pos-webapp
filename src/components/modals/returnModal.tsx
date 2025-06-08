@@ -1,6 +1,19 @@
 import React, { useState, useMemo } from "react";
-import { X, Search, Package, AlertCircle, Receipt } from "lucide-react";
+import {
+  X,
+  Search,
+  Package,
+  AlertCircle,
+  Receipt,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 import { Customer, CustomerTransaction } from "@/interfaces/interface";
+import {
+  ReturnValidator,
+  ReturnValidationContext,
+  ReturnValidationResult,
+} from "@/utils/returnValidator";
 
 interface ReturnModalProps {
   show: boolean;
@@ -33,6 +46,10 @@ const ReturnModal: React.FC<ReturnModalProps> = ({
   const [returnNotes, setReturnNotes] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
   const [step, setStep] = useState(1); // 1: Customer, 2: Transaction, 3: Items, 4: Review
+  const [validationResults, setValidationResults] = useState<
+    ReturnValidationResult[]
+  >([]);
+  const [showValidation, setShowValidation] = useState(false);
 
   // Filter customers based on search
   const filteredCustomers = useMemo(() => {
@@ -131,6 +148,27 @@ const ReturnModal: React.FC<ReturnModalProps> = ({
     return returnItems.reduce((sum, item) => sum + item.total, 0);
   };
 
+  const handleValidateReturn = () => {
+    if (!selectedCustomer || !selectedTransaction || returnItems.length === 0)
+      return;
+
+    const validationContext: ReturnValidationContext = {
+      originalTransaction: selectedTransaction,
+      returnRequest: {
+        requestDate: new Date().toISOString().split("T")[0],
+        returnItems: returnItems.filter((item) => item.quantity > 0),
+        reason: returnReason,
+        customerId: selectedCustomer.id,
+      },
+      customerBalance: selectedCustomer.balance,
+      customerType: selectedCustomer.type,
+    };
+
+    const results = ReturnValidator.validateReturn(validationContext);
+    setValidationResults(results);
+    setShowValidation(true);
+  };
+
   const handleSubmitReturn = () => {
     if (
       !selectedCustomer ||
@@ -138,6 +176,17 @@ const ReturnModal: React.FC<ReturnModalProps> = ({
       returnItems.length === 0 ||
       !returnReason
     ) {
+      return;
+    }
+
+    // Run validation first
+    handleValidateReturn();
+
+    const validation = ReturnValidator.getOverallValidation(validationResults);
+    if (!validation.canProcess) {
+      alert(
+        "Cannot process return due to validation errors. Please review and fix the issues."
+      );
       return;
     }
 
@@ -462,6 +511,98 @@ const ReturnModal: React.FC<ReturnModalProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* Validation Results */}
+              {showValidation && validationResults.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium text-gray-700">
+                      Validation Results
+                    </h4>
+                    <button
+                      onClick={handleValidateReturn}
+                      className="text-xs text-orange-600 hover:text-orange-700 underline"
+                    >
+                      Re-validate
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {validationResults.map((result, index) => (
+                      <div
+                        key={index}
+                        className={`flex items-start space-x-2 p-3 rounded-lg border ${
+                          result.severity === "error"
+                            ? "bg-red-50 border-red-200"
+                            : result.severity === "warning"
+                            ? "bg-yellow-50 border-yellow-200"
+                            : "bg-blue-50 border-blue-200"
+                        }`}
+                      >
+                        {result.severity === "error" ? (
+                          <XCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                        ) : result.severity === "warning" ? (
+                          <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                        )}
+                        <div className="flex-1">
+                          <p
+                            className={`text-sm ${
+                              result.severity === "error"
+                                ? "text-red-800"
+                                : result.severity === "warning"
+                                ? "text-yellow-800"
+                                : "text-blue-800"
+                            }`}
+                          >
+                            {result.message}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {(() => {
+                    const validation =
+                      ReturnValidator.getOverallValidation(validationResults);
+                    return (
+                      <div
+                        className={`p-3 rounded-lg border ${
+                          validation.canProcess
+                            ? validation.hasWarnings
+                              ? "bg-yellow-50 border-yellow-200"
+                              : "bg-green-50 border-green-200"
+                            : "bg-red-50 border-red-200"
+                        }`}
+                      >
+                        <p
+                          className={`text-sm font-medium ${
+                            validation.canProcess
+                              ? validation.hasWarnings
+                                ? "text-yellow-800"
+                                : "text-green-800"
+                              : "text-red-800"
+                          }`}
+                        >
+                          {validation.summary}
+                        </p>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {!showValidation && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <button
+                    onClick={handleValidateReturn}
+                    className="text-orange-600 hover:text-orange-700 font-medium text-sm underline"
+                  >
+                    Click to validate return request
+                  </button>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>

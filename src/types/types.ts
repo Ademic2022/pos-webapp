@@ -51,10 +51,18 @@ export type Debt = {
   customerCount: number;
 };
 
+export type Returns = {
+  totalReturns: number;
+  totalRefundValue: number;
+  pendingReturns: number;
+  processedReturns: number;
+};
+
 export type DashboardStats = {
   totalSales: number;
   transaction: Transactions;
   outstandingDebts: Debt;
+  returns: Returns;
   stockData: DeliveryHistory;
   totalLitres: number;
   totalCustomers: number;

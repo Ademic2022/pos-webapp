@@ -132,6 +132,18 @@ const Home = () => {
                 textColor: colorMap[litresStatus].textColor,
               }}
             />
+
+            {/* <StatsCard
+              title="Returns"
+              value={`₦${dashboardStat.returns.totalRefundValue.toLocaleString()}`}
+              change={{
+                value: `${dashboardStat.returns.pendingReturns} pending, ${dashboardStat.returns.processedReturns} processed`,
+                textColor: "text-red-600",
+              }}
+              icon={RotateCcw}
+              iconBg="bg-red-100"
+              iconColor="text-red-600"
+            /> */}
           </div>
 
           {/* Main Action Cards */}

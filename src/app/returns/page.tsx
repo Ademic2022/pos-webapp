@@ -16,12 +16,204 @@ import {
   User,
   Receipt,
   RefreshCw,
+  TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import { usePageLoading } from "@/hooks/usePageLoading";
 import { customers, customerTransactions } from "@/data/customers";
 import ReturnModal from "@/components/modals/returnModal";
 import ProcessReturnModal from "@/components/modals/processReturnModal";
+import { ReturnAnalyticsEngine } from "@/utils/returnAnalytics";
+
+// Local interfaces for analytics
+interface AnalyticsSalesData {
+  id: string;
+  customerId: number;
+  date: string;
+  total: number;
+  items: Array<{
+    name: string;
+    quantity: number;
+    price: number;
+  }>;
+}
+
+// Return Analytics Dashboard Component
+const ReturnAnalyticsDashboard: React.FC<{
+  returns: ReturnRequest[];
+  salesData: AnalyticsSalesData[];
+  dateRange: { start: Date; end: Date };
+}> = ({ returns, salesData, dateRange }) => {
+  const analytics = ReturnAnalyticsEngine.generateAnalytics(
+    returns,
+    salesData,
+    dateRange
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-blue-50 rounded-lg p-4">
+          <div className="text-sm text-blue-600 mb-1">Total Returns</div>
+          <div className="text-2xl font-bold text-blue-900">
+            {analytics.summary.totalReturns}
+          </div>
+          <div className="text-xs text-blue-600">
+            {analytics.summary.pendingReturns} pending
+          </div>
+        </div>
+
+        <div className="bg-red-50 rounded-lg p-4">
+          <div className="text-sm text-red-600 mb-1">Total Refunds</div>
+          <div className="text-2xl font-bold text-red-900">
+            ₦{analytics.summary.totalRefundAmount.toLocaleString()}
+          </div>
+          <div className="text-xs text-red-600">
+            Avg: ₦{analytics.summary.averageRefundAmount.toLocaleString()}
+          </div>
+        </div>
+
+        <div className="bg-orange-50 rounded-lg p-4">
+          <div className="text-sm text-orange-600 mb-1">Return Rate</div>
+          <div className="text-2xl font-bold text-orange-900">
+            {analytics.summary.returnRate.toFixed(1)}%
+          </div>
+          <div className="text-xs text-orange-600">of total sales</div>
+        </div>
+
+        <div className="bg-green-50 rounded-lg p-4">
+          <div className="text-sm text-green-600 mb-1">Processed</div>
+          <div className="text-2xl font-bold text-green-900">
+            {analytics.summary.processedReturns}
+          </div>
+          <div className="text-xs text-green-600">
+            {(
+              (analytics.summary.processedReturns /
+                analytics.summary.totalReturns) *
+              100
+            ).toFixed(1)}
+            % completion
+          </div>
+        </div>
+      </div>
+
+      {/* Charts and Analysis */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Return Reasons */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Return Reasons
+          </h3>
+          <div className="space-y-3">
+            {analytics.trends.returnsByReason.map((reason, index) => (
+              <div key={index} className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-gray-900">
+                    {reason.reason}
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                    <div
+                      className="bg-orange-500 h-2 rounded-full"
+                      style={{ width: `${reason.percentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+                <div className="ml-4 text-sm text-gray-600">
+                  {reason.count} ({reason.percentage.toFixed(1)}%)
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Customer Risk Analysis */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Top Returning Customers
+          </h3>
+          <div className="space-y-3">
+            {analytics.customerAnalysis.topReturningCustomers
+              .slice(0, 5)
+              .map((customer, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {customer.customerName}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {customer.returnCount} returns
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-bold text-red-600">
+                      ₦{customer.totalRefundAmount.toLocaleString()}
+                    </div>
+                    <div
+                      className={`text-xs px-2 py-1 rounded-full ${
+                        customer.riskScore >= 7
+                          ? "bg-red-100 text-red-600"
+                          : customer.riskScore >= 4
+                          ? "bg-yellow-100 text-yellow-600"
+                          : "bg-green-100 text-green-600"
+                      }`}
+                    >
+                      Risk: {customer.riskScore}/10
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Recommendations */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Recommendations
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {analytics.recommendations.slice(0, 4).map((rec, index) => (
+            <div
+              key={index}
+              className={`p-4 rounded-lg border-l-4 ${
+                rec.priority === "high"
+                  ? "border-red-500 bg-red-50"
+                  : rec.priority === "medium"
+                  ? "border-yellow-500 bg-yellow-50"
+                  : "border-green-500 bg-green-50"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-sm font-semibold text-gray-900">
+                  {rec.title}
+                </h4>
+                <span
+                  className={`text-xs px-2 py-1 rounded-full ${
+                    rec.priority === "high"
+                      ? "bg-red-100 text-red-600"
+                      : rec.priority === "medium"
+                      ? "bg-yellow-100 text-yellow-600"
+                      : "bg-green-100 text-green-600"
+                  }`}
+                >
+                  {rec.priority}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 mb-2">{rec.description}</p>
+              <p className="text-xs text-gray-500">
+                Expected Impact: {rec.expectedImpact}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Type definitions for returns
 interface ReturnRequest {
@@ -121,6 +313,7 @@ const ReturnsPage = () => {
   );
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [showProcessModal, setShowProcessModal] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   const [filters, setFilters] = useState<FilterOptions>({
     status: "all",
@@ -132,6 +325,9 @@ const ReturnsPage = () => {
     field: "date",
     direction: "desc",
   });
+
+  // Bulk actions state
+  const [selectedReturns, setSelectedReturns] = useState<string[]>([]);
 
   // Filter and sort returns
   const filteredAndSortedReturns = useMemo(() => {
@@ -210,6 +406,27 @@ const ReturnsPage = () => {
     return filtered;
   }, [searchTerm, filters, sortBy]);
 
+  // Performance optimization: Memoize summary calculations
+  const summaryStats = useMemo(() => {
+    const pending = filteredAndSortedReturns.filter(
+      (r: ReturnRequest) => r.status === "pending"
+    ).length;
+    const processed = filteredAndSortedReturns.filter(
+      (r: ReturnRequest) => r.status === "processed"
+    ).length;
+    const totalValue = filteredAndSortedReturns.reduce(
+      (sum: number, r: ReturnRequest) => sum + r.totalRefundAmount,
+      0
+    );
+
+    return {
+      total: filteredAndSortedReturns.length,
+      pending,
+      processed,
+      totalValue,
+    };
+  }, [filteredAndSortedReturns]);
+
   const handleSort = (field: SortOptions["field"]) => {
     setSortBy((prev) => ({
       field,
@@ -267,8 +484,76 @@ const ReturnsPage = () => {
   };
 
   const exportReturns = () => {
-    console.log("Exporting returns data...");
-    // Implementation for exporting returns
+    // Generate analytics for export
+    const mockSalesData = Object.values(customerTransactions)
+      .flat()
+      .map((tx) => ({
+        id: tx.id,
+        customerId: parseInt(
+          Object.keys(customerTransactions).find((custId) =>
+            customerTransactions[parseInt(custId)].some((t) => t.id === tx.id)
+          ) || "0"
+        ),
+        date: tx.date,
+        total: tx.amount,
+        items: [], // Would need to parse from description in real app
+      }));
+
+    const analytics = ReturnAnalyticsEngine.generateAnalytics(
+      mockReturnRequests,
+      mockSalesData,
+      { start: new Date(2025, 0, 1), end: new Date() }
+    );
+
+    const csvData = ReturnAnalyticsEngine.exportAnalyticsToCSV(analytics);
+
+    // Create and download CSV file
+    const blob = new Blob([csvData], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `returns-analytics-${
+      new Date().toISOString().split("T")[0]
+    }.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleAnalytics = () => {
+    setShowAnalytics(true);
+  };
+
+  // Bulk actions handlers
+  const handleSelectAll = () => {
+    if (selectedReturns.length === filteredAndSortedReturns.length) {
+      setSelectedReturns([]);
+    } else {
+      setSelectedReturns(
+        filteredAndSortedReturns.map((r: ReturnRequest) => r.id)
+      );
+    }
+  };
+
+  const handleSelectReturn = (returnId: string) => {
+    setSelectedReturns((prev) =>
+      prev.includes(returnId)
+        ? prev.filter((id) => id !== returnId)
+        : [...prev, returnId]
+    );
+  };
+
+  const handleBulkApprove = () => {
+    console.log("Bulk approving returns:", selectedReturns);
+    setSelectedReturns([]);
+    // Implementation would go here
+  };
+
+  const handleBulkReject = () => {
+    console.log("Bulk rejecting returns:", selectedReturns);
+    setSelectedReturns([]);
+    // Implementation would go here
   };
 
   return (
@@ -295,6 +580,13 @@ const ReturnsPage = () => {
             </div>
             <div className="flex items-center space-x-3">
               <button
+                onClick={handleAnalytics}
+                className="flex items-center space-x-2 px-4 py-2 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
+              >
+                <TrendingUp className="w-4 h-4" />
+                <span>Analytics</span>
+              </button>
+              <button
                 onClick={exportReturns}
                 className="flex items-center space-x-2 px-4 py-2 border border-orange-200 text-orange-700 rounded-lg hover:bg-orange-50 transition-colors"
               >
@@ -315,6 +607,54 @@ const ReturnsPage = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Quick Summary */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-lg p-4 border border-orange-100 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Returns</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {summaryStats.total}
+                </p>
+              </div>
+              <RotateCcw className="w-8 h-8 text-orange-500" />
+            </div>
+          </div>
+          <div className="bg-white rounded-lg p-4 border border-blue-100 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Pending</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {summaryStats.pending}
+                </p>
+              </div>
+              <Clock className="w-8 h-8 text-blue-500" />
+            </div>
+          </div>
+          <div className="bg-white rounded-lg p-4 border border-green-100 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Processed</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {summaryStats.processed}
+                </p>
+              </div>
+              <CheckCircle className="w-8 h-8 text-green-500" />
+            </div>
+          </div>
+          <div className="bg-white rounded-lg p-4 border border-purple-100 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Value</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  ₦{summaryStats.totalValue.toLocaleString()}
+                </p>
+              </div>
+              <DollarSign className="w-8 h-8 text-purple-500" />
+            </div>
+          </div>
+        </div>
+
         {/* Search and Filters */}
         <div className="bg-white rounded-xl shadow-lg border border-orange-100 p-6 mb-6">
           <div className="flex flex-col lg:flex-row gap-4">
@@ -421,7 +761,7 @@ const ReturnsPage = () => {
         </div>
 
         {/* Results Summary */}
-        <div className="mb-6 flex justify-between items-center">
+        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <p className="text-gray-600">
             Showing {filteredAndSortedReturns.length} of{" "}
             {mockReturnRequests.length} returns
@@ -434,12 +774,58 @@ const ReturnsPage = () => {
           </div>
         </div>
 
+        {/* Bulk Actions */}
+        {selectedReturns.length > 0 && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="text-sm text-blue-700">
+                {selectedReturns.length} return
+                {selectedReturns.length > 1 ? "s" : ""} selected
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleBulkApprove}
+                  className="flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Approve All</span>
+                </button>
+                <button
+                  onClick={handleBulkReject}
+                  className="flex items-center space-x-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                >
+                  <XCircle className="w-4 h-4" />
+                  <span>Reject All</span>
+                </button>
+                <button
+                  onClick={() => setSelectedReturns([])}
+                  className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                >
+                  Clear Selection
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Returns Table */}
         <div className="bg-white rounded-xl shadow-lg border border-orange-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
+                  <th className="px-6 py-4 text-left">
+                    <input
+                      type="checkbox"
+                      checked={
+                        selectedReturns.length ===
+                          filteredAndSortedReturns.length &&
+                        filteredAndSortedReturns.length > 0
+                      }
+                      onChange={handleSelectAll}
+                      className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                    />
+                  </th>
                   <th className="px-6 py-4 text-left">
                     <button
                       onClick={() => handleSort("date")}
@@ -496,6 +882,14 @@ const ReturnsPage = () => {
               <tbody className="divide-y divide-gray-200">
                 {filteredAndSortedReturns.map((returnRequest) => (
                   <tr key={returnRequest.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedReturns.includes(returnRequest.id)}
+                        onChange={() => handleSelectReturn(returnRequest.id)}
+                        className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">
                         {new Date(
@@ -809,6 +1203,69 @@ const ReturnsPage = () => {
           </div>
         </div>
       )}
+
+      {/* Analytics Modal */}
+      {showAnalytics && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">
+                  Return Analytics Dashboard
+                </h2>
+                <button
+                  onClick={() => setShowAnalytics(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <ReturnAnalyticsDashboard
+                returns={mockReturnRequests}
+                salesData={Object.values(customerTransactions)
+                  .flat()
+                  .map((tx) => ({
+                    id: tx.id,
+                    customerId: parseInt(
+                      Object.keys(customerTransactions).find((custId) =>
+                        customerTransactions[parseInt(custId)].some(
+                          (t) => t.id === tx.id
+                        )
+                      ) || "0"
+                    ),
+                    date: tx.date,
+                    total: tx.amount,
+                    items: [],
+                  }))}
+                dateRange={{ start: new Date(2025, 0, 1), end: new Date() }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Return Modal */}
+      <ReturnModal
+        show={showReturnModal}
+        onClose={() => setShowReturnModal(false)}
+        customers={customers}
+        customerTransactions={customerTransactions}
+      />
+
+      {/* Process Return Modal */}
+      <ProcessReturnModal
+        show={showProcessModal}
+        onClose={() => setShowProcessModal(false)}
+        returnRequest={selectedReturn}
+        onProcess={() => {
+          setShowProcessModal(false);
+          setSelectedReturn(null);
+          // In real app, process the return with decision and notes
+        }}
+      />
     </div>
   );
 };

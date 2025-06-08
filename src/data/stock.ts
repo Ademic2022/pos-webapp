@@ -23,6 +23,12 @@ export const dashboardStat: DashboardStats = {
     debtValue: 230000,
     customerCount: 34,
   },
+  returns: {
+    totalReturns: 15,
+    totalRefundValue: 82500,
+    pendingReturns: 5,
+    processedReturns: 10,
+  },
   stockData: {
     id: 101,
     amount: 9200, // litres delivered

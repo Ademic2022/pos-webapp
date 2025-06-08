@@ -8,6 +8,40 @@ import {
   DollarSign,
 } from "lucide-react";
 
+interface ReturnProcessData {
+  returnId: string;
+  decision: "approved" | "rejected";
+  refundMethod: "cash" | "credit" | "transfer";
+  refundAmount: number;
+  notes: string;
+  processedBy: string;
+  processedDate: string;
+  restockItems: boolean;
+  generateReceipt: boolean;
+  auditTrail: {
+    action: string;
+    timestamp: string;
+    user: string;
+    details: {
+      originalTransaction: string;
+      customer: string;
+      refundMethod: string;
+      amount: number;
+    };
+  };
+}
+
+interface ReturnItem {
+  name: string;
+  quantity: number;
+  price: number;
+  total: number;
+}
+
+interface ReceiptData {
+  returnId: string;
+}
+
 interface ReturnRequest {
   id: string;
   originalTransactionId: string;
@@ -51,34 +85,103 @@ const ProcessReturnModal: React.FC<ProcessReturnModalProps> = ({
   >("credit");
   const [partialRefund, setPartialRefund] = useState(false);
   const [partialAmount, setPartialAmount] = useState(0);
+  const [restockItems, setRestockItems] = useState(true);
+  const [generateReceipt, setGenerateReceipt] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleProcess = () => {
+  const handleProcess = async () => {
     if (!decision || !returnRequest) return;
 
-    // In a real app, you would:
-    // 1. Update the return status in the database
-    // 2. If approved:
-    //    - Process refund based on method
-    //    - Update customer balance
-    //    - Restore stock quantities
-    //    - Create return transaction record
-    // 3. Send notification to customer
-    // 4. Generate return receipt
+    setIsProcessing(true);
 
-    console.log("Processing return:", {
-      returnId: returnRequest.id,
-      decision,
-      refundMethod,
-      refundAmount: partialRefund
-        ? partialAmount
-        : returnRequest.totalRefundAmount,
-      notes: processingNotes,
-      processedBy: "Admin", // In real app, use authenticated user
-      processedDate: new Date().toISOString(),
-    });
+    try {
+      // Create comprehensive return processing data
+      const processData = {
+        returnId: returnRequest.id,
+        decision,
+        refundMethod,
+        refundAmount: partialRefund
+          ? partialAmount
+          : returnRequest.totalRefundAmount,
+        notes: processingNotes,
+        processedBy: "Admin", // In real app, use authenticated user
+        processedDate: new Date().toISOString(),
+        restockItems,
+        generateReceipt,
+        // Audit trail
+        auditTrail: {
+          action: `Return ${decision}`,
+          timestamp: new Date().toISOString(),
+          user: "Admin",
+          details: {
+            originalTransaction: returnRequest.originalTransactionId,
+            customer: returnRequest.customerName,
+            refundMethod,
+            amount: finalRefundAmount,
+          },
+        },
+      };
 
-    onProcess(decision, processingNotes);
-    resetForm();
+      // Simulate API call with processing steps
+      if (decision === "approved") {
+        // Step 1: Process refund
+        await simulateRefundProcessing(processData);
+
+        // Step 2: Update inventory if restocking
+        if (restockItems) {
+          await simulateInventoryUpdate(returnRequest.returnItems);
+        }
+
+        // Step 3: Update customer balance
+        await simulateCustomerBalanceUpdate(
+          returnRequest.customerId,
+          finalRefundAmount,
+          refundMethod
+        );
+
+        // Step 4: Generate receipt if requested
+        if (generateReceipt) {
+          await simulateReceiptGeneration(processData);
+        }
+      }
+
+      console.log("Return processed successfully:", processData);
+
+      onProcess(decision, processingNotes);
+      resetForm();
+    } catch (error) {
+      console.error("Error processing return:", error);
+      // In real app, show error notification
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Simulation functions (replace with real API calls)
+  const simulateRefundProcessing = async (data: ReturnProcessData) => {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    console.log("Refund processed:", data.refundAmount);
+  };
+
+  const simulateInventoryUpdate = async (items: ReturnItem[]) => {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    console.log("Inventory updated for returned items:", items);
+  };
+
+  const simulateCustomerBalanceUpdate = async (
+    customerId: number,
+    amount: number,
+    method: string
+  ) => {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    console.log(
+      `Customer ${customerId} balance updated: +₦${amount} via ${method}`
+    );
+  };
+
+  const simulateReceiptGeneration = async (data: ReceiptData) => {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    console.log("Return receipt generated:", data.returnId);
   };
 
   const resetForm = () => {
@@ -87,6 +190,9 @@ const ProcessReturnModal: React.FC<ProcessReturnModalProps> = ({
     setRefundMethod("credit");
     setPartialRefund(false);
     setPartialAmount(0);
+    setRestockItems(true);
+    setGenerateReceipt(true);
+    setIsProcessing(false);
   };
 
   const handleClose = () => {
@@ -346,6 +452,45 @@ const ProcessReturnModal: React.FC<ProcessReturnModalProps> = ({
                     )}
                   </div>
                 </div>
+
+                {/* Additional Processing Options */}
+                <div className="space-y-3 border-t border-green-200 pt-4">
+                  <h6 className="font-medium text-green-800 text-sm">
+                    Processing Options
+                  </h6>
+
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="restockItems"
+                      checked={restockItems}
+                      onChange={(e) => setRestockItems(e.target.checked)}
+                      className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                    />
+                    <label
+                      htmlFor="restockItems"
+                      className="text-sm text-green-700"
+                    >
+                      Restock returned items to inventory
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="generateReceipt"
+                      checked={generateReceipt}
+                      onChange={(e) => setGenerateReceipt(e.target.checked)}
+                      className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                    />
+                    <label
+                      htmlFor="generateReceipt"
+                      className="text-sm text-green-700"
+                    >
+                      Generate return receipt
+                    </label>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -401,9 +546,12 @@ const ProcessReturnModal: React.FC<ProcessReturnModalProps> = ({
             disabled={
               !decision ||
               (decision === "rejected" && !processingNotes.trim()) ||
-              (decision === "approved" && partialRefund && partialAmount <= 0)
+              (decision === "approved" &&
+                partialRefund &&
+                partialAmount <= 0) ||
+              isProcessing
             }
-            className={`px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 ${
               decision === "approved"
                 ? "bg-green-600 text-white hover:bg-green-700"
                 : decision === "rejected"
@@ -411,11 +559,18 @@ const ProcessReturnModal: React.FC<ProcessReturnModalProps> = ({
                 : "bg-gray-400 text-white"
             }`}
           >
-            {decision === "approved"
-              ? "Approve & Process Refund"
-              : decision === "rejected"
-              ? "Reject Return"
-              : "Select Decision"}
+            {isProcessing && (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            )}
+            <span>
+              {isProcessing
+                ? "Processing..."
+                : decision === "approved"
+                ? "Approve & Process Refund"
+                : decision === "rejected"
+                ? "Reject Return"
+                : "Select Decision"}
+            </span>
           </button>
         </div>
       </div>
