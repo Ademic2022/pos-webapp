@@ -10,53 +10,36 @@ import {
   Trash2,
   Search,
   Filter,
+  Save,
+  X,
 } from "lucide-react";
+import { products } from "@/data/sales";
 
 const InventorySettingsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [editingPrice, setEditingPrice] = useState<string | null>(null);
+  const [tempPrice, setTempPrice] = useState<string>("");
 
-  const inventoryCategories = [
-    {
-      id: 1,
-      name: "Groundnut Oil - 1L",
-      stock: 150,
-      minStock: 20,
-      unit: "bottles",
-      status: "In Stock",
-    },
-    {
-      id: 2,
-      name: "Groundnut Oil - 5L",
-      stock: 80,
-      minStock: 15,
-      unit: "bottles",
-      status: "In Stock",
-    },
-    {
-      id: 3,
-      name: "Groundnut Oil - 15L",
-      stock: 5,
-      minStock: 10,
-      unit: "bottles",
-      status: "Low Stock",
-    },
-    {
-      id: 4,
-      name: "Coconut Oil - 1L",
-      stock: 25,
-      minStock: 10,
-      unit: "bottles",
-      status: "In Stock",
-    },
-    {
-      id: 5,
-      name: "Sesame Oil - 500ml",
-      stock: 0,
-      minStock: 5,
-      unit: "bottles",
-      status: "Out of Stock",
-    },
+  // Flatten all products from wholesale and retail
+  const allProducts = [
+    ...products.wholesale.map((p) => ({
+      ...p,
+      category: "wholesale" as const,
+    })),
+    ...products.retail.map((p) => ({ ...p, category: "retail" as const })),
   ];
+
+  // Filter products based on search
+  const filteredProducts = allProducts.filter((product) =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Calculate status based on stock levels
+  const getProductStatus = (stock: number) => {
+    if (stock === 0) return "Out of Stock";
+    if (stock <= 10) return "Low Stock";
+    return "In Stock";
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -69,6 +52,45 @@ const InventorySettingsPage: React.FC = () => {
       default:
         return "text-gray-600 bg-gray-100";
     }
+  };
+
+  // Count products by status
+  const statusCounts = {
+    total: allProducts.length,
+    inStock: allProducts.filter((p) => getProductStatus(p.stock) === "In Stock")
+      .length,
+    lowStock: allProducts.filter(
+      (p) => getProductStatus(p.stock) === "Low Stock"
+    ).length,
+    outOfStock: allProducts.filter(
+      (p) => getProductStatus(p.stock) === "Out of Stock"
+    ).length,
+  };
+
+  const handleEditPrice = (productId: string, currentPrice: number) => {
+    setEditingPrice(productId);
+    setTempPrice(currentPrice.toString());
+  };
+
+  const handleSavePrice = (productId: string) => {
+    // Here you would typically update the price in your data store
+    console.log(`Updating price for ${productId} to ${tempPrice}`);
+    setEditingPrice(null);
+    setTempPrice("");
+    // TODO: Implement actual price update logic
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPrice(null);
+    setTempPrice("");
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      minimumFractionDigits: 0,
+    }).format(price);
   };
 
   return (
@@ -84,7 +106,7 @@ const InventorySettingsPage: React.FC = () => {
               >
                 <ArrowLeft className="w-5 h-5 text-orange-600" />
               </Link>
-              
+
               <div>
                 <h1 className="text-xl font-bold text-gray-900">
                   Inventory Settings
@@ -133,7 +155,9 @@ const InventorySettingsPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Total Products</p>
-                  <p className="text-2xl font-bold text-gray-900">5</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {statusCounts.total}
+                  </p>
                 </div>
               </div>
             </div>
@@ -145,7 +169,9 @@ const InventorySettingsPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">In Stock</p>
-                  <p className="text-2xl font-bold text-gray-900">3</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {statusCounts.inStock}
+                  </p>
                 </div>
               </div>
             </div>
@@ -157,7 +183,9 @@ const InventorySettingsPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Low Stock</p>
-                  <p className="text-2xl font-bold text-gray-900">1</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {statusCounts.lowStock}
+                  </p>
                 </div>
               </div>
             </div>
@@ -169,7 +197,9 @@ const InventorySettingsPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Out of Stock</p>
-                  <p className="text-2xl font-bold text-gray-900">1</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {statusCounts.outOfStock}
+                  </p>
                 </div>
               </div>
             </div>
@@ -193,10 +223,13 @@ const InventorySettingsPage: React.FC = () => {
                       Product Name
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Category
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Current Stock
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                      Min. Stock
+                      Price
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Status
@@ -207,60 +240,124 @@ const InventorySettingsPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-orange-100">
-                  {inventoryCategories.map((product) => (
-                    <tr
-                      key={product.id}
-                      className="hover:bg-orange-50 transition-colors"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-amber-100 rounded-lg flex items-center justify-center mr-3">
-                            <Package className="w-5 h-5 text-orange-600" />
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {product.name}
+                  {filteredProducts.map((product) => {
+                    const status = getProductStatus(product.stock);
+                    return (
+                      <tr
+                        key={product.id}
+                        className="hover:bg-orange-50 transition-colors"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-amber-100 rounded-lg flex items-center justify-center mr-3">
+                              <Package className="w-5 h-5 text-orange-600" />
                             </div>
-                            <div className="text-sm text-gray-500">
-                              Unit: {product.unit}
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {product.name}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                Unit: {product.unit}{" "}
+                                {product.category === "wholesale"
+                                  ? "Drum"
+                                  : "Keg"}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 font-medium">
-                          {product.stock}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {product.unit}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {product.minStock}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                            product.status
-                          )}`}
-                        >
-                          {product.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button className="text-orange-600 hover:text-orange-800 p-1 rounded-lg hover:bg-orange-50 transition-colors">
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button className="text-red-600 hover:text-red-800 p-1 rounded-lg hover:bg-red-50 transition-colors">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              product.category === "wholesale"
+                                ? "bg-purple-100 text-purple-800"
+                                : "bg-blue-100 text-blue-800"
+                            }`}
+                          >
+                            {product.category === "wholesale"
+                              ? "Wholesale"
+                              : "Retail"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900 font-medium">
+                            {product.stock}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {product.category === "wholesale"
+                              ? "Drums"
+                              : "Kegs"}{" "}
+                            available
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {editingPrice === product.id ? (
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="number"
+                                value={tempPrice}
+                                onChange={(e) => setTempPrice(e.target.value)}
+                                className="w-24 px-2 py-1 text-sm border border-orange-300 rounded focus:outline-none focus:ring-1 focus:ring-orange-500"
+                                autoFocus
+                              />
+                              <button
+                                onClick={() => handleSavePrice(product.id)}
+                                className="p-1 text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition-colors"
+                              >
+                                <Save className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={handleCancelEdit}
+                                className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center space-x-2">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {formatPrice(product.price)}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  per{" "}
+                                  {product.category === "wholesale"
+                                    ? "drum"
+                                    : "keg"}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() =>
+                                  handleEditPrice(product.id, product.price)
+                                }
+                                className="p-1 text-orange-600 hover:text-orange-800 hover:bg-orange-50 rounded transition-colors"
+                              >
+                                <Edit className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                              status
+                            )}`}
+                          >
+                            {status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            <button className="text-orange-600 hover:text-orange-800 p-1 rounded-lg hover:bg-orange-50 transition-colors">
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button className="text-red-600 hover:text-red-800 p-1 rounded-lg hover:bg-red-50 transition-colors">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
