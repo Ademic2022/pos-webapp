@@ -69,19 +69,6 @@ const InventorySettingsPage: React.FC = () => {
     }
   };
 
-  // Count products by status
-  const statusCounts = {
-    total: allProducts.length,
-    inStock: allProducts.filter((p) => getProductStatus(p.stock) === "In Stock")
-      .length,
-    lowStock: allProducts.filter(
-      (p) => getProductStatus(p.stock) === "Low Stock"
-    ).length,
-    outOfStock: allProducts.filter(
-      (p) => getProductStatus(p.stock) === "Out of Stock"
-    ).length,
-  };
-
   const handleEditPrice = (productId: string, currentPrice: number) => {
     setEditingPrice(productId);
     setTempPrice(currentPrice.toString());
