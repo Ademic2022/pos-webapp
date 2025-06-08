@@ -563,11 +563,10 @@ const ReturnsPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
-              <Link
-                href="/"
-                className="p-2 hover:bg-orange-100 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
+              <Link href="/">
+                <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
+                  <ArrowLeft className="w-5 h-5 text-orange-600" />
+                </button>
               </Link>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">

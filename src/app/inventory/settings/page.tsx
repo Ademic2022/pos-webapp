@@ -84,6 +84,7 @@ const InventorySettingsPage: React.FC = () => {
               >
                 <ArrowLeft className="w-5 h-5 text-orange-600" />
               </Link>
+              
               <div>
                 <h1 className="text-xl font-bold text-gray-900">
                   Inventory Settings
