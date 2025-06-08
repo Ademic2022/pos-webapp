@@ -41,7 +41,7 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
     if (validationError) {
       setValidationError("");
     }
-  }, [formData]);
+  }, [formData, validationError]);
 
   const validateForm = (): boolean => {
     if (!formData.name?.trim()) {
@@ -62,7 +62,7 @@ const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
     return true;
   };
 
-  const handleInputChange = (field: keyof Customer, value: any) => {
+  const handleInputChange = (field: keyof Customer, value: string | number) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
