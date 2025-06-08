@@ -20,7 +20,8 @@ type PermissionType =
   | "PROCESS_RETURNS"
   | "VALIDATE_SALES"
   | "MANAGE_STOCK"
-  | "VIEW_FINANCIAL_DATA";
+  | "VIEW_FINANCIAL_DATA"
+  | "NEW_SALE";
 ```
 
 ### User Roles and Permissions
@@ -37,6 +38,7 @@ type PermissionType =
   - `EDIT_CUSTOMER_DETAILS`
   - `PROCESS_RETURNS`
   - `MANAGE_STOCK`
+  - `NEW_SALE`
 
 #### Regular User (is_staff: false, is_superuser: false)
 - **Access Level**: Very limited access
@@ -126,7 +128,11 @@ These pages require specific permissions:
    - **Required Permission**: `VIEW_REPORTS`
    - **Access**: All authenticated users (but content may vary by role)
 
-3. **Inventory Settings** (`/inventory/settings`)
+3. **Sales Creation** (`/sales`)
+   - **Required Permission**: `NEW_SALE`
+   - **Access**: Staff+ (Superuser and Staff roles)
+
+4. **Inventory Settings** (`/inventory/settings`)
    - **Required Permission**: `VIEW_INVENTORY_SETTINGS`
    - **Access**: Superuser only
 
@@ -201,6 +207,7 @@ export const loggedInUser: User = {
 - [ ] Navigate to `/settings` - should show appropriate access control
 - [ ] Navigate to `/validate-sales` - should show appropriate access control
 - [ ] Navigate to `/reports` - should show appropriate access control
+- [ ] Navigate to `/sales` - should show appropriate access control (NEW_SALE permission)
 - [ ] Navigate to `/inventory/settings` - should show appropriate access control
 
 #### UI Element Tests

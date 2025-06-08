@@ -25,7 +25,8 @@ type PermissionType =
   | "PROCESS_RETURNS"
   | "VALIDATE_SALES"
   | "MANAGE_STOCK"
-  | "VIEW_FINANCIAL_DATA";
+  | "VIEW_FINANCIAL_DATA"
+  | "NEW_SALE";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -63,6 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         "EDIT_CUSTOMER_DETAILS",
         "PROCESS_RETURNS",
         "MANAGE_STOCK",
+        "NEW_SALE",
       ];
       return staffPermissions.includes(permission);
     }

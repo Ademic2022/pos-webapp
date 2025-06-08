@@ -11,7 +11,7 @@ const SalesPage = () => {
   });
 
   return (
-    <ProtectedRoute requiredPermission="VALIDATE_SALES">
+    <ProtectedRoute requiredPermission="NEW_SALE">
       <NewSalePage />
     </ProtectedRoute>
   );
