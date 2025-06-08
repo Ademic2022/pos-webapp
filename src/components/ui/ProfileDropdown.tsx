@@ -154,11 +154,11 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
           <div className="border-t border-gray-100 py-2">
             <button
               onClick={handleLogout}
-              className="flex items-center w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+              className="flex items-start w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
             >
               <LogOut className="w-5 h-5 mr-3" />
-              <div>
-                <p className="font-medium">Sign Out</p>
+              <div className="text-left">
+                <p className="font-medium m-0 p-0">Sign Out</p>
                 <p className="text-xs text-red-400">Log out of your account</p>
               </div>
             </button>
