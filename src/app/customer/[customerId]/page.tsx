@@ -26,18 +26,18 @@ import {
   FileText,
   Receipt,
   Edit3,
-  MoreHorizontal,
   RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { CustomerTransaction } from "@/interfaces/interface";
+import { CustomerTransaction, Customer } from "@/interfaces/interface";
 import {
   customers as customerData,
   customerTransactions,
 } from "@/data/customers";
 import { StatsCard } from "@/components/cards/statCard";
 import { usePageLoading } from "@/hooks/usePageLoading";
+import EditCustomerModal from "@/components/modals/editCustomerModal";
 
 interface TransactionFilters {
   dateRange: "all" | "week" | "month" | "quarter" | "year";
@@ -83,6 +83,15 @@ const CustomerDetailPage = () => {
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [selectedTransaction, setSelectedTransaction] =
     useState<CustomerTransaction | null>(null);
+
+  // Modal state management
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
+  const [customerData_, setCustomerData_] = useState<Customer | null>(
+    customer || null
+  );
+
+  // Use the managed customer data or fallback to original
+  const currentCustomer = customerData_ || customer;
 
   // Filter and sort transactions
   const filteredAndSortedTransactions = useMemo(() => {
@@ -201,8 +210,40 @@ const CustomerDetailPage = () => {
     };
   }, [transactions]);
 
+  // Handler functions for modal
+  const handleOpenEditModal = () => {
+    setShowEditModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+  };
+
+  const handleSaveCustomer = async (updatedCustomer: Customer) => {
+    try {
+      // Simulate API call - in real app, this would be an API request
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Update local customer data state
+      setCustomerData_(updatedCustomer);
+
+      // Close modal
+      setShowEditModal(false);
+
+      // In a real application, you would also:
+      // 1. Make an API call to update the customer in the backend
+      // 2. Show a success notification
+      // 3. Potentially refresh the customer data from the server
+
+      console.log("Customer updated successfully:", updatedCustomer);
+    } catch (error) {
+      console.error("Error updating customer:", error);
+      // In a real app, show error notification
+    }
+  };
+
   // Early return after all hooks are declared
-  if (!customer) {
+  if (!currentCustomer) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 flex items-center justify-center">
         <div className="text-center">
@@ -297,18 +338,18 @@ const CustomerDetailPage = () => {
                 </Link>
                 <span className="text-gray-400">/</span>
                 <span className="text-gray-900 font-medium">
-                  {customer.name}
+                  {currentCustomer.name}
                 </span>
               </nav>
             </div>
 
             {/* Actions */}
             <div className="flex items-center space-x-3">
-              <button className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors">
+              <button
+                onClick={handleOpenEditModal}
+                className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors"
+              >
                 <Edit3 className="w-5 h-5" />
-              </button>
-              <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                <MoreHorizontal className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -322,7 +363,7 @@ const CustomerDetailPage = () => {
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-4">
                 <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                  {customer.type === "wholesale" ? (
+                  {currentCustomer.type === "wholesale" ? (
                     <Building className="w-8 h-8 text-white" />
                   ) : (
                     <User className="w-8 h-8 text-white" />
@@ -330,20 +371,20 @@ const CustomerDetailPage = () => {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-white mb-1">
-                    {customer.name}
+                    {currentCustomer.name}
                   </h1>
                   <div className="flex items-center space-x-4 text-orange-100">
                     <span className="text-sm font-medium capitalize">
-                      {customer.type} Customer
+                      {currentCustomer.type} Customer
                     </span>
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        customer.status === "active"
+                        currentCustomer.status === "active"
                           ? "bg-green-100 text-green-800"
                           : "bg-yellow-100 text-yellow-800"
                       }`}
                     >
-                      {customer.status}
+                      {currentCustomer.status}
                     </span>
                   </div>
                 </div>
@@ -351,7 +392,7 @@ const CustomerDetailPage = () => {
               <div className="text-right">
                 <div className="text-white/80 text-sm">Customer ID</div>
                 <div className="text-white font-mono text-lg">
-                  #{customer.id}
+                  #{currentCustomer.id}
                 </div>
               </div>
             </div>
@@ -368,22 +409,22 @@ const CustomerDetailPage = () => {
                   <div className="flex items-center space-x-3">
                     <Phone className="w-4 h-4 text-gray-400" />
                     <span className="text-sm text-gray-900">
-                      {customer.phone}
+                      {currentCustomer.phone}
                     </span>
                   </div>
-                  {customer.email && (
+                  {currentCustomer.email && (
                     <div className="flex items-center space-x-3">
                       <Mail className="w-4 h-4 text-gray-400" />
                       <span className="text-sm text-gray-900">
-                        {customer.email}
+                        {currentCustomer.email}
                       </span>
                     </div>
                   )}
-                  {customer.address && (
+                  {currentCustomer.address && (
                     <div className="flex items-start space-x-3">
                       <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
                       <span className="text-sm text-gray-900">
-                        {customer.address}
+                        {currentCustomer.address}
                       </span>
                     </div>
                   )}
@@ -402,11 +443,11 @@ const CustomerDetailPage = () => {
                     </span>
                     <span
                       className={`font-medium ${getBalanceColor(
-                        customer.balance
+                        currentCustomer.balance
                       )}`}
                     >
-                      ₦{Math.abs(customer.balance).toLocaleString()}
-                      {customer.balance < 0 && (
+                      ₦{Math.abs(currentCustomer.balance).toLocaleString()}
+                      {currentCustomer.balance < 0 && (
                         <span className="text-xs ml-1">(debt)</span>
                       )}
                     </span>
@@ -414,7 +455,7 @@ const CustomerDetailPage = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Credit Limit</span>
                     <span className="font-medium text-gray-900">
-                      ₦{customer.creditLimit.toLocaleString()}
+                      ₦{currentCustomer.creditLimit.toLocaleString()}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -424,7 +465,8 @@ const CustomerDetailPage = () => {
                     <span className="font-medium text-orange-600">
                       ₦
                       {(
-                        customer.creditLimit + Math.min(0, customer.balance)
+                        currentCustomer.creditLimit +
+                        Math.min(0, currentCustomer.balance)
                       ).toLocaleString()}
                     </span>
                   </div>
@@ -442,19 +484,19 @@ const CustomerDetailPage = () => {
                       Total Purchases
                     </span>
                     <span className="font-medium text-gray-900">
-                      ₦{customer.totalPurchases.toLocaleString()}
+                      ₦{currentCustomer.totalPurchases.toLocaleString()}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Last Purchase</span>
                     <span className="text-sm text-gray-900">
-                      {customer.lastPurchase || "Never"}
+                      {currentCustomer.lastPurchase || "Never"}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Member Since</span>
                     <span className="text-sm text-gray-900">
-                      {new Date(customer.joinDate).toLocaleDateString()}
+                      {new Date(currentCustomer.joinDate).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
@@ -472,7 +514,7 @@ const CustomerDetailPage = () => {
                       <span>New Sale</span>
                     </button>
                   </Link>
-                  {customer.balance < 0 && (
+                  {currentCustomer.balance < 0 && (
                     <button className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm">
                       <DollarSign className="w-4 h-4" />
                       <span>Record Payment</span>
@@ -1035,6 +1077,14 @@ const CustomerDetailPage = () => {
           </div>
         </div>
       )}
+
+      {/* Edit Customer Modal */}
+      <EditCustomerModal
+        isOpen={showEditModal}
+        onClose={handleCloseEditModal}
+        customer={currentCustomer}
+        onSave={handleSaveCustomer}
+      />
     </div>
   );
 };
