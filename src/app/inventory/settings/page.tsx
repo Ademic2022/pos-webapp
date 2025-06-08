@@ -12,8 +12,14 @@ import {
   Filter,
   Save,
   X,
+  Cylinder,
+  Droplets,
 } from "lucide-react";
 import { products } from "@/data/sales";
+import { InventoryCard } from "@/components/cards/inventoryCard";
+import { dashboardStat } from "@/data/stock";
+import { getFillDetails } from "@/utils/utils";
+import { KEG_CAPACITY } from "@/data/constants";
 
 const InventorySettingsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,6 +34,15 @@ const InventorySettingsPage: React.FC = () => {
     })),
     ...products.retail.map((p) => ({ ...p, category: "retail" as const })),
   ];
+
+  const stock = dashboardStat.stockData;
+  const {
+    totalDrums,
+    totalKegs,
+    remainingKegs,
+    remainingLitres,
+    totalAvailableStock,
+  } = getFillDetails();
 
   // Filter products based on search
   const filteredProducts = allProducts.filter((product) =>
@@ -146,63 +161,46 @@ const InventorySettingsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Inventory Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white rounded-xl shadow-lg border border-orange-100 p-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-emerald-100 rounded-lg flex items-center justify-center">
-                  <Package className="w-6 h-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Total Products</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {statusCounts.total}
-                  </p>
-                </div>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            {/* Total Litres */}
+            <InventoryCard
+              value={totalAvailableStock}
+              unit="Litres"
+              icon={Droplets}
+              footerText="Total Available"
+            />
 
-            <div className="bg-white rounded-xl shadow-lg border border-orange-100 p-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-lg flex items-center justify-center">
-                  <Package className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">In Stock</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {statusCounts.inStock}
-                  </p>
-                </div>
-              </div>
-            </div>
+            {/* Total Drums */}
+            <InventoryCard
+              value={totalDrums}
+              unit="Drums"
+              icon={Cylinder}
+              iconBg="bg-green-100"
+              iconColor="text-green-600"
+              footerText={`${totalDrums} Drums ${Math.floor(
+                remainingKegs / KEG_CAPACITY
+              )} Kegs`}
+            />
 
-            <div className="bg-white rounded-xl shadow-lg border border-orange-100 p-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-amber-100 rounded-lg flex items-center justify-center">
-                  <Package className="w-6 h-6 text-yellow-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Low Stock</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {statusCounts.lowStock}
-                  </p>
-                </div>
-              </div>
-            </div>
+            {/* Total Kegs */}
+            <InventoryCard
+              value={totalKegs}
+              unit="Kegs"
+              icon={Cylinder}
+              iconColor="text-orange-600"
+              iconBg="bg-orange-100"
+              footerText={`${totalKegs} Kegs (${remainingLitres} Litres)`}
+            />
 
-            <div className="bg-white rounded-xl shadow-lg border border-orange-100 p-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-red-100 to-rose-100 rounded-lg flex items-center justify-center">
-                  <Package className="w-6 h-6 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Out of Stock</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {statusCounts.outOfStock}
-                  </p>
-                </div>
-              </div>
-            </div>
+            {/* Total Sold */}
+            <InventoryCard
+              value={stock?.soldStock || 0}
+              unit="Litres"
+              icon={Droplets}
+              iconBg="bg-blue-100"
+              iconColor="text-blue-600"
+              footerText="Total Sold Stock"
+            />
           </div>
 
           {/* Product List */}
