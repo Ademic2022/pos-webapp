@@ -8,27 +8,17 @@ import {
   CheckCircle,
   XCircle,
 } from "lucide-react";
-import { Customer, CustomerTransaction } from "@/interfaces/interface";
+import {
+  Customer,
+  CustomerTransaction,
+  ReturnModalProps,
+  ReturnItem,
+} from "@/interfaces/interface";
 import {
   ReturnValidator,
   ReturnValidationContext,
   ReturnValidationResult,
 } from "@/utils/returnValidator";
-
-interface ReturnModalProps {
-  show: boolean;
-  onClose: () => void;
-  customers: Customer[];
-  customerTransactions: Record<number, CustomerTransaction[]>;
-}
-
-interface ReturnItem {
-  name: string;
-  quantity: number;
-  price: number;
-  total: number;
-  maxQuantity: number;
-}
 
 const ReturnModal: React.FC<ReturnModalProps> = ({
   show,
@@ -132,7 +122,8 @@ const ReturnModal: React.FC<ReturnModalProps> = ({
     setReturnItems((prev) =>
       prev.map((item, i) => {
         if (i === index) {
-          const newQuantity = Math.min(Math.max(0, value), item.maxQuantity);
+          const maxQty = item.maxQuantity || 0;
+          const newQuantity = Math.min(Math.max(0, value), maxQty);
           return {
             ...item,
             [field]: newQuantity,

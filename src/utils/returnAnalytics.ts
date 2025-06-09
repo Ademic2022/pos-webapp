@@ -1,5 +1,6 @@
 // Return Analytics Engine for comprehensive return analysis and reporting
 
+// Local interfaces specific to analytics processing
 interface ReturnAnalyticsData {
   id: string;
   originalTransactionId: string;

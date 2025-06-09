@@ -2,15 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { X, User, Building, Loader2 } from "lucide-react";
-import { Customer } from "@/interfaces/interface";
+import { Customer, EditCustomerModalProps } from "@/interfaces/interface";
 import ProtectedElement from "@/components/auth/ProtectedElement";
-
-interface EditCustomerModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  customer: Customer | null;
-  onSave: (updatedCustomer: Customer) => void;
-}
 
 const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
   isOpen,

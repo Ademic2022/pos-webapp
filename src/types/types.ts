@@ -46,6 +46,7 @@ export type Transactions = {
   wholeSales: number;
   retails: number;
 };
+
 export type Debt = {
   debtValue: number;
   customerCount: number;
@@ -67,4 +68,31 @@ export type DashboardStats = {
   totalLitres: number;
   totalCustomers: number;
   totalDeliveries: number;
+};
+
+// Permission types from AuthContext
+export type PermissionType =
+  | "VIEW_INVENTORY_SETTINGS"
+  | "EDIT_PRICES"
+  | "DELETE_PRODUCTS"
+  | "MANAGE_USERS"
+  | "VIEW_REPORTS"
+  | "EDIT_CUSTOMER_DETAILS"
+  | "DELETE_CUSTOMERS"
+  | "PROCESS_RETURNS"
+  | "VALIDATE_SALES"
+  | "MANAGE_STOCK"
+  | "VIEW_FINANCIAL_DATA"
+  | "NEW_SALE";
+
+// Filter and Sort Options Types
+export type FilterOptions = {
+  status: "all" | "pending" | "approved" | "rejected" | "processed";
+  dateRange: "all" | "today" | "week" | "month";
+  reason: "all" | "quality" | "damaged" | "wrong_quantity" | "customer_changed_mind" | "excess" | "other";
+};
+
+export type SortOptions = {
+  field: "date" | "customer" | "amount" | "status";
+  direction: "asc" | "desc";
 };

@@ -3,15 +3,9 @@ import React, { useState } from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useAsyncLoading } from "@/hooks/usePageLoading";
 import ProtectedElement from "@/components/auth/ProtectedElement";
+import { DeleteCustomerModalProps } from "@/interfaces/interface";
 
-interface Props {
-  show: boolean;
-  customerName: string;
-  onClose: () => void;
-  onDelete: () => Promise<void> | void;
-}
-
-const DeleteCustomerModal: React.FC<Props> = ({
+const DeleteCustomerModal: React.FC<DeleteCustomerModalProps> = ({
   show,
   customerName,
   onClose,

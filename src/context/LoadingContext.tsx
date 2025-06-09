@@ -1,13 +1,10 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback } from "react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-
-interface LoadingContextType {
-  isLoading: boolean;
-  setLoading: (loading: boolean, text?: string) => void;
-  showPageLoader: (text?: string) => void;
-  hidePageLoader: () => void;
-}
+import {
+  LoadingContextType,
+  LoadingProviderProps,
+} from "@/interfaces/interface";
 
 const LoadingContext = createContext<LoadingContextType | undefined>(undefined);
 
@@ -18,10 +15,6 @@ export const useLoading = () => {
   }
   return context;
 };
-
-interface LoadingProviderProps {
-  children: React.ReactNode;
-}
 
 export const LoadingProvider: React.FC<LoadingProviderProps> = ({
   children,

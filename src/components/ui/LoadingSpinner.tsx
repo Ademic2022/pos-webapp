@@ -1,13 +1,7 @@
 "use client";
 import React from "react";
 import { Droplets } from "lucide-react";
-
-interface LoadingSpinnerProps {
-  size?: "sm" | "md" | "lg" | "xl";
-  text?: string;
-  fullScreen?: boolean;
-  variant?: "primary" | "secondary";
-}
+import { LoadingSpinnerProps } from "@/interfaces/interface";
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   size = "md",

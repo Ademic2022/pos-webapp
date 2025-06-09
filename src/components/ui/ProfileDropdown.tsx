@@ -12,12 +12,7 @@ import {
   Shield,
   FileText,
 } from "lucide-react";
-
-interface ProfileDropdownProps {
-  userName?: string;
-  userInitials?: string;
-  userEmail?: string;
-}
+import { ProfileDropdownProps } from "@/interfaces/interface";
 
 const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   userName = "Store Employee",

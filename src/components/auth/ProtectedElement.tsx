@@ -1,16 +1,8 @@
 "use client";
 
 import React from "react";
-import { useAuth, PermissionType } from "@/context/AuthContext";
-
-interface ProtectedElementProps {
-  children: React.ReactNode;
-  requireSuperuser?: boolean;
-  requireStaff?: boolean;
-  requiredPermission?: PermissionType;
-  fallback?: React.ReactNode;
-  hideIfNoAccess?: boolean;
-}
+import { useAuth } from "@/context/AuthContext";
+import { ProtectedElementProps } from "@/interfaces/interface";
 
 const ProtectedElement: React.FC<ProtectedElementProps> = ({
   children,

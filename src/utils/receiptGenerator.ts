@@ -1,23 +1,5 @@
 // Return Receipt Generator Utility
-export interface ReturnReceiptData {
-  returnId: string;
-  originalTransactionId: string;
-  customerId: number;
-  customerName: string;
-  returnDate: string;
-  processedBy: string;
-  refundMethod: "cash" | "credit" | "transfer";
-  returnItems: Array<{
-    name: string;
-    quantity: number;
-    price: number;
-    total: number;
-  }>;
-  originalRefundAmount: number;
-  actualRefundAmount: number;
-  reason: string;
-  notes?: string;
-}
+import { ReturnReceiptData } from "@/interfaces/interface";
 
 export class ReturnReceiptGenerator {
   private static formatCurrency(amount: number): string {

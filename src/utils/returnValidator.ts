@@ -1,6 +1,7 @@
 // Return Validation Rules and Business Logic
 import { CustomerTransaction } from "@/interfaces/interface";
 
+// Validator-specific interfaces (different structure from consolidated ones)
 export interface ReturnValidationRule {
   id: string;
   name: string;

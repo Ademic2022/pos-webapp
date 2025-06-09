@@ -5,17 +5,7 @@ import {
   CreditCard,
   RotateCcw,
 } from "lucide-react";
-
-interface DashboardCard {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  gradientFrom: string;
-  gradientTo: string;
-  textColor: string;
-  route: string;
-}
+import { DashboardCard } from "@/interfaces/interface";
 
 export const cardsData: DashboardCard[] = [
   {

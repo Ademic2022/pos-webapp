@@ -3,23 +3,7 @@
 import React from "react";
 import { X, Package } from "lucide-react";
 import ProtectedElement from "@/components/auth/ProtectedElement";
-
-interface EditPriceModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  selectedProduct: {
-    id: string;
-    name: string;
-    price: number;
-    stock: number;
-    unit: string;
-    category: "wholesale" | "retail";
-  } | null;
-  tempPrice: string;
-  setTempPrice: (value: string) => void;
-  onSave: () => void;
-  formatPrice: (price: number) => string;
-}
+import { EditPriceModalProps } from "@/interfaces/interface";
 
 const EditPriceModal: React.FC<EditPriceModalProps> = ({
   isOpen,

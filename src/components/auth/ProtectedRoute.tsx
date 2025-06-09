@@ -1,16 +1,9 @@
 "use client";
 
 import React from "react";
-import { useAuth, PermissionType } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
+import { ProtectedRouteProps } from "@/interfaces/interface";
 import { ShieldX, Lock } from "lucide-react";
-
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  requireSuperuser?: boolean;
-  requireStaff?: boolean;
-  requiredPermission?: PermissionType;
-  fallback?: React.ReactNode;
-}
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,

@@ -1,12 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import { useLoading } from "@/context/LoadingContext";
-
-interface UsePageLoadingOptions {
-  text?: string;
-  delay?: number;
-  minDuration?: number;
-}
+import { UsePageLoadingOptions } from "@/interfaces/interface";
 
 export const usePageLoading = (options: UsePageLoadingOptions = {}) => {
   const { showPageLoader, hidePageLoader } = useLoading();

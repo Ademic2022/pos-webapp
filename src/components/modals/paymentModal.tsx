@@ -3,24 +3,7 @@ import React, { useState } from "react";
 import { X, Loader2 } from "lucide-react";
 import { useAsyncLoading } from "@/hooks/usePageLoading";
 import ProtectedElement from "@/components/auth/ProtectedElement";
-
-interface Customer {
-  name: string;
-  balance: number;
-}
-
-interface PaymentModalProps {
-  show: boolean;
-  customer: Customer | null;
-  paymentAmount: number;
-  setPaymentAmount: (value: number) => void;
-  paymentMethod: string;
-  setPaymentMethod: (value: string) => void;
-  paymentNote: string;
-  setPaymentNote: (value: string) => void;
-  onClose: () => void;
-  onSubmit: () => Promise<void> | void;
-}
+import { PaymentModalProps } from "@/interfaces/interface";
 
 const PaymentModal: React.FC<PaymentModalProps> = ({
   show,

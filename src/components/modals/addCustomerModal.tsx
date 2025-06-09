@@ -1,18 +1,9 @@
 "use client";
 import React, { useState } from "react";
 import { X, Loader2 } from "lucide-react";
-import { Customer } from "@/interfaces/interface";
+import { AddCustomerModalProps } from "@/interfaces/interface";
 import { useAsyncLoading } from "@/hooks/usePageLoading";
 import ProtectedElement from "@/components/auth/ProtectedElement";
-
-interface AddCustomerModalProps {
-  show: boolean;
-  newCustomer: Partial<Customer>;
-  setNewCustomer: (customer: Partial<Customer>) => void;
-  onClose: () => void;
-  onSubmit: () => Promise<void> | void;
-  validationError?: string;
-}
 
 const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
   show,

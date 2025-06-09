@@ -24,7 +24,7 @@ import { usePageLoading } from "@/hooks/usePageLoading";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ProtectedElement from "@/components/auth/ProtectedElement";
 
-// Type definitions
+// Local transaction interfaces for this page
 interface Transaction {
   id: string;
   type: "sale" | "payment" | "credit" | "return";
@@ -47,7 +47,7 @@ interface TransactionItem {
   totalPrice: number;
 }
 
-interface FilterOptions {
+interface TransactionFilterOptions {
   dateRange: "today" | "week" | "month" | "custom" | "all";
   transactionType: "all" | "sale" | "payment" | "credit" | "return";
   customerType: "all" | "wholesale" | "retail";
@@ -55,7 +55,7 @@ interface FilterOptions {
   paymentMethod: "all" | "cash" | "transfer" | "credit";
 }
 
-interface SortOptions {
+interface TransactionSortOptions {
   field: "date" | "amount" | "customer" | "status";
   direction: "asc" | "desc";
 }
@@ -203,14 +203,14 @@ const TransactionHistoryPage: React.FC = () => {
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [filters, setFilters] = useState<FilterOptions>({
+  const [filters, setFilters] = useState<TransactionFilterOptions>({
     dateRange: "all",
     transactionType: "all",
     customerType: "all",
     paymentStatus: "all",
     paymentMethod: "all",
   });
-  const [sortBy, setSortBy] = useState<SortOptions>({
+  const [sortBy, setSortBy] = useState<TransactionSortOptions>({
     field: "date",
     direction: "desc",
   });
@@ -362,7 +362,7 @@ const TransactionHistoryPage: React.FC = () => {
     }
   };
 
-  const handleSort = (field: SortOptions["field"]): void => {
+  const handleSort = (field: TransactionSortOptions["field"]): void => {
     setSortBy((prev) => ({
       field,
       direction:
@@ -471,7 +471,7 @@ const TransactionHistoryPage: React.FC = () => {
                       setFilters((prev) => ({
                         ...prev,
                         transactionType:
-                          filter.key as FilterOptions["transactionType"],
+                          filter.key as TransactionFilterOptions["transactionType"],
                       }))
                     }
                     className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
@@ -501,7 +501,7 @@ const TransactionHistoryPage: React.FC = () => {
                         setFilters((prev) => ({
                           ...prev,
                           dateRange: e.target
-                            .value as FilterOptions["dateRange"],
+                            .value as TransactionFilterOptions["dateRange"],
                         }))
                       }
                       className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
@@ -524,7 +524,7 @@ const TransactionHistoryPage: React.FC = () => {
                         setFilters((prev) => ({
                           ...prev,
                           transactionType: e.target
-                            .value as FilterOptions["transactionType"],
+                            .value as TransactionFilterOptions["transactionType"],
                         }))
                       }
                       className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
@@ -547,7 +547,7 @@ const TransactionHistoryPage: React.FC = () => {
                         setFilters((prev) => ({
                           ...prev,
                           customerType: e.target
-                            .value as FilterOptions["customerType"],
+                            .value as TransactionFilterOptions["customerType"],
                         }))
                       }
                       className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
@@ -568,7 +568,7 @@ const TransactionHistoryPage: React.FC = () => {
                         setFilters((prev) => ({
                           ...prev,
                           paymentStatus: e.target
-                            .value as FilterOptions["paymentStatus"],
+                            .value as TransactionFilterOptions["paymentStatus"],
                         }))
                       }
                       className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
@@ -590,7 +590,7 @@ const TransactionHistoryPage: React.FC = () => {
                         setFilters((prev) => ({
                           ...prev,
                           paymentMethod: e.target
-                            .value as FilterOptions["paymentMethod"],
+                            .value as TransactionFilterOptions["paymentMethod"],
                         }))
                       }
                       className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"

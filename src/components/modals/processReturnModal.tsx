@@ -7,68 +7,12 @@ import {
   Package,
   DollarSign,
 } from "lucide-react";
-
-interface ReturnProcessData {
-  returnId: string;
-  decision: "approved" | "rejected";
-  refundMethod: "cash" | "credit" | "transfer";
-  refundAmount: number;
-  notes: string;
-  processedBy: string;
-  processedDate: string;
-  restockItems: boolean;
-  generateReceipt: boolean;
-  auditTrail: {
-    action: string;
-    timestamp: string;
-    user: string;
-    details: {
-      originalTransaction: string;
-      customer: string;
-      refundMethod: string;
-      amount: number;
-    };
-  };
-}
-
-interface ReturnItem {
-  name: string;
-  quantity: number;
-  price: number;
-  total: number;
-}
-
-interface ReceiptData {
-  returnId: string;
-}
-
-interface ReturnRequest {
-  id: string;
-  originalTransactionId: string;
-  customerId: number;
-  customerName: string;
-  originalDate: string;
-  requestDate: string;
-  status: "pending" | "approved" | "rejected" | "processed";
-  reason: string;
-  returnItems: Array<{
-    name: string;
-    quantity: number;
-    price: number;
-    total: number;
-  }>;
-  totalRefundAmount: number;
-  notes?: string;
-  processedBy?: string;
-  processedDate?: string;
-}
-
-interface ProcessReturnModalProps {
-  show: boolean;
-  returnRequest: ReturnRequest | null;
-  onClose: () => void;
-  onProcess: (decision: "approved" | "rejected", notes?: string) => void;
-}
+import {
+  ReturnProcessData,
+  ReturnItem,
+  ReceiptData,
+  ProcessReturnModalProps,
+} from "@/interfaces/interface";
 
 const ProcessReturnModal: React.FC<ProcessReturnModalProps> = ({
   show,

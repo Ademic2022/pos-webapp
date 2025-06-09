@@ -1,20 +1,4 @@
-import { LucideIcon } from "lucide-react";
-
-interface StatsCardProps {
-  title: string;
-  titleColor?: string;
-  cardBg?: string;
-  value: string | number;
-  change?: {
-    value: string;
-    icon?: LucideIcon;
-    textColor?: string;
-  };
-  icon?: LucideIcon;
-  iconBg?: string;
-  iconColor?: string;
-  borderColor?: string;
-}
+import { StatsCardProps } from "@/interfaces/interface";
 
 export function StatsCard({
   title,

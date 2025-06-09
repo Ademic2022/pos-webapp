@@ -1,11 +1,6 @@
 "use client";
 import React from "react";
-
-interface SkeletonLoaderProps {
-  rows?: number;
-  columns?: number;
-  className?: string;
-}
+import { SkeletonLoaderProps } from "@/interfaces/interface";
 
 const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
   rows = 5,

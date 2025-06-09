@@ -1,32 +1,9 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { User } from "@/interfaces/interface";
+import { User, AuthContextType } from "@/interfaces/interface";
+import { PermissionType } from "@/types/types";
 import { loggedInUser } from "@/data/user";
-
-interface AuthContextType {
-  user: User | null;
-  isAuthenticated: boolean;
-  isSuperuser: boolean;
-  isStaff: boolean;
-  login: (userData: User) => void;
-  logout: () => void;
-  checkPermission: (permission: PermissionType) => boolean;
-}
-
-type PermissionType =
-  | "VIEW_INVENTORY_SETTINGS"
-  | "EDIT_PRICES"
-  | "DELETE_PRODUCTS"
-  | "MANAGE_USERS"
-  | "VIEW_REPORTS"
-  | "EDIT_CUSTOMER_DETAILS"
-  | "DELETE_CUSTOMERS"
-  | "PROCESS_RETURNS"
-  | "VALIDATE_SALES"
-  | "MANAGE_STOCK"
-  | "VIEW_FINANCIAL_DATA"
-  | "NEW_SALE";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 

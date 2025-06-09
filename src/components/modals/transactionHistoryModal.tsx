@@ -1,34 +1,8 @@
 import React from "react";
 import { X, DollarSign, Package, CreditCard, RotateCcw } from "lucide-react";
-// import { Customer } from "@/interfaces/interface";
+import { TransactionHistoryModalProps } from "@/interfaces/interface";
 
-interface Customer {
-  id: string | number;
-  name: string;
-  balance: number;
-  creditLimit: number;
-  totalPurchases: number;
-}
-
-interface Transaction {
-  id: string | number;
-  type: "sale" | "payment" | "credit" | "return";
-  description: string;
-  date: string;
-  amount: number;
-  balance: number;
-}
-
-interface Props {
-  show: boolean;
-  customer: Customer | null;
-  transactions: Record<string | number, Transaction[]>;
-  onClose: () => void;
-  onRecordPayment: () => void;
-  getBalanceColor: (balance: number) => string;
-}
-
-const TransactionHistoryModal: React.FC<Props> = ({
+const TransactionHistoryModal: React.FC<TransactionHistoryModalProps> = ({
   show,
   customer,
   transactions,
