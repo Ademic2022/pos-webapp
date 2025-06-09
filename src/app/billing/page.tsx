@@ -11,7 +11,7 @@ import {
   CheckCircle,
   Clock,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ProtectedElement from "@/components/auth/ProtectedElement";
 

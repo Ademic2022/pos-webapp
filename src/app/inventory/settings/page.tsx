@@ -180,32 +180,56 @@ const InventorySettingsPage: React.FC = () => {
 
   return (
     <ProtectedRoute requireSuperuser={true}>
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+      <motion.div
+        className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         {/* Header */}
-        <header className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50">
+        <motion.header
+          className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50"
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between py-4">
               <div className="flex items-center space-x-4">
-                <Link
-                  href="/"
-                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors"
+                <motion.div
+                  whileHover={{ scale: 1.1, rotate: -5 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <ArrowLeft className="w-5 h-5 text-orange-600" />
-                </Link>
+                  <Link
+                    href="/"
+                    className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors"
+                  >
+                    <ArrowLeft className="w-5 h-5 text-orange-600" />
+                  </Link>
+                </motion.div>
 
-                <div>
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.2, duration: 0.5 }}
+                >
                   <h1 className="text-xl font-bold text-gray-900">
                     Inventory Settings
                   </h1>
                   <p className="text-sm text-orange-600">
                     Manage your product inventory
                   </p>
-                </div>
+                </motion.div>
               </div>
               <ProtectedElement requiredPermission="MANAGE_STOCK">
-                <button
+                <motion.button
                   onClick={() => setShowStockManagement(!showStockManagement)}
                   className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg hover:from-orange-600 hover:to-amber-700 transition-colors"
+                  initial={{ x: 50, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.4, duration: 0.5 }}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   <Plus className="w-4 h-4" />
                   <span>
@@ -213,219 +237,387 @@ const InventorySettingsPage: React.FC = () => {
                       ? "Close Stock Management"
                       : "Add Product"}
                   </span>
-                </button>
+                </motion.button>
               </ProtectedElement>
             </div>
           </div>
-        </header>
+        </motion.header>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <motion.div
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.5, duration: 0.6 }}
+        >
           <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7, duration: 0.6 }}
+            >
               {/* Total Litres */}
-              <InventoryCard
-                value={totalAvailableStock}
-                unit="Litres"
-                icon={Droplets}
-                footerText="Total Available"
-              />
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.8, duration: 0.5, type: "spring" }}
+                whileHover={{ y: -5, scale: 1.02 }}
+              >
+                <InventoryCard
+                  value={totalAvailableStock}
+                  unit="Litres"
+                  icon={Droplets}
+                  footerText="Total Available"
+                />
+              </motion.div>
 
               {/* Total Drums */}
-              <InventoryCard
-                value={totalDrums}
-                unit="Drums"
-                icon={Cylinder}
-                iconBg="bg-green-100"
-                iconColor="text-green-600"
-                footerText={`${totalDrums} Drums ${Math.floor(
-                  remainingKegs / KEG_CAPACITY
-                )} Kegs`}
-              />
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.9, duration: 0.5, type: "spring" }}
+                whileHover={{ y: -5, scale: 1.02 }}
+              >
+                <InventoryCard
+                  value={totalDrums}
+                  unit="Drums"
+                  icon={Cylinder}
+                  iconBg="bg-green-100"
+                  iconColor="text-green-600"
+                  footerText={`${totalDrums} Drums ${Math.floor(
+                    remainingKegs / KEG_CAPACITY
+                  )} Kegs`}
+                />
+              </motion.div>
 
               {/* Total Kegs */}
-              <InventoryCard
-                value={totalKegs}
-                unit="Kegs"
-                icon={Cylinder}
-                iconColor="text-orange-600"
-                iconBg="bg-orange-100"
-                footerText={`${totalKegs} Kegs (${remainingLitres} Litres)`}
-              />
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 1.0, duration: 0.5, type: "spring" }}
+                whileHover={{ y: -5, scale: 1.02 }}
+              >
+                <InventoryCard
+                  value={totalKegs}
+                  unit="Kegs"
+                  icon={Cylinder}
+                  iconColor="text-orange-600"
+                  iconBg="bg-orange-100"
+                  footerText={`${totalKegs} Kegs (${remainingLitres} Litres)`}
+                />
+              </motion.div>
 
               {/* Total Sold */}
-              <InventoryCard
-                value={stock?.soldStock || 0}
-                unit="Litres"
-                icon={Droplets}
-                iconBg="bg-blue-100"
-                iconColor="text-blue-600"
-                footerText="Total Sold Stock"
-              />
-            </div>
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 1.1, duration: 0.5, type: "spring" }}
+                whileHover={{ y: -5, scale: 1.02 }}
+              >
+                <InventoryCard
+                  value={stock?.soldStock || 0}
+                  unit="Litres"
+                  icon={Droplets}
+                  iconBg="bg-blue-100"
+                  iconColor="text-blue-600"
+                  footerText="Total Sold Stock"
+                />
+              </motion.div>
+            </motion.div>
 
             {/* Stock Management Section */}
-            {showStockManagement && (
-              <div className="space-y-8">
-                <div className="bg-white rounded-xl shadow-lg border border-orange-100 p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                    Stock Management
-                  </h2>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Add Stock */}
-                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-8 border border-green-100">
-                      <div className="flex items-center justify-between mb-6">
-                        <div>
-                          <h3 className="text-xl font-semibold text-gray-900">
-                            Add New Stock
-                          </h3>
-                          <p className="text-gray-600 mt-1">
-                            Record tanker delivery
-                          </p>
-                        </div>
-                        <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                          <Plus className="w-6 h-6 text-green-600" />
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Delivery Amount
-                          </label>
-                          <div className="relative">
-                            <input
-                              type="number"
-                              value={deliveryAmount}
-                              onChange={(e) =>
-                                setDeliveryAmount(e.target.value)
-                              }
-                              placeholder="Enter litres delivered"
-                              min="1"
-                              max={totalAvailableStock}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                              required
-                            />
-                            <span className="absolute right-3 top-3 text-gray-500">
-                              Litres
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Maximum capacity:{" "}
-                            {totalAvailableStock.toLocaleString()}L
-                          </p>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Supplier
-                          </label>
-                          <select
-                            value={selectedSupplier}
-                            onChange={(e) =>
-                              setSelectedSupplier(e.target.value)
-                            }
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                            required
-                          >
-                            <option value="">Select supplier</option>
-                            {suppliers.map((supplier) => (
-                              <option key={supplier} value={supplier}>
-                                {supplier}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Delivery Date
-                          </label>
-                          <input
-                            type="date"
-                            value={deliveryDate}
-                            onChange={(e) => setDeliveryDate(e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                            required
-                          />
-                        </div>
-
-                        <button
-                          onClick={handleAddStock}
-                          disabled={isSubmitting}
-                          className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            <AnimatePresence>
+              {showStockManagement && (
+                <motion.div
+                  className="space-y-8"
+                  initial={{ opacity: 0, height: 0, y: -50 }}
+                  animate={{ opacity: 1, height: "auto", y: 0 }}
+                  exit={{ opacity: 0, height: 0, y: -50 }}
+                  transition={{ duration: 0.6, ease: "easeInOut" }}
+                >
+                  <motion.div
+                    className="bg-white rounded-xl shadow-lg border border-orange-100 p-6"
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.2, duration: 0.6, type: "spring" }}
+                    whileHover={{
+                      boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+                      y: -5,
+                    }}
+                  >
+                    <motion.h2
+                      className="text-2xl font-bold text-gray-900 mb-6"
+                      initial={{ x: -30, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 0.4, duration: 0.5 }}
+                    >
+                      Stock Management
+                    </motion.h2>
+                    <motion.div
+                      className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.6, duration: 0.6 }}
+                    >
+                      {" "}
+                      {/* Add Stock */}
+                      <motion.div
+                        className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-8 border border-green-100"
+                        initial={{ x: -50, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.8, duration: 0.6 }}
+                        whileHover={{ scale: 1.02, y: -5 }}
+                      >
+                        <motion.div
+                          className="flex items-center justify-between mb-6"
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ delay: 1.0, duration: 0.5 }}
                         >
-                          {isSubmitting ? "Recording..." : "Record Delivery"}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Recent Deliveries */}
-                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-8 border border-blue-100">
-                      <div className="flex items-center justify-between mb-6">
-                        <div>
-                          <h3 className="text-xl font-semibold text-gray-900">
-                            Recent Deliveries
-                          </h3>
-                          <p className="text-gray-600 mt-1">
-                            Latest stock additions
-                          </p>
-                        </div>
-                        <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                          <Droplets className="w-6 h-6 text-blue-600" />
-                        </div>
-                      </div>
-
-                      <div className="space-y-4 max-h-80 overflow-y-auto">
-                        {deliveryHistory.map((delivery) => (
-                          <div
-                            key={delivery.id}
-                            className="p-4 bg-white rounded-lg border border-blue-200 shadow-sm"
+                          <div>
+                            <h3 className="text-xl font-semibold text-gray-900">
+                              Add New Stock
+                            </h3>
+                            <p className="text-gray-600 mt-1">
+                              Record tanker delivery
+                            </p>
+                          </div>
+                          <motion.div
+                            className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center"
+                            animate={{ rotate: [0, 10, -10, 0] }}
+                            transition={{
+                              delay: 2,
+                              duration: 2,
+                              repeat: Infinity,
+                              repeatDelay: 5,
+                            }}
                           >
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-semibold text-gray-900">
-                                +{delivery.amount?.toLocaleString() || 0}L
-                              </span>
-                              <span className="text-sm text-gray-500">
-                                {delivery.createdAt?.toLocaleDateString() ||
-                                  new Date().toLocaleDateString()}
+                            <Plus className="w-6 h-6 text-green-600" />
+                          </motion.div>
+                        </motion.div>{" "}
+                        <motion.div
+                          className="space-y-4"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 1.2, duration: 0.6 }}
+                        >
+                          <motion.div
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 1.3, duration: 0.5 }}
+                          >
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Delivery Amount
+                            </label>
+                            <div className="relative">
+                              <motion.input
+                                type="number"
+                                value={deliveryAmount}
+                                onChange={(e) =>
+                                  setDeliveryAmount(e.target.value)
+                                }
+                                placeholder="Enter litres delivered"
+                                min="1"
+                                max={totalAvailableStock}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                required
+                                whileFocus={{ scale: 1.02 }}
+                                transition={{ type: "spring", stiffness: 300 }}
+                              />
+                              <span className="absolute right-3 top-3 text-gray-500">
+                                Litres
                               </span>
                             </div>
-                            <p className="text-sm text-gray-600 mb-1">
-                              {delivery.supplier || "Supplier N/A"}
+                            <p className="text-xs text-gray-500 mt-1">
+                              Maximum capacity:{" "}
+                              {totalAvailableStock.toLocaleString()}L
                             </p>
-                            <p className="text-xs text-gray-500">
-                              {delivery.createdAt?.toLocaleTimeString() ||
-                                new Date().toLocaleTimeString()}
-                            </p>
-                          </div>
-                        ))}
+                          </motion.div>
 
-                        {deliveryHistory.length === 0 && (
-                          <div className="text-center py-8">
-                            <Droplets className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                            <p className="text-gray-500">
-                              No deliveries recorded yet
+                          <motion.div
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 1.4, duration: 0.5 }}
+                          >
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Supplier
+                            </label>
+                            <motion.select
+                              value={selectedSupplier}
+                              onChange={(e) =>
+                                setSelectedSupplier(e.target.value)
+                              }
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                              required
+                              whileFocus={{ scale: 1.02 }}
+                              transition={{ type: "spring", stiffness: 300 }}
+                            >
+                              <option value="">Select supplier</option>
+                              {suppliers.map((supplier) => (
+                                <option key={supplier} value={supplier}>
+                                  {supplier}
+                                </option>
+                              ))}
+                            </motion.select>
+                          </motion.div>
+
+                          <motion.div
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 1.5, duration: 0.5 }}
+                          >
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Delivery Date
+                            </label>
+                            <motion.input
+                              type="date"
+                              value={deliveryDate}
+                              onChange={(e) => setDeliveryDate(e.target.value)}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                              required
+                              whileFocus={{ scale: 1.02 }}
+                              transition={{ type: "spring", stiffness: 300 }}
+                            />
+                          </motion.div>
+
+                          <motion.button
+                            onClick={handleAddStock}
+                            disabled={isSubmitting}
+                            className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 1.6, duration: 0.5 }}
+                            whileHover={{ scale: 1.02, y: -2 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            {isSubmitting ? "Recording..." : "Record Delivery"}
+                          </motion.button>
+                        </motion.div>
+                      </motion.div>{" "}
+                      {/* Recent Deliveries */}
+                      <motion.div
+                        className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-8 border border-blue-100"
+                        initial={{ x: 50, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.9, duration: 0.6 }}
+                        whileHover={{ scale: 1.02, y: -5 }}
+                      >
+                        <motion.div
+                          className="flex items-center justify-between mb-6"
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ delay: 1.1, duration: 0.5 }}
+                        >
+                          <div>
+                            <h3 className="text-xl font-semibold text-gray-900">
+                              Recent Deliveries
+                            </h3>
+                            <p className="text-gray-600 mt-1">
+                              Latest stock additions
                             </p>
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+                          <motion.div
+                            className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center"
+                            animate={{ scale: [1, 1.1, 1] }}
+                            transition={{
+                              delay: 3,
+                              duration: 2,
+                              repeat: Infinity,
+                              repeatDelay: 5,
+                            }}
+                          >
+                            <Droplets className="w-6 h-6 text-blue-600" />
+                          </motion.div>
+                        </motion.div>
+
+                        <motion.div
+                          className="space-y-4 max-h-80 overflow-y-auto"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 1.3, duration: 0.6 }}
+                        >
+                          {deliveryHistory.map((delivery, index) => (
+                            <motion.div
+                              key={delivery.id}
+                              className="p-4 bg-white rounded-lg border border-blue-200 shadow-sm"
+                              initial={{ y: 30, opacity: 0 }}
+                              animate={{ y: 0, opacity: 1 }}
+                              transition={{
+                                delay: 1.4 + index * 0.1,
+                                duration: 0.5,
+                              }}
+                              whileHover={{ scale: 1.02, y: -2 }}
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-semibold text-gray-900">
+                                  +{delivery.amount?.toLocaleString() || 0}L
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                  {delivery.createdAt?.toLocaleDateString() ||
+                                    new Date().toLocaleDateString()}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-600 mb-1">
+                                {delivery.supplier || "Supplier N/A"}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {delivery.createdAt?.toLocaleTimeString() ||
+                                  new Date().toLocaleTimeString()}
+                              </p>
+                            </motion.div>
+                          ))}
+
+                          {deliveryHistory.length === 0 && (
+                            <motion.div
+                              className="text-center py-8"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: 1.5, duration: 0.5 }}
+                            >
+                              <Droplets className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                              <p className="text-gray-500">
+                                No deliveries recorded yet
+                              </p>
+                            </motion.div>
+                          )}
+                        </motion.div>
+                      </motion.div>
+                    </motion.div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Product List */}
-            <div className="bg-white rounded-xl shadow-lg border border-orange-100">
-              <div className="p-6 border-b border-orange-100">
+            <motion.div
+              className="bg-white rounded-xl shadow-lg border border-orange-100"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 1.2, duration: 0.6 }}
+              whileHover={{
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+                y: -5,
+              }}
+            >
+              <motion.div
+                className="p-6 border-b border-orange-100"
+                initial={{ x: -30, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 1.3, duration: 0.5 }}
+              >
                 <h2 className="text-lg font-medium text-gray-900">
                   Product Inventory
                 </h2>
                 <p className="text-sm text-gray-600">
                   Manage your product stock levels and settings
                 </p>
-              </div>
-              <div className="overflow-x-auto">
+              </motion.div>
+              <motion.div
+                className="overflow-x-auto"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.4, duration: 0.6 }}
+              >
                 <table className="min-w-full divide-y divide-orange-100">
                   <thead className="bg-orange-50">
                     <tr>
@@ -450,12 +642,22 @@ const InventorySettingsPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-orange-100">
-                    {allProducts.map((product) => {
+                    {allProducts.map((product, index) => {
                       const status = getProductStatus(product.stock);
                       return (
-                        <tr
+                        <motion.tr
                           key={product.id}
                           className="hover:bg-orange-50 transition-colors"
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{
+                            delay: 1.5 + index * 0.1,
+                            duration: 0.5,
+                          }}
+                          whileHover={{
+                            scale: 1.01,
+                            backgroundColor: "#FEF3E2",
+                          }}
                         >
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
@@ -524,40 +726,71 @@ const InventorySettingsPage: React.FC = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex space-x-2">
                               <ProtectedElement requiredPermission="EDIT_PRICES">
-                                <button
+                                <motion.button
                                   onClick={() => handleOpenEditModal(product)}
                                   className="text-orange-600 hover:text-orange-800 p-1 rounded-lg hover:bg-orange-50 transition-colors"
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.95 }}
                                 >
                                   <Edit className="w-4 h-4" />
-                                </button>
+                                </motion.button>
                               </ProtectedElement>
                               <ProtectedElement requiredPermission="DELETE_PRODUCTS">
-                                <button className="text-red-600 hover:text-red-800 p-1 rounded-lg hover:bg-red-50 transition-colors">
+                                <motion.button
+                                  className="text-red-600 hover:text-red-800 p-1 rounded-lg hover:bg-red-50 transition-colors"
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.95 }}
+                                >
                                   <Trash2 className="w-4 h-4" />
-                                </button>
+                                </motion.button>
                               </ProtectedElement>
                             </div>
                           </td>
-                        </tr>
+                        </motion.tr>
                       );
                     })}
                   </tbody>
                 </table>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
 
             {/* Inventory Settings */}
-            <div className="bg-white rounded-xl shadow-lg border border-orange-100">
-              <div className="p-6 border-b border-orange-100">
+            <motion.div
+              className="bg-white rounded-xl shadow-lg border border-orange-100"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 1.8, duration: 0.6 }}
+              whileHover={{
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+                y: -5,
+              }}
+            >
+              <motion.div
+                className="p-6 border-b border-orange-100"
+                initial={{ x: -30, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 1.9, duration: 0.5 }}
+              >
                 <h2 className="text-lg font-medium text-gray-900">
                   Inventory Settings
                 </h2>
                 <p className="text-sm text-gray-600">
                   Configure automatic alerts and stock management
                 </p>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
+              </motion.div>
+              <motion.div
+                className="p-6 space-y-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 2.0, duration: 0.6 }}
+              >
+                <motion.div
+                  className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
+                  initial={{ x: -30, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 2.1, duration: 0.5 }}
+                  whileHover={{ scale: 1.02, x: 5 }}
+                >
                   <div>
                     <p className="font-medium text-gray-900">
                       Low Stock Alerts
@@ -566,116 +799,262 @@ const InventorySettingsPage: React.FC = () => {
                       Get notified when products are running low
                     </p>
                   </div>
-                  <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-orange-200 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+                  <motion.button
+                    className="relative inline-flex h-6 w-11 items-center rounded-full bg-orange-200 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
                     <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6" />
-                  </button>
-                </div>
+                  </motion.button>
+                </motion.div>
 
-                <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
+                <motion.div
+                  className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
+                  initial={{ x: -30, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 2.2, duration: 0.5 }}
+                  whileHover={{ scale: 1.02, x: 5 }}
+                >
                   <div>
                     <p className="font-medium text-gray-900">Auto-Reorder</p>
                     <p className="text-sm text-gray-600">
                       Automatically reorder products when stock is low
                     </p>
                   </div>
-                  <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+                  <motion.button
+                    className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
                     <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1" />
-                  </button>
-                </div>
+                  </motion.button>
+                </motion.div>
 
-                <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
+                <motion.div
+                  className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
+                  initial={{ x: -30, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 2.3, duration: 0.5 }}
+                  whileHover={{ scale: 1.02, x: 5 }}
+                >
                   <div>
                     <p className="font-medium text-gray-900">Stock Tracking</p>
                     <p className="text-sm text-gray-600">
                       Track all inventory movements and changes
                     </p>
                   </div>
-                  <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-orange-200 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+                  <motion.button
+                    className="relative inline-flex h-6 w-11 items-center rounded-full bg-orange-200 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
                     <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6" />
-                  </button>
-                </div>
-              </div>
-            </div>
+                  </motion.button>
+                </motion.div>
+              </motion.div>
+            </motion.div>
 
             {/* Stock Reports */}
-            <div className="bg-white rounded-xl shadow-lg border border-orange-100">
-              <div className="p-6 border-b border-orange-100">
+            <motion.div
+              className="bg-white rounded-xl shadow-lg border border-orange-100"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 2.4, duration: 0.6 }}
+              whileHover={{
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+                y: -5,
+              }}
+            >
+              <motion.div
+                className="p-6 border-b border-orange-100"
+                initial={{ x: -30, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 2.5, duration: 0.5 }}
+              >
                 <h2 className="text-lg font-medium text-gray-900">
                   Stock Reports
                 </h2>
                 <p className="text-sm text-gray-600">
                   Generate and export inventory reports
                 </p>
-              </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-                    <div className="flex items-center justify-between mb-2">
+              </motion.div>
+              <motion.div
+                className="p-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 2.6, duration: 0.6 }}
+              >
+                <motion.div
+                  className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 2.7, duration: 0.6 }}
+                >
+                  <motion.div
+                    className="p-4 bg-orange-50 rounded-lg border border-orange-200"
+                    initial={{ y: 30, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 2.8, duration: 0.5 }}
+                    whileHover={{ scale: 1.05, y: -5 }}
+                  >
+                    <motion.div
+                      className="flex items-center justify-between mb-2"
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 2.9, duration: 0.5 }}
+                    >
                       <h4 className="font-medium text-gray-900">
                         Daily Stock Summary
                       </h4>
-                      <Calendar className="w-5 h-5 text-orange-600" />
-                    </div>
+                      <motion.div
+                        animate={{ rotate: [0, 5, -5, 0] }}
+                        transition={{
+                          delay: 4,
+                          duration: 2,
+                          repeat: Infinity,
+                          repeatDelay: 8,
+                        }}
+                      >
+                        <Calendar className="w-5 h-5 text-orange-600" />
+                      </motion.div>
+                    </motion.div>
                     <p className="text-sm text-gray-600 mb-3">
                       Stock levels and movements for today
                     </p>
-                    <button className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors text-sm">
+                    <motion.button
+                      className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors text-sm"
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
                       Generate Report
-                    </button>
-                  </div>
+                    </motion.button>
+                  </motion.div>
 
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="flex items-center justify-between mb-2">
+                  <motion.div
+                    className="p-4 bg-blue-50 rounded-lg border border-blue-200"
+                    initial={{ y: 30, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 3.0, duration: 0.5 }}
+                    whileHover={{ scale: 1.05, y: -5 }}
+                  >
+                    <motion.div
+                      className="flex items-center justify-between mb-2"
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 3.1, duration: 0.5 }}
+                    >
                       <h4 className="font-medium text-gray-900">
                         Weekly Inventory Report
                       </h4>
-                      <TrendingUp className="w-5 h-5 text-blue-600" />
-                    </div>
+                      <motion.div
+                        animate={{ y: [0, -3, 3, 0] }}
+                        transition={{
+                          delay: 5,
+                          duration: 2,
+                          repeat: Infinity,
+                          repeatDelay: 8,
+                        }}
+                      >
+                        <TrendingUp className="w-5 h-5 text-blue-600" />
+                      </motion.div>
+                    </motion.div>
                     <p className="text-sm text-gray-600 mb-3">
                       Comprehensive weekly stock analysis
                     </p>
-                    <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                    <motion.button
+                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
                       Generate Report
-                    </button>
-                  </div>
+                    </motion.button>
+                  </motion.div>
 
-                  <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                    <div className="flex items-center justify-between mb-2">
+                  <motion.div
+                    className="p-4 bg-purple-50 rounded-lg border border-purple-200"
+                    initial={{ y: 30, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 3.2, duration: 0.5 }}
+                    whileHover={{ scale: 1.05, y: -5 }}
+                  >
+                    <motion.div
+                      className="flex items-center justify-between mb-2"
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 3.3, duration: 0.5 }}
+                    >
                       <h4 className="font-medium text-gray-900">
                         Monthly Stock Analysis
                       </h4>
-                      <Activity className="w-5 h-5 text-purple-600" />
-                    </div>
+                      <motion.div
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{
+                          delay: 6,
+                          duration: 2,
+                          repeat: Infinity,
+                          repeatDelay: 8,
+                        }}
+                      >
+                        <Activity className="w-5 h-5 text-purple-600" />
+                      </motion.div>
+                    </motion.div>
                     <p className="text-sm text-gray-600 mb-3">
                       Complete monthly inventory overview
                     </p>
-                    <button className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors text-sm">
+                    <motion.button
+                      className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
                       Generate Report
-                    </button>
-                  </div>
-                </div>
-                <div className="pt-6 border-t border-gray-200 mt-6">
-                  <button className="w-full flex items-center justify-center space-x-2 text-gray-600 hover:text-orange-600 transition-colors">
-                    <Download className="w-4 h-4" />
+                    </motion.button>
+                  </motion.div>
+                </motion.div>
+                <motion.div
+                  className="pt-6 border-t border-gray-200 mt-6"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 3.4, duration: 0.5 }}
+                >
+                  <motion.button
+                    className="w-full flex items-center justify-center space-x-2 text-gray-600 hover:text-orange-600 transition-colors"
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <motion.div
+                      animate={{ rotate: [0, 180, 360] }}
+                      transition={{
+                        delay: 8,
+                        duration: 2,
+                        repeat: Infinity,
+                        repeatDelay: 10,
+                      }}
+                    >
+                      <Download className="w-4 h-4" />
+                    </motion.div>
                     <span className="text-sm font-medium">Export All Data</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+                  </motion.button>
+                </motion.div>
+              </motion.div>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Edit Price Modal */}
-        <EditPriceModal
-          isOpen={showEditModal}
-          onClose={handleCloseEditModal}
-          selectedProduct={selectedProduct}
-          tempPrice={tempPrice}
-          setTempPrice={setTempPrice}
-          onSave={handleSavePriceModal}
-          formatPrice={formatPrice}
-        />
-      </div>
+        <AnimatePresence>
+          {showEditModal && (
+            <EditPriceModal
+              isOpen={showEditModal}
+              onClose={handleCloseEditModal}
+              selectedProduct={selectedProduct}
+              tempPrice={tempPrice}
+              setTempPrice={setTempPrice}
+              onSave={handleSavePriceModal}
+              formatPrice={formatPrice}
+            />
+          )}
+        </AnimatePresence>
+      </motion.div>
     </ProtectedRoute>
   );
 };

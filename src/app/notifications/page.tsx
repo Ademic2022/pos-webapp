@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Bell, Mail, MessageSquare, Smartphone } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 const NotificationsPage: React.FC = () => {
   const [emailNotifications, setEmailNotifications] = useState(true);
