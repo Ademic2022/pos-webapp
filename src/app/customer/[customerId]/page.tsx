@@ -727,6 +727,11 @@ const CustomerDetailPage = () => {
                   icon={Receipt}
                   iconBg="bg-blue-100"
                   iconColor="text-blue-600"
+                  change={{
+                    value: `${transactions.length} transactions`,
+                    icon: Eye,
+                    textColor: "text-gray-600",
+                  }}
                 />
               ),
               delay: 0.6,
