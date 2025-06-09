@@ -19,7 +19,10 @@ import {
   Droplets,
   RotateCcw,
   Package,
+  ArrowLeft,
 } from "lucide-react";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { usePageLoading } from "@/hooks/usePageLoading";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ProtectedElement from "@/components/auth/ProtectedElement";
@@ -384,74 +387,149 @@ const TransactionHistoryPage: React.FC = () => {
 
   return (
     <ProtectedRoute requiredPermission="VIEW_FINANCIAL_DATA">
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+      <motion.div
+        className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         {/* Header */}
-        <header className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50">
+        <motion.header
+          className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50"
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center">
-                  <Droplets className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">
-                    Transaction History
-                  </h1>
-                  <p className="text-xs text-orange-600">
-                    Complete transaction records
-                  </p>
-                </div>
+              <div className="flex items-center space-x-4">
+                <motion.div
+                  whileHover={{ scale: 1.1, rotate: -5 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Link href="/">
+                    <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
+                      <ArrowLeft className="w-5 h-5 text-orange-600" />
+                    </button>
+                  </Link>
+                </motion.div>
+                <motion.div
+                  className="flex items-center space-x-3"
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.3, duration: 0.5 }}
+                >
+                  <motion.div
+                    className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center"
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{
+                      delay: 2,
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatDelay: 5,
+                    }}
+                  >
+                    <Droplets className="w-6 h-6 text-white" />
+                  </motion.div>
+                  <div>
+                    <h1 className="text-xl font-bold text-gray-900">
+                      Transaction History
+                    </h1>
+                    <p className="text-xs text-orange-600">
+                      Complete transaction records
+                    </p>
+                  </div>
+                </motion.div>
               </div>
             </div>
           </div>
-        </header>
+        </motion.header>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <motion.div
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+        >
           {/* Page Header */}
-          <div className="mb-8">
+          <motion.div
+            className="mb-8"
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+          >
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Transaction History
             </h1>
             <p className="text-gray-600">
               View and manage all your business transactions
             </p>
-          </div>
+          </motion.div>
 
           {/* Search and Filter Bar */}
-          <div className="bg-white rounded-xl shadow-lg border border-orange-100 p-6 mb-8">
-            <div className="flex flex-col lg:flex-row gap-4">
+          <motion.div
+            className="bg-white rounded-xl shadow-lg border border-orange-100 p-6 mb-8"
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.6, duration: 0.5 }}
+            whileHover={{
+              y: -5,
+              boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
+            }}
+          >
+            <motion.div
+              className="flex flex-col lg:flex-row gap-4"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.7, duration: 0.5 }}
+            >
               {/* Search */}
-              <div className="flex-1 relative">
+              <motion.div
+                className="flex-1 relative"
+                whileHover={{ scale: 1.02 }}
+                whileFocus={{ scale: 1.02 }}
+              >
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type="text"
                   placeholder="Search by customer name, transaction ID, or reference..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
                 />
-              </div>
+              </motion.div>
 
               {/* Filter Toggle */}
-              <button
+              <motion.button
                 onClick={() => setShowFilters(!showFilters)}
                 className="px-6 py-3 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors flex items-center"
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
               >
                 <Filter className="w-5 h-5 mr-2" />
                 Filters
-              </button>
+              </motion.button>
 
               {/* Export */}
               <ProtectedElement requiredPermission="VIEW_FINANCIAL_DATA">
-                <button className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                <motion.button
+                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                >
                   <Download className="w-5 h-5 mr-2" />
                   Export
-                </button>
+                </motion.button>
               </ProtectedElement>
-            </div>
+            </motion.div>
 
             {/* Quick Transaction Type Filters */}
-            <div className="mt-4 flex flex-wrap gap-2">
+            <motion.div
+              className="mt-4 flex flex-wrap gap-2"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.8, duration: 0.5 }}
+            >
               <span className="text-sm font-medium text-gray-700 mr-2 self-center">
                 Quick filters:
               </span>
@@ -461,11 +539,11 @@ const TransactionHistoryPage: React.FC = () => {
                 { key: "payment", label: "Payments", icon: DollarSign },
                 { key: "credit", label: "Credits", icon: CreditCard },
                 { key: "return", label: "Returns", icon: RotateCcw },
-              ].map((filter) => {
+              ].map((filter, index) => {
                 const Icon = filter.icon;
                 const isActive = filters.transactionType === filter.key;
                 return (
-                  <button
+                  <motion.button
                     key={filter.key}
                     onClick={() =>
                       setFilters((prev) => ({
@@ -479,144 +557,188 @@ const TransactionHistoryPage: React.FC = () => {
                         ? "bg-orange-100 text-orange-700 border border-orange-200"
                         : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
                     }`}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.9 + index * 0.1, duration: 0.3 }}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     {Icon && <Icon className="w-3 h-3 mr-1" />}
                     {filter.label}
-                  </button>
+                  </motion.button>
                 );
               })}
-            </div>
+            </motion.div>
 
             {/* Advanced Filters */}
-            {showFilters && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Date Range
-                    </label>
-                    <select
-                      value={filters.dateRange}
-                      onChange={(e) =>
-                        setFilters((prev) => ({
-                          ...prev,
-                          dateRange: e.target
-                            .value as TransactionFilterOptions["dateRange"],
-                        }))
-                      }
-                      className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
-                    >
-                      <option value="all">All Time</option>
-                      <option value="today">Today</option>
-                      <option value="week">This Week</option>
-                      <option value="month">This Month</option>
-                      <option value="custom">Custom Range</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Transaction Type
-                    </label>
-                    <select
-                      value={filters.transactionType}
-                      onChange={(e) =>
-                        setFilters((prev) => ({
-                          ...prev,
-                          transactionType: e.target
-                            .value as TransactionFilterOptions["transactionType"],
-                        }))
-                      }
-                      className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
-                    >
-                      <option value="all">All Types</option>
-                      <option value="sale">Sales</option>
-                      <option value="payment">Payments</option>
-                      <option value="credit">Credits</option>
-                      <option value="return">Returns</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Customer Type
-                    </label>
-                    <select
-                      value={filters.customerType}
-                      onChange={(e) =>
-                        setFilters((prev) => ({
-                          ...prev,
-                          customerType: e.target
-                            .value as TransactionFilterOptions["customerType"],
-                        }))
-                      }
-                      className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
-                    >
-                      <option value="all">All Types</option>
-                      <option value="wholesale">Wholesale</option>
-                      <option value="retail">Retail</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Payment Status
-                    </label>
-                    <select
-                      value={filters.paymentStatus}
-                      onChange={(e) =>
-                        setFilters((prev) => ({
-                          ...prev,
-                          paymentStatus: e.target
-                            .value as TransactionFilterOptions["paymentStatus"],
-                        }))
-                      }
-                      className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
-                    >
-                      <option value="all">All Status</option>
-                      <option value="paid">Paid</option>
-                      <option value="pending">Pending</option>
-                      <option value="overdue">Overdue</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Payment Method
-                    </label>
-                    <select
-                      value={filters.paymentMethod}
-                      onChange={(e) =>
-                        setFilters((prev) => ({
-                          ...prev,
-                          paymentMethod: e.target
-                            .value as TransactionFilterOptions["paymentMethod"],
-                        }))
-                      }
-                      className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
-                    >
-                      <option value="all">All Methods</option>
-                      <option value="cash">Cash</option>
-                      <option value="transfer">Transfer</option>
-                      <option value="credit">Credit</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex justify-end">
-                  <button
-                    onClick={resetFilters}
-                    className="px-4 py-2 text-orange-600 border border-orange-200 rounded-lg hover:bg-orange-50 transition-colors"
+            <AnimatePresence>
+              {showFilters && (
+                <motion.div
+                  className="mt-6 pt-6 border-t border-gray-200"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <motion.div
+                    className="grid grid-cols-1 md:grid-cols-5 gap-4"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2, duration: 0.5 }}
                   >
-                    Reset Filters
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileFocus={{ scale: 1.02 }}
+                    >
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Date Range
+                      </label>
+                      <select
+                        value={filters.dateRange}
+                        onChange={(e) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            dateRange: e.target
+                              .value as TransactionFilterOptions["dateRange"],
+                          }))
+                        }
+                        className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 transition-all"
+                      >
+                        <option value="all">All Time</option>
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                        <option value="custom">Custom Range</option>
+                      </select>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileFocus={{ scale: 1.02 }}
+                    >
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Transaction Type
+                      </label>
+                      <select
+                        value={filters.transactionType}
+                        onChange={(e) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            transactionType: e.target
+                              .value as TransactionFilterOptions["transactionType"],
+                          }))
+                        }
+                        className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 transition-all"
+                      >
+                        <option value="all">All Types</option>
+                        <option value="sale">Sales</option>
+                        <option value="payment">Payments</option>
+                        <option value="credit">Credits</option>
+                        <option value="return">Returns</option>
+                      </select>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileFocus={{ scale: 1.02 }}
+                    >
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Customer Type
+                      </label>
+                      <select
+                        value={filters.customerType}
+                        onChange={(e) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            customerType: e.target
+                              .value as TransactionFilterOptions["customerType"],
+                          }))
+                        }
+                        className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 transition-all"
+                      >
+                        <option value="all">All Types</option>
+                        <option value="wholesale">Wholesale</option>
+                        <option value="retail">Retail</option>
+                      </select>
+                    </motion.div>
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileFocus={{ scale: 1.02 }}
+                    >
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Payment Status
+                      </label>
+                      <select
+                        value={filters.paymentStatus}
+                        onChange={(e) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            paymentStatus: e.target
+                              .value as TransactionFilterOptions["paymentStatus"],
+                          }))
+                        }
+                        className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 transition-all"
+                      >
+                        <option value="all">All Status</option>
+                        <option value="paid">Paid</option>
+                        <option value="pending">Pending</option>
+                        <option value="overdue">Overdue</option>
+                      </select>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileFocus={{ scale: 1.02 }}
+                    >
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Payment Method
+                      </label>
+                      <select
+                        value={filters.paymentMethod}
+                        onChange={(e) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            paymentMethod: e.target
+                              .value as TransactionFilterOptions["paymentMethod"],
+                          }))
+                        }
+                        className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 transition-all"
+                      >
+                        <option value="all">All Methods</option>
+                        <option value="cash">Cash</option>
+                        <option value="transfer">Transfer</option>
+                        <option value="credit">Credit</option>
+                      </select>
+                    </motion.div>
+                  </motion.div>
+
+                  <motion.div
+                    className="mt-4 flex justify-end"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.3, duration: 0.5 }}
+                  >
+                    <motion.button
+                      onClick={resetFilters}
+                      className="px-4 py-2 text-orange-600 border border-orange-200 rounded-lg hover:bg-orange-50 transition-colors"
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Reset Filters
+                    </motion.button>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
 
           {/* Results Summary */}
-          <div className="mb-6 flex justify-between items-center">
+          <motion.div
+            className="mb-6 flex justify-between items-center"
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 1.4, duration: 0.5 }}
+          >
             <p className="text-gray-600">
               Showing {paginatedTransactions.length} of{" "}
               {filteredAndSortedTransactions.length} transactions
@@ -627,10 +749,19 @@ const TransactionHistoryPage: React.FC = () => {
                 .reduce((sum, t) => sum + t.totalAmount, 0)
                 .toLocaleString()}
             </div>
-          </div>
+          </motion.div>
 
           {/* Transactions Table */}
-          <div className="bg-white rounded-xl shadow-lg border border-orange-100 overflow-hidden">
+          <motion.div
+            className="bg-white rounded-xl shadow-lg border border-orange-100 overflow-hidden"
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 1.5, duration: 0.5 }}
+            whileHover={{
+              y: -5,
+              boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
+            }}
+          >
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
@@ -809,8 +940,8 @@ const TransactionHistoryPage: React.FC = () => {
                 </div>
               </div>
             )}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Transaction Detail Modal */}
         {selectedTransaction && (
@@ -988,20 +1119,26 @@ const TransactionHistoryPage: React.FC = () => {
               </div>
 
               <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
-                <button
+                <motion.button
                   onClick={() => setSelectedTransaction(null)}
                   className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   Close
-                </button>
-                <button className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                </motion.button>
+                <motion.button
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                >
                   Print Receipt
-                </button>
+                </motion.button>
               </div>
             </div>
           </div>
         )}
-      </div>
+      </motion.div>
     </ProtectedRoute>
   );
 };

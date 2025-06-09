@@ -12,6 +12,7 @@ import {
   Search,
   ChevronRight,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const HelpPage: React.FC = () => {
   const faqItems = [
@@ -67,192 +68,154 @@ const HelpPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <motion.div
+      className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-4">
+      <motion.header
+        className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-40"
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
-              <Link
-                href="/"
-                className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+              <motion.div
+                whileHover={{ scale: 1.1, rotate: -5 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Back to Dashboard
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-2">
-            <HelpCircle className="w-6 h-6 text-orange-600" />
-            <h1 className="text-2xl font-bold text-gray-900">Help & Support</h1>
-          </div>
-          <p className="text-gray-600">
-            Get help with using your POS system and find answers to common
-            questions
-          </p>
-        </div>
-
-        <div className="space-y-8">
-          {/* Search */}
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">
-              Search Help Articles
-            </h2>
-            <div className="relative">
-              <Search className="w-5 h-5 absolute left-3 top-3 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search for help articles..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              />
-            </div>
-          </div>
-
-          {/* FAQ */}
-          <div className="bg-white rounded-lg shadow-sm border">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">
-                Frequently Asked Questions
-              </h2>
-              <p className="text-sm text-gray-500">
-                Find quick answers to common questions
-              </p>
-            </div>
-            <div className="divide-y divide-gray-200">
-              {faqItems.map((item, index) => (
-                <div key={index} className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-900 mb-2">
-                        {item.question}
-                      </h3>
-                      <p className="text-sm text-gray-600">{item.answer}</p>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-gray-400 ml-4" />
-                  </div>
+                <Link href="/">
+                  <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
+                    <ArrowLeft className="w-5 h-5 text-orange-600" />
+                  </button>
+                </Link>
+              </motion.div>
+              <motion.div
+                className="flex items-center space-x-3"
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+              >
+                <motion.div
+                  className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center"
+                  animate={{
+                    rotate: [0, 10, -10, 0],
+                  }}
+                  transition={{
+                    delay: 2,
+                    duration: 2,
+                    repeat: Infinity,
+                    repeatDelay: 5,
+                  }}
+                >
+                  <HelpCircle className="w-5 h-5 text-white" />
+                </motion.div>
+                <div>
+                  <h1 className="text-lg font-bold text-gray-900">
+                    Help & Support
+                  </h1>
+                  <p className="text-xs text-orange-600">Get Help & Support</p>
                 </div>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      </motion.header>
+
+      <motion.div
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.3, duration: 0.6 }}
+      >
+        {/* Support Options */}
+        <motion.div
+          className="grid md:grid-cols-3 gap-6 mb-12"
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.5, duration: 0.6 }}
+        >
+          {supportOptions.map((option, index) => (
+            <motion.div
+              key={index}
+              className="bg-white rounded-xl p-6 shadow-lg border border-orange-100"
+              initial={{ scale: 0.9, opacity: 0, y: 30 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 + index * 0.1, duration: 0.5 }}
+              whileHover={{
+                scale: 1.05,
+                y: -10,
+                boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.25)",
+              }}
+            >
+              <motion.div
+                className="flex items-center space-x-3 mb-4"
+                whileHover={{ x: 5 }}
+              >
+                <motion.div
+                  className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center"
+                  whileHover={{ rotate: 15, scale: 1.1 }}
+                >
+                  <option.icon className="w-5 h-5 text-orange-600" />
+                </motion.div>
+                <h3 className="font-semibold text-gray-900">{option.title}</h3>
+              </motion.div>
+              <p className="text-gray-600 text-sm mb-3">{option.description}</p>
+              <div className="space-y-1">
+                <p className="font-medium text-gray-900">{option.contact}</p>
+                <p className="text-xs text-gray-500">{option.availability}</p>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* FAQ Section */}
+        <motion.div
+          className="bg-white rounded-xl shadow-lg border border-orange-100 overflow-hidden"
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.9, duration: 0.6 }}
+          whileHover={{
+            y: -2,
+            boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
+          }}
+        >
+          <motion.div
+            className="p-6 border-b border-gray-200"
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 1.0, duration: 0.5 }}
+          >
+            <h2 className="text-xl font-semibold text-gray-900">
+              Frequently Asked Questions
+            </h2>
+          </motion.div>
+          <div className="p-6">
+            <div className="space-y-4">
+              {faqItems.map((item, index) => (
+                <motion.div
+                  key={index}
+                  className="border border-gray-200 rounded-lg p-4"
+                  initial={{ x: -30, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 1.1 + index * 0.1, duration: 0.5 }}
+                  whileHover={{ scale: 1.02, x: 5 }}
+                >
+                  <h3 className="font-medium text-gray-900 mb-2">
+                    {item.question}
+                  </h3>
+                  <p className="text-gray-600 text-sm">{item.answer}</p>
+                </motion.div>
               ))}
             </div>
           </div>
-
-          {/* Contact Support */}
-          <div className="bg-white rounded-lg shadow-sm border">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">
-                Contact Support
-              </h2>
-              <p className="text-sm text-gray-500">
-                Get in touch with our support team
-              </p>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {supportOptions.map((option, index) => {
-                  const Icon = option.icon;
-                  return (
-                    <div
-                      key={index}
-                      className="text-center p-6 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors"
-                    >
-                      <div className="inline-flex items-center justify-center w-12 h-12 bg-orange-100 rounded-lg mb-4">
-                        <Icon className="w-6 h-6 text-orange-600" />
-                      </div>
-                      <h3 className="font-medium text-gray-900 mb-2">
-                        {option.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-3">
-                        {option.description}
-                      </p>
-                      <p className="text-sm font-medium text-orange-600 mb-1">
-                        {option.contact}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {option.availability}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Links */}
-          <div className="bg-white rounded-lg shadow-sm border">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Quick Links</h2>
-              <p className="text-sm text-gray-500">
-                Jump to important sections
-              </p>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Link
-                  href="/returns"
-                  className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors"
-                >
-                  <FileText className="w-5 h-5 text-orange-600 mr-3" />
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      Returns System Guide
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Learn how to handle returns
-                    </p>
-                  </div>
-                </Link>
-                <Link
-                  href="/inventory/settings"
-                  className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors"
-                >
-                  <FileText className="w-5 h-5 text-orange-600 mr-3" />
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      Inventory Management
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Manage your stock levels
-                    </p>
-                  </div>
-                </Link>
-                <Link
-                  href="/sales"
-                  className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors"
-                >
-                  <FileText className="w-5 h-5 text-orange-600 mr-3" />
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      Sales Management
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Process sales and payments
-                    </p>
-                  </div>
-                </Link>
-                <Link
-                  href="/customers"
-                  className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors"
-                >
-                  <FileText className="w-5 h-5 text-orange-600 mr-3" />
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      Customer Management
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Manage customer accounts
-                    </p>
-                  </div>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 };
 

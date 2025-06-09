@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   FileText,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { MeterReading, ValidationResult } from "@/types/types";
 import { generateMockData } from "@/data/sales";
 import { loggedInUser } from "@/data/user";
@@ -40,7 +41,6 @@ const FuelValidationSystem: React.FC = () => {
   const [tolerance, setTolerance] = useState<number>(1);
   const [validation, setValidation] = useState<ValidationResult>(null);
   const [mockReadings] = useState<MeterReading[]>(generateMockData());
-  useState<MeterReading[]>(mockReadings);
 
   const calculateValidation = useCallback((): ValidationResult => {
     if (!endReading) return null;
@@ -114,21 +114,50 @@ const FuelValidationSystem: React.FC = () => {
 
   return (
     <ProtectedRoute requiredPermission="VALIDATE_SALES">
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+      <motion.div
+        className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         {/* Header */}
-        <header className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50">
+        <motion.header
+          className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50"
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-4">
               <div className="flex items-center space-x-4">
-                <Link href="/customers">
-                  <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
-                    <ArrowLeft className="w-5 h-5 text-orange-600" />
-                  </button>
-                </Link>
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center">
+                <motion.div
+                  whileHover={{ scale: 1.1, rotate: -5 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Link href="/customers">
+                    <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
+                      <ArrowLeft className="w-5 h-5 text-orange-600" />
+                    </button>
+                  </Link>
+                </motion.div>
+                <motion.div
+                  className="flex items-center space-x-3"
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.3, duration: 0.5 }}
+                >
+                  <motion.div
+                    className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center"
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{
+                      delay: 2,
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatDelay: 5,
+                    }}
+                  >
                     <Droplets className="w-6 h-6 text-white" />
-                  </div>
+                  </motion.div>
                   <div>
                     <h1 className="text-xl font-bold text-gray-900">
                       Sales Validation System
@@ -137,385 +166,766 @@ const FuelValidationSystem: React.FC = () => {
                       Daily Meter Tracking
                     </p>
                   </div>
-                </div>
+                </motion.div>
               </div>
 
               {/* Tab Navigation */}
-              <div className="flex bg-gray-100 rounded-lg p-1">
-                <button
+              <motion.div
+                className="flex bg-gray-100 rounded-lg p-1"
+                initial={{ x: 50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+              >
+                <motion.button
                   onClick={() => setActiveTab("validation")}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     activeTab === "validation"
                       ? "bg-white text-orange-600 shadow-sm"
                       : "text-gray-600 hover:text-gray-900"
                   }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   <Calculator className="w-4 h-4 inline mr-2" />
                   Validation
-                </button>
-                <button
+                </motion.button>
+                <motion.button
                   onClick={() => setActiveTab("reports")}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     activeTab === "reports"
                       ? "bg-white text-orange-600 shadow-sm"
                       : "text-gray-600 hover:text-gray-900"
                   }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   <FileText className="w-4 h-4 inline mr-2" />
                   Reports
-                </button>
-              </div>
+                </motion.button>
+              </motion.div>
             </div>
           </div>
-        </header>
+        </motion.header>
 
         <div className="max-w-7xl mx-auto p-6">
-          {activeTab === "validation" ? (
-            <React.Fragment>
-              {/* Page Title */}
-              <div className="mb-8">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                    <Fuel className="w-7 h-7 text-white" />
-                  </div>
-                  <div>
-                    <h1 className="text-3xl font-bold text-gray-900">
-                      Daily Validation
-                    </h1>
-                    <p className="text-gray-600">
-                      Verify meter readings against recorded sales to detect
-                      discrepancies
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid lg:grid-cols-2 gap-8 mb-8">
-                {/* Input Section */}
-                <div className="bg-white rounded-2xl p-8 shadow-lg border border-orange-100">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center">
-                      <Calculator className="w-5 h-5 text-white" />
-                    </div>
-                    <h2 className="text-xl font-semibold text-gray-900">
-                      Daily Readings
-                    </h2>
-                  </div>
-
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
-                        Start of Day Reading (L)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={startReading}
-                        onChange={(e) =>
-                          setStartReading(parseFloat(e.target.value) || 0)
-                        }
-                        className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
-                        placeholder="000245.7"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
-                        End of Day Reading (L)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={endReading}
-                        onChange={(e) => setEndReading(e.target.value)}
-                        className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
-                        placeholder={(startReading + totalSales).toFixed(1)}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
-                        Total Sales Recorded (L)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={totalSales}
-                        readOnly={true}
-                        onChange={(e) =>
-                          setTotalSales(parseFloat(e.target.value) || 0)
-                        }
-                        className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
-                        placeholder="75.0"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
-                        Tolerance Level (L)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        readOnly={true}
-                        value={tolerance}
-                        onChange={(e) =>
-                          setTolerance(parseFloat(e.target.value) || 0)
-                        }
-                        className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
-                        placeholder="2.0"
-                      />
-                      <p className="text-xs text-gray-500 mt-2">
-                        Acceptable variance between meter and sales
+          <AnimatePresence mode="wait">
+            {activeTab === "validation" ? (
+              <motion.div
+                key="validation"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.5 }}
+              >
+                {/* Page Title */}
+                <motion.div
+                  className="mb-8"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.6 }}
+                >
+                  <div className="flex items-center gap-4 mb-4">
+                    <motion.div
+                      className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center"
+                      initial={{ scale: 0, rotate: -180 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{
+                        delay: 0.6,
+                        duration: 0.8,
+                        type: "spring",
+                        bounce: 0.4,
+                      }}
+                    >
+                      <Fuel className="w-7 h-7 text-white" />
+                    </motion.div>
+                    <motion.div
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 0.7, duration: 0.5 }}
+                    >
+                      <h1 className="text-3xl font-bold text-gray-900">
+                        Daily Validation
+                      </h1>
+                      <p className="text-gray-600">
+                        Verify meter readings against recorded sales to detect
+                        discrepancies
                       </p>
-                    </div>
+                    </motion.div>
                   </div>
-                </div>
+                </motion.div>
 
-                {/* Results Section */}
-                <div className="bg-white rounded-2xl p-8 shadow-lg border border-orange-100">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                      <CheckCircle className="w-5 h-5 text-white" />
-                    </div>
-                    <h2 className="text-xl font-semibold text-gray-900">
-                      Validation Results
-                    </h2>
-                  </div>
-
-                  {validation ? (
-                    <div className="space-y-6">
-                      <div
-                        className={`p-6 rounded-xl border-2 ${getStatusColor(
-                          validation.status
-                        )} transition-all duration-300`}
+                <motion.div
+                  className="grid lg:grid-cols-2 gap-8 mb-8"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8, duration: 0.6 }}
+                >
+                  {/* Input Section */}
+                  <motion.div
+                    className="bg-white rounded-2xl p-8 shadow-lg border border-orange-100"
+                    initial={{ x: -50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.9, duration: 0.6 }}
+                    whileHover={{
+                      boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+                      y: -5,
+                    }}
+                  >
+                    <motion.div
+                      className="flex items-center gap-3 mb-6"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 1.0, duration: 0.5 }}
+                    >
+                      <motion.div
+                        className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center"
+                        animate={{ rotate: [0, 5, -5, 0] }}
+                        transition={{
+                          delay: 3,
+                          duration: 2,
+                          repeat: Infinity,
+                          repeatDelay: 8,
+                        }}
                       >
-                        <div className="flex items-center gap-3 mb-3">
-                          {getStatusIcon(validation.status)}
-                          <span className="font-bold text-lg">
-                            {validation.withinTolerance
-                              ? "VALIDATION PASSED"
-                              : "VALIDATION FAILED"}
-                          </span>
-                        </div>
-                        <p className="text-sm leading-relaxed">
-                          {validation.withinTolerance
-                            ? "Readings are within acceptable tolerance range"
-                            : "Significant discrepancy detected - investigation required"}
+                        <Calculator className="w-5 h-5 text-white" />
+                      </motion.div>
+                      <h2 className="text-xl font-semibold text-gray-900">
+                        Daily Readings
+                      </h2>
+                    </motion.div>
+
+                    <motion.div
+                      className="space-y-6"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 1.1, duration: 0.6 }}
+                    >
+                      <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 1.2, duration: 0.5 }}
+                      >
+                        <label className="block text-sm font-semibold text-gray-700 mb-3">
+                          Start of Day Reading (L)
+                        </label>
+                        <motion.input
+                          type="number"
+                          step="0.1"
+                          value={startReading}
+                          onChange={(e) =>
+                            setStartReading(parseFloat(e.target.value) || 0)
+                          }
+                          className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
+                          placeholder="000245.7"
+                          whileFocus={{ scale: 1.02 }}
+                          transition={{ type: "spring", stiffness: 300 }}
+                        />
+                      </motion.div>
+
+                      <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 1.3, duration: 0.5 }}
+                      >
+                        <label className="block text-sm font-semibold text-gray-700 mb-3">
+                          End of Day Reading (L)
+                        </label>
+                        <motion.input
+                          type="number"
+                          step="0.1"
+                          value={endReading}
+                          onChange={(e) => setEndReading(e.target.value)}
+                          className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
+                          placeholder={(startReading + totalSales).toFixed(1)}
+                          whileFocus={{ scale: 1.02 }}
+                          transition={{ type: "spring", stiffness: 300 }}
+                        />
+                      </motion.div>
+
+                      <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 1.4, duration: 0.5 }}
+                      >
+                        <label className="block text-sm font-semibold text-gray-700 mb-3">
+                          Total Sales Recorded (L)
+                        </label>
+                        <motion.input
+                          type="number"
+                          step="0.1"
+                          value={totalSales}
+                          readOnly={true}
+                          onChange={(e) =>
+                            setTotalSales(parseFloat(e.target.value) || 0)
+                          }
+                          className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
+                          placeholder="75.0"
+                          whileFocus={{ scale: 1.02 }}
+                          transition={{ type: "spring", stiffness: 300 }}
+                        />
+                      </motion.div>
+
+                      <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 1.5, duration: 0.5 }}
+                      >
+                        <label className="block text-sm font-semibold text-gray-700 mb-3">
+                          Tolerance Level (L)
+                        </label>
+                        <motion.input
+                          type="number"
+                          step="0.1"
+                          readOnly={true}
+                          value={tolerance}
+                          onChange={(e) =>
+                            setTolerance(parseFloat(e.target.value) || 0)
+                          }
+                          className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300"
+                          placeholder="2.0"
+                          whileFocus={{ scale: 1.02 }}
+                          transition={{ type: "spring", stiffness: 300 }}
+                        />
+                        <p className="text-xs text-gray-500 mt-2">
+                          Acceptable variance between meter and sales
                         </p>
-                      </div>
+                      </motion.div>
+                    </motion.div>
+                  </motion.div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
-                          <p className="text-xs text-gray-600 uppercase font-semibold mb-1">
-                            Meter Difference
-                          </p>
-                          <p className="text-xl font-bold text-gray-900">
-                            {validation.meterDifference} L
-                          </p>
-                        </div>
-                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
-                          <p className="text-xs text-blue-600 uppercase font-semibold mb-1">
-                            Recorded Sales
-                          </p>
-                          <p className="text-xl font-bold text-blue-900">
-                            {validation.totalSales} L
-                          </p>
-                        </div>
-                        <div
-                          className={`p-4 rounded-xl border-2 ${
-                            validation.withinTolerance
-                              ? "bg-gradient-to-br from-green-50 to-green-100 border-green-200"
-                              : "bg-gradient-to-br from-red-50 to-red-100 border-red-200"
-                          }`}
-                        >
-                          <p
-                            className={`text-xs uppercase font-semibold mb-1 ${
-                              validation.withinTolerance
-                                ? "text-green-600"
-                                : "text-red-600"
-                            }`}
-                          >
-                            Discrepancy
-                          </p>
-                          <p
-                            className={`text-xl font-bold ${
-                              validation.withinTolerance
-                                ? "text-green-700"
-                                : "text-red-700"
-                            }`}
-                          >
-                            ±{validation.discrepancy} L
-                          </p>
-                        </div>
-                        <div
-                          className={`p-4 rounded-xl border-2 ${
-                            validation.withinTolerance
-                              ? "bg-gradient-to-br from-green-50 to-green-100 border-green-200"
-                              : "bg-gradient-to-br from-red-50 to-red-100 border-red-200"
-                          }`}
-                        >
-                          <p
-                            className={`text-xs uppercase font-semibold mb-1 ${
-                              validation.withinTolerance
-                                ? "text-green-600"
-                                : "text-red-600"
-                            }`}
-                          >
-                            Variance %
-                          </p>
-                          <p
-                            className={`text-xl font-bold ${
-                              validation.withinTolerance
-                                ? "text-green-700"
-                                : "text-red-700"
-                            }`}
-                          >
-                            {validation.discrepancyPercentage}%
-                          </p>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={saveReading}
-                        className="w-full bg-gradient-to-r from-orange-500 to-amber-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-orange-600 hover:to-amber-700 transition-all duration-300 shadow-lg"
+                  {/* Results Section */}
+                  <motion.div
+                    className="bg-white rounded-2xl p-8 shadow-lg border border-orange-100"
+                    initial={{ x: 50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 1.0, duration: 0.6 }}
+                    whileHover={{
+                      boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+                      y: -5,
+                    }}
+                  >
+                    <motion.div
+                      className="flex items-center gap-3 mb-6"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 1.1, duration: 0.5 }}
+                    >
+                      <motion.div
+                        className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center"
+                        animate={{ scale: [1, 1.1, 1] }}
+                        transition={{
+                          delay: 4,
+                          duration: 2,
+                          repeat: Infinity,
+                          repeatDelay: 6,
+                        }}
                       >
-                        Save Reading
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 text-gray-500">
-                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Calculator className="w-8 h-8 opacity-50" />
-                      </div>
-                      <p className="text-lg font-medium">
-                        Enter end reading to validate
-                      </p>
-                      <p className="text-sm">
-                        Fill in all the required fields above
-                      </p>
-                    </div>
+                        <CheckCircle className="w-5 h-5 text-white" />
+                      </motion.div>
+                      <h2 className="text-xl font-semibold text-gray-900">
+                        Validation Results
+                      </h2>
+                    </motion.div>
+
+                    <AnimatePresence mode="wait">
+                      {validation ? (
+                        <motion.div
+                          className="space-y-6"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          transition={{ duration: 0.5 }}
+                        >
+                          <motion.div
+                            className={`p-6 rounded-xl border-2 ${getStatusColor(
+                              validation.status
+                            )} transition-all duration-300`}
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{
+                              delay: 0.2,
+                              duration: 0.6,
+                              type: "spring",
+                              bounce: 0.3,
+                            }}
+                            whileHover={{ scale: 1.02 }}
+                          >
+                            <motion.div
+                              className="flex items-center gap-3 mb-3"
+                              initial={{ x: -20, opacity: 0 }}
+                              animate={{ x: 0, opacity: 1 }}
+                              transition={{ delay: 0.4, duration: 0.5 }}
+                            >
+                              <motion.div
+                                animate={
+                                  validation.withinTolerance
+                                    ? { rotate: [0, 360] }
+                                    : { x: [-2, 2, -2, 2, 0] }
+                                }
+                                transition={{
+                                  duration: validation.withinTolerance
+                                    ? 1
+                                    : 0.5,
+                                  delay: 0.6,
+                                }}
+                              >
+                                {getStatusIcon(validation.status)}
+                              </motion.div>
+                              <span className="font-bold text-lg">
+                                {validation.withinTolerance
+                                  ? "VALIDATION PASSED"
+                                  : "VALIDATION FAILED"}
+                              </span>
+                            </motion.div>
+                            <motion.p
+                              className="text-sm leading-relaxed"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: 0.8, duration: 0.5 }}
+                            >
+                              {validation.withinTolerance
+                                ? "Readings are within acceptable tolerance range"
+                                : "Significant discrepancy detected - investigation required"}
+                            </motion.p>
+                          </motion.div>
+
+                          <motion.div
+                            className="grid grid-cols-2 gap-4"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.6, duration: 0.6 }}
+                          >
+                            <motion.div
+                              className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200"
+                              initial={{ y: 20, opacity: 0 }}
+                              animate={{ y: 0, opacity: 1 }}
+                              transition={{ delay: 0.8, duration: 0.5 }}
+                              whileHover={{ scale: 1.05, y: -5 }}
+                            >
+                              <p className="text-xs text-gray-600 uppercase font-semibold mb-1">
+                                Meter Difference
+                              </p>
+                              <p className="text-xl font-bold text-gray-900">
+                                {validation.meterDifference} L
+                              </p>
+                            </motion.div>
+                            <motion.div
+                              className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200"
+                              initial={{ y: 20, opacity: 0 }}
+                              animate={{ y: 0, opacity: 1 }}
+                              transition={{ delay: 0.9, duration: 0.5 }}
+                              whileHover={{ scale: 1.05, y: -5 }}
+                            >
+                              <p className="text-xs text-blue-600 uppercase font-semibold mb-1">
+                                Recorded Sales
+                              </p>
+                              <p className="text-xl font-bold text-blue-900">
+                                {validation.totalSales} L
+                              </p>
+                            </motion.div>
+                            <motion.div
+                              className={`p-4 rounded-xl border-2 ${
+                                validation.withinTolerance
+                                  ? "bg-gradient-to-br from-green-50 to-green-100 border-green-200"
+                                  : "bg-gradient-to-br from-red-50 to-red-100 border-red-200"
+                              }`}
+                              initial={{ y: 20, opacity: 0 }}
+                              animate={{ y: 0, opacity: 1 }}
+                              transition={{ delay: 1.0, duration: 0.5 }}
+                              whileHover={{ scale: 1.05, y: -5 }}
+                            >
+                              <p
+                                className={`text-xs uppercase font-semibold mb-1 ${
+                                  validation.withinTolerance
+                                    ? "text-green-600"
+                                    : "text-red-600"
+                                }`}
+                              >
+                                Discrepancy
+                              </p>
+                              <p
+                                className={`text-xl font-bold ${
+                                  validation.withinTolerance
+                                    ? "text-green-700"
+                                    : "text-red-700"
+                                }`}
+                              >
+                                ±{validation.discrepancy} L
+                              </p>
+                            </motion.div>
+                            <motion.div
+                              className={`p-4 rounded-xl border-2 ${
+                                validation.withinTolerance
+                                  ? "bg-gradient-to-br from-green-50 to-green-100 border-green-200"
+                                  : "bg-gradient-to-br from-red-50 to-red-100 border-red-200"
+                              }`}
+                              initial={{ y: 20, opacity: 0 }}
+                              animate={{ y: 0, opacity: 1 }}
+                              transition={{ delay: 1.1, duration: 0.5 }}
+                              whileHover={{ scale: 1.05, y: -5 }}
+                            >
+                              <p
+                                className={`text-xs uppercase font-semibold mb-1 ${
+                                  validation.withinTolerance
+                                    ? "text-green-600"
+                                    : "text-red-600"
+                                }`}
+                              >
+                                Variance %
+                              </p>
+                              <p
+                                className={`text-xl font-bold ${
+                                  validation.withinTolerance
+                                    ? "text-green-700"
+                                    : "text-red-700"
+                                }`}
+                              >
+                                {validation.discrepancyPercentage}%
+                              </p>
+                            </motion.div>
+                          </motion.div>
+
+                          <motion.button
+                            onClick={saveReading}
+                            className="w-full bg-gradient-to-r from-orange-500 to-amber-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-orange-600 hover:to-amber-700 transition-all duration-300 shadow-lg"
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 1.2, duration: 0.5 }}
+                            whileHover={{ scale: 1.02, y: -2 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            Save Reading
+                          </motion.button>
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          className="text-center py-12 text-gray-500"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5 }}
+                        >
+                          <motion.div
+                            className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{
+                              delay: 0.2,
+                              duration: 0.6,
+                              type: "spring",
+                              bounce: 0.4,
+                            }}
+                          >
+                            <Calculator className="w-8 h-8 opacity-50" />
+                          </motion.div>
+                          <motion.p
+                            className="text-lg font-medium"
+                            initial={{ y: 10, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.4, duration: 0.5 }}
+                          >
+                            Enter end reading to validate
+                          </motion.p>
+                          <motion.p
+                            className="text-sm"
+                            initial={{ y: 10, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.5, duration: 0.5 }}
+                          >
+                            Fill in all the required fields above
+                          </motion.p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                </motion.div>
+
+                {/* Potential Issues & Actions */}
+                <AnimatePresence>
+                  {validation && !validation.withinTolerance && (
+                    <motion.div
+                      className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-8 mb-6"
+                      initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -50, scale: 0.9 }}
+                      transition={{
+                        duration: 0.6,
+                        type: "spring",
+                        bounce: 0.3,
+                      }}
+                    >
+                      <motion.div
+                        className="flex items-start gap-4"
+                        initial={{ x: -30, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.2, duration: 0.6 }}
+                      >
+                        <motion.div
+                          className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center flex-shrink-0"
+                          animate={{ rotate: [0, -5, 5, 0] }}
+                          transition={{
+                            delay: 1,
+                            duration: 2,
+                            repeat: Infinity,
+                            repeatDelay: 8,
+                          }}
+                        >
+                          <AlertTriangle className="w-6 h-6 text-white" />
+                        </motion.div>
+                        <motion.div
+                          className="flex-1"
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ delay: 0.4, duration: 0.6 }}
+                        >
+                          <h3 className="font-bold text-lg text-amber-800 mb-4">
+                            Potential Issues to Investigate:
+                          </h3>
+                          <motion.div
+                            className="grid md:grid-cols-2 gap-4 mb-6"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.6, duration: 0.6 }}
+                          >
+                            <motion.ul
+                              className="text-sm text-amber-700 space-y-2"
+                              initial={{ x: -20, opacity: 0 }}
+                              animate={{ x: 0, opacity: 1 }}
+                              transition={{ delay: 0.8, duration: 0.5 }}
+                            >
+                              <motion.li
+                                className="flex items-center gap-2"
+                                initial={{ x: -10, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                transition={{ delay: 1.0, duration: 0.4 }}
+                              >
+                                <div className="w-1.5 h-1.5 bg-amber-600 rounded-full"></div>
+                                Meter calibration drift or malfunction
+                              </motion.li>
+                              <motion.li
+                                className="flex items-center gap-2"
+                                initial={{ x: -10, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                transition={{ delay: 1.1, duration: 0.4 }}
+                              >
+                                <div className="w-1.5 h-1.5 bg-amber-600 rounded-full"></div>
+                                Human error in reading analog meter
+                              </motion.li>
+                              <motion.li
+                                className="flex items-center gap-2"
+                                initial={{ x: -10, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                transition={{ delay: 1.2, duration: 0.4 }}
+                              >
+                                <div className="w-1.5 h-1.5 bg-amber-600 rounded-full"></div>
+                                Unrecorded sales or transactions
+                              </motion.li>
+                            </motion.ul>
+                            <motion.ul
+                              className="text-sm text-amber-700 space-y-2"
+                              initial={{ x: 20, opacity: 0 }}
+                              animate={{ x: 0, opacity: 1 }}
+                              transition={{ delay: 0.8, duration: 0.5 }}
+                            >
+                              <motion.li
+                                className="flex items-center gap-2"
+                                initial={{ x: 10, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                transition={{ delay: 1.0, duration: 0.4 }}
+                              >
+                                <div className="w-1.5 h-1.5 bg-amber-600 rounded-full"></div>
+                                Fuel theft or unauthorized dispensing
+                              </motion.li>
+                              <motion.li
+                                className="flex items-center gap-2"
+                                initial={{ x: 10, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                transition={{ delay: 1.1, duration: 0.4 }}
+                              >
+                                <div className="w-1.5 h-1.5 bg-amber-600 rounded-full"></div>
+                                Temperature compensation variations
+                              </motion.li>
+                              <motion.li
+                                className="flex items-center gap-2"
+                                initial={{ x: 10, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                transition={{ delay: 1.2, duration: 0.4 }}
+                              >
+                                <div className="w-1.5 h-1.5 bg-amber-600 rounded-full"></div>
+                                Mechanical meter wear or damage
+                              </motion.li>
+                            </motion.ul>
+                          </motion.div>
+                          <motion.div
+                            className="bg-white rounded-xl p-6 border border-amber-200"
+                            initial={{ y: 30, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 1.0, duration: 0.6 }}
+                            whileHover={{ scale: 1.02 }}
+                          >
+                            <p className="text-sm font-bold text-gray-800 mb-3">
+                              Recommended Actions:
+                            </p>
+                            <motion.div
+                              className="grid sm:grid-cols-2 gap-3 text-sm text-gray-700"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: 1.2, duration: 0.6 }}
+                            >
+                              <motion.div
+                                className="flex items-center gap-2"
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ delay: 1.3, duration: 0.4 }}
+                                whileHover={{ scale: 1.05 }}
+                              >
+                                <span className="w-6 h-6 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-xs font-bold">
+                                  1
+                                </span>
+                                Double-check meter readings
+                              </motion.div>
+                              <motion.div
+                                className="flex items-center gap-2"
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ delay: 1.4, duration: 0.4 }}
+                                whileHover={{ scale: 1.05 }}
+                              >
+                                <span className="w-6 h-6 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-xs font-bold">
+                                  2
+                                </span>
+                                Review all sales records
+                              </motion.div>
+                              <motion.div
+                                className="flex items-center gap-2"
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ delay: 1.5, duration: 0.4 }}
+                                whileHover={{ scale: 1.05 }}
+                              >
+                                <span className="w-6 h-6 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-xs font-bold">
+                                  3
+                                </span>
+                                Inspect meter for visible damage
+                              </motion.div>
+                              <motion.div
+                                className="flex items-center gap-2"
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ delay: 1.6, duration: 0.4 }}
+                                whileHover={{ scale: 1.05 }}
+                              >
+                                <span className="w-6 h-6 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-xs font-bold">
+                                  4
+                                </span>
+                                Consider professional calibration
+                              </motion.div>
+                            </motion.div>
+                          </motion.div>
+                        </motion.div>
+                      </motion.div>
+                    </motion.div>
                   )}
-                </div>
-              </div>
+                </AnimatePresence>
 
-              {/* Potential Issues & Actions */}
-              {validation && !validation.withinTolerance && (
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-8 mb-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <AlertTriangle className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-lg text-amber-800 mb-4">
-                        Potential Issues to Investigate:
-                      </h3>
-                      <div className="grid md:grid-cols-2 gap-4 mb-6">
-                        <ul className="text-sm text-amber-700 space-y-2">
-                          <li className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-amber-600 rounded-full"></div>
-                            Meter calibration drift or malfunction
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-amber-600 rounded-full"></div>
-                            Human error in reading analog meter
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-amber-600 rounded-full"></div>
-                            Unrecorded sales or transactions
-                          </li>
-                        </ul>
-                        <ul className="text-sm text-amber-700 space-y-2">
-                          <li className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-amber-600 rounded-full"></div>
-                            Fuel theft or unauthorized dispensing
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-amber-600 rounded-full"></div>
-                            Temperature compensation variations
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-amber-600 rounded-full"></div>
-                            Mechanical meter wear or damage
-                          </li>
-                        </ul>
-                      </div>
-                      <div className="bg-white rounded-xl p-6 border border-amber-200">
-                        <p className="text-sm font-bold text-gray-800 mb-3">
-                          Recommended Actions:
-                        </p>
-                        <div className="grid sm:grid-cols-2 gap-3 text-sm text-gray-700">
-                          <div className="flex items-center gap-2">
-                            <span className="w-6 h-6 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-xs font-bold">
-                              1
-                            </span>
-                            Double-check meter readings
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="w-6 h-6 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-xs font-bold">
-                              2
-                            </span>
-                            Review all sales records
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="w-6 h-6 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-xs font-bold">
-                              3
-                            </span>
-                            Inspect meter for visible damage
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="w-6 h-6 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-xs font-bold">
-                              4
-                            </span>
-                            Consider professional calibration
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Quick Reference */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                    <Fuel className="w-5 h-5 text-white" />
-                  </div>
-                  <h3 className="font-bold text-lg text-blue-800">
-                    Quick Reference
-                  </h3>
-                </div>
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="bg-white p-4 rounded-xl border border-blue-200">
-                    <p className="font-semibold text-blue-700 mb-2">Formula:</p>
-                    <p className="text-blue-600 text-sm">
-                      End Reading - Start Reading = Sold Product
-                    </p>
-                  </div>
-                  <div className="bg-white p-4 rounded-xl border border-blue-200">
-                    <p className="font-semibold text-blue-700 mb-2">Example:</p>
-                    <p className="text-blue-600 text-sm">
-                      320.7L - 245.7L = 75.0L Sold
-                    </p>
-                  </div>
-                  <div className="bg-white p-4 rounded-xl border border-blue-200">
-                    <p className="font-semibold text-blue-700 mb-2">
-                      Tolerance:
-                    </p>
-                    <p className="text-blue-600 text-sm">
-                      ±{tolerance}L variance acceptable
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </React.Fragment>
-          ) : (
-            // Reports Tab
-            <MeterReadingReports />
-          )}
+                {/* Quick Reference */}
+                <motion.div
+                  className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6"
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1.6, duration: 0.6 }}
+                  whileHover={{
+                    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+                    y: -5,
+                  }}
+                >
+                  <motion.div
+                    className="flex items-center gap-3 mb-4"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 1.7, duration: 0.5 }}
+                  >
+                    <motion.div
+                      className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center"
+                      animate={{ rotate: [0, 10, -10, 0] }}
+                      transition={{
+                        delay: 4,
+                        duration: 3,
+                        repeat: Infinity,
+                        repeatDelay: 10,
+                      }}
+                    >
+                      <Fuel className="w-5 h-5 text-white" />
+                    </motion.div>
+                    <h3 className="font-bold text-lg text-blue-800">
+                      Quick Reference
+                    </h3>
+                  </motion.div>
+                  <motion.div
+                    className="grid md:grid-cols-3 gap-6"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.8, duration: 0.6 }}
+                  >
+                    <motion.div
+                      className="bg-white p-4 rounded-xl border border-blue-200"
+                      initial={{ y: 30, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 1.9, duration: 0.5 }}
+                      whileHover={{ scale: 1.05, y: -5 }}
+                    >
+                      <p className="font-semibold text-blue-700 mb-2">
+                        Formula:
+                      </p>
+                      <p className="text-blue-600 text-sm">
+                        End Reading - Start Reading = Sold Product
+                      </p>
+                    </motion.div>
+                    <motion.div
+                      className="bg-white p-4 rounded-xl border border-blue-200"
+                      initial={{ y: 30, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 2.0, duration: 0.5 }}
+                      whileHover={{ scale: 1.05, y: -5 }}
+                    >
+                      <p className="font-semibold text-blue-700 mb-2">
+                        Example:
+                      </p>
+                      <p className="text-blue-600 text-sm">
+                        320.7L - 245.7L = 75.0L Sold
+                      </p>
+                    </motion.div>
+                    <motion.div
+                      className="bg-white p-4 rounded-xl border border-blue-200"
+                      initial={{ y: 30, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 2.1, duration: 0.5 }}
+                      whileHover={{ scale: 1.05, y: -5 }}
+                    >
+                      <p className="font-semibold text-blue-700 mb-2">
+                        Tolerance:
+                      </p>
+                      <p className="text-blue-600 text-sm">
+                        ±{tolerance}L variance acceptable
+                      </p>
+                    </motion.div>
+                  </motion.div>
+                </motion.div>
+              </motion.div>
+            ) : (
+              // Reports Tab
+              <motion.div
+                key="reports"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.5 }}
+              >
+                <MeterReadingReports />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
     </ProtectedRoute>
   );
 };

@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   User,
@@ -246,24 +247,55 @@ const CustomerDetailPage = () => {
   // Early return after all hooks are declared
   if (!currentCustomer) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <motion.div
+        className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 flex items-center justify-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <motion.div
+          className="text-center"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <motion.div
+            className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"
+            animate={{ rotate: [0, -10, 10, 0] }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
             <AlertCircle className="w-8 h-8 text-red-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          </motion.div>
+          <motion.h2
+            className="text-2xl font-bold text-gray-900 mb-2"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+          >
             Customer Not Found
-          </h2>
-          <p className="text-gray-600 mb-6">
+          </motion.h2>
+          <motion.p
+            className="text-gray-600 mb-6"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+          >
             The customer you&apos;re looking for doesn&apos;t exist.
-          </p>
+          </motion.p>
           <Link href="/customers">
-            <button className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+            <motion.button
+              className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.7 }}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+            >
               Back to Customers
-            </button>
+            </motion.button>
           </Link>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     );
   }
 
@@ -317,17 +349,63 @@ const CustomerDetailPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+    <motion.div
+      className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Floating Background Elements */}
+      <motion.div
+        className="fixed top-20 left-10 w-32 h-32 bg-orange-200 rounded-full opacity-20 blur-xl"
+        animate={{
+          y: [0, -20, 0],
+          rotate: [0, 180, 360],
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
+      <motion.div
+        className="fixed bottom-20 right-10 w-24 h-24 bg-amber-300 rounded-full opacity-30 blur-lg"
+        animate={{
+          y: [0, 20, 0],
+          x: [0, -10, 0],
+        }}
+        transition={{
+          duration: 6,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 1,
+        }}
+      />
+
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-40">
+      <motion.header
+        className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-40"
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+          <motion.div
+            className="flex justify-between items-center py-4"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
             {/* Breadcrumb Navigation */}
             <div className="flex items-center space-x-4">
               <Link href="/customers">
-                <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
+                <motion.button
+                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors"
+                  whileHover={{ scale: 1.1, rotate: -10 }}
+                  whileTap={{ scale: 0.9 }}
+                >
                   <ArrowLeft className="w-5 h-5 text-orange-600" />
-                </button>
+                </motion.button>
               </Link>
 
               <nav className="flex items-center space-x-2 text-sm">
@@ -347,32 +425,61 @@ const CustomerDetailPage = () => {
             {/* Actions */}
             <div className="flex items-center space-x-3">
               <ProtectedElement requiredPermission="EDIT_CUSTOMER_DETAILS">
-                <button
+                <motion.button
                   onClick={handleOpenEditModal}
                   className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  whileTap={{ scale: 0.9 }}
                 >
                   <Edit3 className="w-5 h-5" />
-                </button>
+                </motion.button>
               </ProtectedElement>
             </div>
-          </div>
+          </motion.div>
         </div>
-      </header>
+      </motion.header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <motion.div
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+      >
         {/* Customer Profile Section */}
-        <div className="bg-white rounded-xl shadow-lg border border-orange-100 mb-8 overflow-hidden">
-          <div className="bg-gradient-to-r from-orange-500 to-amber-600 px-6 py-8">
+        <motion.div
+          className="bg-white rounded-xl shadow-lg border border-orange-100 mb-8 overflow-hidden"
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          whileHover={{
+            y: -5,
+            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+          }}
+        >
+          <motion.div
+            className="bg-gradient-to-r from-orange-500 to-amber-600 px-6 py-8"
+            initial={{ x: -100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+          >
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                <motion.div
+                  className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm"
+                  animate={{ rotate: [0, 5, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                >
                   {currentCustomer.type === "wholesale" ? (
                     <Building className="w-8 h-8 text-white" />
                   ) : (
                     <User className="w-8 h-8 text-white" />
                   )}
-                </div>
-                <div>
+                </motion.div>
+                <motion.div
+                  initial={{ x: -30, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                >
                   <h1 className="text-2xl font-bold text-white mb-1">
                     {currentCustomer.name}
                   </h1>
@@ -380,62 +487,104 @@ const CustomerDetailPage = () => {
                     <span className="text-sm font-medium capitalize">
                       {currentCustomer.type} Customer
                     </span>
-                    <span
+                    <motion.span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
                         currentCustomer.status === "active"
                           ? "bg-green-100 text-green-800"
                           : "bg-yellow-100 text-yellow-800"
                       }`}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ duration: 0.3, delay: 0.8 }}
                     >
                       {currentCustomer.status}
-                    </span>
+                    </motion.span>
                   </div>
-                </div>
+                </motion.div>
               </div>
-              <div className="text-right">
+              <motion.div
+                className="text-right"
+                initial={{ x: 30, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.7 }}
+              >
                 <div className="text-white/80 text-sm">Customer ID</div>
                 <div className="text-white font-mono text-lg">
                   #{currentCustomer.id}
                 </div>
-              </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="p-6">
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <motion.div
+            className="p-6"
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
+            <motion.div
+              className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.7 }}
+            >
               {/* Contact Information */}
-              <div className="space-y-4">
+              <motion.div
+                className="space-y-4"
+                initial={{ x: -30, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.8 }}
+                whileHover={{ scale: 1.02 }}
+              >
                 <h3 className="font-semibold text-gray-900 mb-3">
                   Contact Information
                 </h3>
                 <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
+                  <motion.div
+                    className="flex items-center space-x-3"
+                    whileHover={{ x: 5 }}
+                    transition={{ duration: 0.2 }}
+                  >
                     <Phone className="w-4 h-4 text-gray-400" />
                     <span className="text-sm text-gray-900">
                       {currentCustomer.phone}
                     </span>
-                  </div>
+                  </motion.div>
                   {currentCustomer.email && (
-                    <div className="flex items-center space-x-3">
+                    <motion.div
+                      className="flex items-center space-x-3"
+                      whileHover={{ x: 5 }}
+                      transition={{ duration: 0.2 }}
+                    >
                       <Mail className="w-4 h-4 text-gray-400" />
                       <span className="text-sm text-gray-900">
                         {currentCustomer.email}
                       </span>
-                    </div>
+                    </motion.div>
                   )}
                   {currentCustomer.address && (
-                    <div className="flex items-start space-x-3">
+                    <motion.div
+                      className="flex items-start space-x-3"
+                      whileHover={{ x: 5 }}
+                      transition={{ duration: 0.2 }}
+                    >
                       <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
                       <span className="text-sm text-gray-900">
                         {currentCustomer.address}
                       </span>
-                    </div>
+                    </motion.div>
                   )}
                 </div>
-              </div>
+              </motion.div>
 
               {/* Account Information */}
-              <div className="space-y-4">
+              <motion.div
+                className="space-y-4"
+                initial={{ x: -30, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.9 }}
+                whileHover={{ scale: 1.02 }}
+              >
                 <h3 className="font-semibold text-gray-900 mb-3">
                   Account Information
                 </h3>
@@ -474,10 +623,16 @@ const CustomerDetailPage = () => {
                     </span>
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Purchase History */}
-              <div className="space-y-4">
+              <motion.div
+                className="space-y-4"
+                initial={{ x: -30, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 1.0 }}
+                whileHover={{ scale: 1.02 }}
+              >
                 <h3 className="font-semibold text-gray-900 mb-3">
                   Purchase History
                 </h3>
@@ -503,139 +658,228 @@ const CustomerDetailPage = () => {
                     </span>
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Quick Actions */}
-              <div className="space-y-4">
+              <motion.div
+                className="space-y-4"
+                initial={{ x: -30, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 1.1 }}
+                whileHover={{ scale: 1.02 }}
+              >
                 <h3 className="font-semibold text-gray-900 mb-3">
                   Quick Actions
                 </h3>
                 <div className="space-y-2">
                   <Link href="/sales">
-                    <button className="w-full flex items-center justify-center space-x-2 px-4 py-2 my-1 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm">
+                    <motion.button
+                      className="w-full flex items-center justify-center space-x-2 px-4 py-2 my-1 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm"
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
                       <Plus className="w-4 h-4" />
                       <span>New Sale</span>
-                    </button>
+                    </motion.button>
                   </Link>
                   {currentCustomer.balance < 0 && (
                     <ProtectedElement requiredPermission="VIEW_FINANCIAL_DATA">
-                      <button className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm">
+                      <motion.button
+                        className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm"
+                        whileHover={{ scale: 1.05, y: -2 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
                         <DollarSign className="w-4 h-4" />
                         <span>Record Payment</span>
-                      </button>
+                      </motion.button>
                     </ProtectedElement>
                   )}
                   <ProtectedElement requiredPermission="VIEW_FINANCIAL_DATA">
-                    <button
+                    <motion.button
                       onClick={exportTransactions}
                       className="w-full flex items-center justify-center space-x-2 px-4 py-2 border border-orange-200 text-orange-700 rounded-lg hover:bg-orange-50 transition-colors text-sm"
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
                     >
                       <Download className="w-4 h-4" />
                       <span>Export Data</span>
-                    </button>
+                    </motion.button>
                   </ProtectedElement>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        </motion.div>
 
         {/* Transaction Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatsCard
-            title="Total Transactions"
-            value={customerStats.totalTransactions}
-            icon={Receipt}
-            iconBg="bg-blue-100"
-            iconColor="text-blue-600"
-          />
-
-          <StatsCard
-            title="Total Sales"
-            value={`₦${customerStats.totalSales.toLocaleString()}`}
-            change={{
-              value: `${
-                transactions.filter((t) => t.type === "sale").length
-              } transactions`,
-              icon: TrendingUp,
-              textColor: "text-blue-600",
-            }}
-            icon={Package}
-            iconBg="bg-purple-100"
-            iconColor="text-purple-600"
-          />
-
-          <StatsCard
-            title="Total Payments"
-            value={`₦${customerStats.totalPayments.toLocaleString()}`}
-            change={{
-              value: `${
-                transactions.filter((t) => t.type === "payment").length
-              } payments`,
-              icon: CheckCircle,
-              textColor: "text-green-600",
-            }}
-            icon={DollarSign}
-            iconBg="bg-green-100"
-            iconColor="text-green-600"
-          />
-
-          <StatsCard
-            title="Average Transaction"
-            value={`₦${customerStats.averageTransaction.toLocaleString()}`}
-            change={{
-              value: customerStats.lastTransaction
-                ? `Last: ${new Date(
-                    customerStats.lastTransaction
-                  ).toLocaleDateString()}`
-                : "No transactions",
-              icon: Calendar,
-              textColor: "text-orange-600",
-            }}
-            icon={TrendingUp}
-            iconBg="bg-orange-100"
-            iconColor="text-orange-600"
-          />
-        </div>
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+        >
+          {[
+            {
+              component: (
+                <StatsCard
+                  title="Total Transactions"
+                  value={customerStats.totalTransactions}
+                  icon={Receipt}
+                  iconBg="bg-blue-100"
+                  iconColor="text-blue-600"
+                />
+              ),
+              delay: 0.6,
+            },
+            {
+              component: (
+                <StatsCard
+                  title="Total Sales"
+                  value={`₦${customerStats.totalSales.toLocaleString()}`}
+                  change={{
+                    value: `${
+                      transactions.filter((t) => t.type === "sale").length
+                    } transactions`,
+                    icon: TrendingUp,
+                    textColor: "text-blue-600",
+                  }}
+                  icon={Package}
+                  iconBg="bg-purple-100"
+                  iconColor="text-purple-600"
+                />
+              ),
+              delay: 0.7,
+            },
+            {
+              component: (
+                <StatsCard
+                  title="Total Payments"
+                  value={`₦${customerStats.totalPayments.toLocaleString()}`}
+                  change={{
+                    value: `${
+                      transactions.filter((t) => t.type === "payment").length
+                    } payments`,
+                    icon: CheckCircle,
+                    textColor: "text-green-600",
+                  }}
+                  icon={DollarSign}
+                  iconBg="bg-green-100"
+                  iconColor="text-green-600"
+                />
+              ),
+              delay: 0.8,
+            },
+            {
+              component: (
+                <StatsCard
+                  title="Average Transaction"
+                  value={`₦${customerStats.averageTransaction.toLocaleString()}`}
+                  change={{
+                    value: customerStats.lastTransaction
+                      ? `Last: ${new Date(
+                          customerStats.lastTransaction
+                        ).toLocaleDateString()}`
+                      : "No transactions",
+                    icon: Calendar,
+                    textColor: "text-orange-600",
+                  }}
+                  icon={TrendingUp}
+                  iconBg="bg-orange-100"
+                  iconColor="text-orange-600"
+                />
+              ),
+              delay: 0.9,
+            },
+          ].map((item, index) => (
+            <motion.div
+              key={index}
+              initial={{ scale: 0.8, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: item.delay }}
+              whileHover={{ scale: 1.05, y: -5 }}
+            >
+              {item.component}
+            </motion.div>
+          ))}
+        </motion.div>
 
         {/* Transaction History Section */}
-        <div className="bg-white rounded-xl shadow-lg border border-orange-100 overflow-hidden">
+        <motion.div
+          className="bg-white rounded-xl shadow-lg border border-orange-100 overflow-hidden"
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          whileHover={{
+            y: -2,
+            boxShadow: "0 20px 40px -12px rgba(0, 0, 0, 0.1)",
+          }}
+        >
           {/* Section Header */}
-          <div className="px-6 py-4 border-b border-gray-100">
+          <motion.div
+            className="px-6 py-4 border-b border-gray-100"
+            initial={{ x: -50, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.7 }}
+          >
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">
+              <motion.h2
+                className="text-xl font-semibold text-gray-900"
+                initial={{ y: -10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.8 }}
+              >
                 Transaction History
-              </h2>
+              </motion.h2>
               <div className="flex items-center space-x-3">
-                <button
+                <motion.button
                   onClick={() => setShowFilters(!showFilters)}
                   className={`px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
                     showFilters
                       ? "bg-orange-100 text-orange-700"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.3, delay: 0.9 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   <Filter className="w-4 h-4" />
                   <span className="text-sm">Filters</span>
-                </button>
+                </motion.button>
                 <ProtectedElement requiredPermission="VIEW_FINANCIAL_DATA">
-                  <button
+                  <motion.button
                     onClick={exportTransactions}
                     className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors flex items-center space-x-2"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.3, delay: 1.0 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     <Download className="w-4 h-4" />
                     <span className="text-sm">Export</span>
-                  </button>
+                  </motion.button>
                 </ProtectedElement>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Search and Filters */}
-          <div className="px-6 py-4 border-b border-gray-100">
+          <motion.div
+            className="px-6 py-4 border-b border-gray-100"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+          >
             <div className="flex flex-col lg:flex-row gap-4">
               {/* Search */}
-              <div className="flex-1 relative">
+              <motion.div
+                className="flex-1 relative"
+                initial={{ x: -30, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.9 }}
+              >
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
@@ -644,95 +888,122 @@ const CustomerDetailPage = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
                 />
-              </div>
+              </motion.div>
 
               {/* Quick Filters */}
-              <div className="flex flex-wrap gap-2">
-                {(["all", "sale", "payment", "credit"] as const).map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setFilters((prev) => ({ ...prev, type }))}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      filters.type === type
-                        ? "bg-orange-500 text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-orange-100"
-                    }`}
-                  >
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </button>
-                ))}
-              </div>
+              <motion.div
+                className="flex flex-wrap gap-2"
+                initial={{ x: 30, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 1.0 }}
+              >
+                {(["all", "sale", "payment", "credit"] as const).map(
+                  (type, index) => (
+                    <motion.button
+                      key={type}
+                      onClick={() => setFilters((prev) => ({ ...prev, type }))}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        filters.type === type
+                          ? "bg-orange-500 text-white"
+                          : "bg-gray-100 text-gray-600 hover:bg-orange-100"
+                      }`}
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.3, delay: 1.1 + index * 0.1 }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </motion.button>
+                  )
+                )}
+              </motion.div>
             </div>
 
             {/* Advanced Filters */}
-            {showFilters && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Date Range
-                    </label>
-                    <select
-                      value={filters.dateRange}
-                      onChange={(e) =>
-                        setFilters((prev) => ({
-                          ...prev,
-                          dateRange: e.target
-                            .value as TransactionFilters["dateRange"],
-                        }))
-                      }
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-sm"
-                    >
-                      <option value="all">All Time</option>
-                      <option value="week">Last Week</option>
-                      <option value="month">Last Month</option>
-                      <option value="quarter">Last Quarter</option>
-                      <option value="year">Last Year</option>
-                    </select>
-                  </div>
+            <AnimatePresence>
+              {showFilters && (
+                <motion.div
+                  className="mt-4 p-4 bg-gray-50 rounded-lg"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <motion.div
+                    className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                    initial={{ y: -20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
+                  >
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Date Range
+                      </label>
+                      <select
+                        value={filters.dateRange}
+                        onChange={(e) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            dateRange: e.target
+                              .value as TransactionFilters["dateRange"],
+                          }))
+                        }
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-sm"
+                      >
+                        <option value="all">All Time</option>
+                        <option value="week">Last Week</option>
+                        <option value="month">Last Month</option>
+                        <option value="quarter">Last Quarter</option>
+                        <option value="year">Last Year</option>
+                      </select>
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Amount Range
-                    </label>
-                    <select
-                      value={filters.amountRange}
-                      onChange={(e) =>
-                        setFilters((prev) => ({
-                          ...prev,
-                          amountRange: e.target
-                            .value as TransactionFilters["amountRange"],
-                        }))
-                      }
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-sm"
-                    >
-                      <option value="all">All Amounts</option>
-                      <option value="0-1000">₦0 - ₦1,000</option>
-                      <option value="1000-5000">₦1,000 - ₦5,000</option>
-                      <option value="5000-10000">₦5,000 - ₦10,000</option>
-                      <option value="10000+">₦10,000+</option>
-                    </select>
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Amount Range
+                      </label>
+                      <select
+                        value={filters.amountRange}
+                        onChange={(e) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            amountRange: e.target
+                              .value as TransactionFilters["amountRange"],
+                          }))
+                        }
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-sm"
+                      >
+                        <option value="all">All Amounts</option>
+                        <option value="0-1000">₦0 - ₦1,000</option>
+                        <option value="1000-5000">₦1,000 - ₦5,000</option>
+                        <option value="5000-10000">₦5,000 - ₦10,000</option>
+                        <option value="10000+">₦10,000+</option>
+                      </select>
+                    </div>
 
-                  <div className="flex items-end">
-                    <button
-                      onClick={() => {
-                        setFilters({
-                          dateRange: "all",
-                          type: "all",
-                          amountRange: "all",
-                        });
-                        setSearchTerm("");
-                      }}
-                      className="w-full px-4 py-2 text-orange-600 border border-orange-200 rounded-lg hover:bg-orange-50 transition-colors text-sm"
-                    >
-                      Reset Filters
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+                    <div className="flex items-end">
+                      <motion.button
+                        onClick={() => {
+                          setFilters({
+                            dateRange: "all",
+                            type: "all",
+                            amountRange: "all",
+                          });
+                          setSearchTerm("");
+                        }}
+                        className="w-full px-4 py-2 text-orange-600 border border-orange-200 rounded-lg hover:bg-orange-50 transition-colors text-sm"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        Reset Filters
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
 
           {/* Results Summary */}
           <div className="px-6 py-3 bg-gray-50 border-b border-gray-100">
@@ -759,14 +1030,26 @@ const CustomerDetailPage = () => {
           </div>
 
           {/* Transaction Table */}
-          <div className="overflow-x-auto">
+          <motion.div
+            className="overflow-x-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 1.0 }}
+          >
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <motion.thead
+                className="bg-gray-50"
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 1.1 }}
+              >
                 <tr>
                   <th className="text-left py-3 px-6">
-                    <button
+                    <motion.button
                       onClick={() => handleSort("date")}
                       className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
                       Date
                       <ChevronDown
@@ -778,12 +1061,14 @@ const CustomerDetailPage = () => {
                             : "opacity-40"
                         }`}
                       />
-                    </button>
+                    </motion.button>
                   </th>
                   <th className="text-left py-3 px-6">
-                    <button
+                    <motion.button
                       onClick={() => handleSort("type")}
                       className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
                       Type
                       <ChevronDown
@@ -795,15 +1080,17 @@ const CustomerDetailPage = () => {
                             : "opacity-40"
                         }`}
                       />
-                    </button>
+                    </motion.button>
                   </th>
                   <th className="text-left py-3 px-6 font-medium text-gray-700 text-sm">
                     Description
                   </th>
                   <th className="text-right py-3 px-6">
-                    <button
+                    <motion.button
                       onClick={() => handleSort("amount")}
                       className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 ml-auto"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
                       Amount
                       <ChevronDown
@@ -815,7 +1102,7 @@ const CustomerDetailPage = () => {
                             : "opacity-40"
                         }`}
                       />
-                    </button>
+                    </motion.button>
                   </th>
                   <th className="text-right py-3 px-6 font-medium text-gray-700 text-sm">
                     Balance After
@@ -824,107 +1111,152 @@ const CustomerDetailPage = () => {
                     Actions
                   </th>
                 </tr>
-              </thead>
+              </motion.thead>
               <tbody className="divide-y divide-gray-100">
-                {paginatedTransactions.length > 0 ? (
-                  paginatedTransactions.map((transaction) => (
-                    <tr
-                      key={transaction.id}
-                      className="hover:bg-gray-50 transition-colors"
+                <AnimatePresence>
+                  {paginatedTransactions.length > 0 ? (
+                    paginatedTransactions.map((transaction, index) => (
+                      <motion.tr
+                        key={transaction.id}
+                        className="hover:bg-gray-50 transition-colors"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        whileHover={{
+                          backgroundColor: "rgba(249, 250, 251, 1)",
+                        }}
+                      >
+                        <td className="py-4 px-6">
+                          <div className="text-sm font-medium text-gray-900">
+                            {new Date(transaction.date).toLocaleDateString()}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {transaction.id}
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <motion.span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTransactionTypeColor(
+                              transaction.type
+                            )}`}
+                            whileHover={{ scale: 1.05 }}
+                          >
+                            {getTransactionTypeIcon(transaction.type)}
+                            <span className="ml-1 capitalize">
+                              {transaction.type}
+                            </span>
+                          </motion.span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="text-sm text-gray-900 font-medium">
+                            {transaction.description}
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 text-right">
+                          <div
+                            className={`text-sm font-bold ${
+                              transaction.type === "payment"
+                                ? "text-green-600"
+                                : "text-gray-900"
+                            }`}
+                          >
+                            {transaction.type === "payment" ? "+" : ""}₦
+                            {transaction.amount.toLocaleString()}
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 text-right">
+                          <div
+                            className={`text-sm font-medium ${getBalanceColor(
+                              transaction.balance
+                            )}`}
+                          >
+                            ₦{Math.abs(transaction.balance).toLocaleString()}
+                            {transaction.balance < 0 && (
+                              <span className="text-xs ml-1">(debt)</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 text-center">
+                          <motion.button
+                            onClick={() => setSelectedTransaction(transaction)}
+                            className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors"
+                            title="View Details"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </motion.button>
+                        </td>
+                      </motion.tr>
+                    ))
+                  ) : (
+                    <motion.tr
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.5 }}
                     >
-                      <td className="py-4 px-6">
-                        <div className="text-sm font-medium text-gray-900">
-                          {new Date(transaction.date).toLocaleDateString()}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {transaction.id}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span
-                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTransactionTypeColor(
-                            transaction.type
-                          )}`}
+                      <td colSpan={6} className="py-12 text-center">
+                        <motion.div
+                          className="text-gray-500"
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ duration: 0.5, delay: 0.2 }}
                         >
-                          {getTransactionTypeIcon(transaction.type)}
-                          <span className="ml-1 capitalize">
-                            {transaction.type}
-                          </span>
-                        </span>
+                          <motion.div
+                            animate={{ rotate: [0, 10, -10, 0] }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                              repeatDelay: 3,
+                            }}
+                          >
+                            <Package className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                          </motion.div>
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            No transactions found
+                          </h3>
+                          <p>Try adjusting your search criteria or filters</p>
+                        </motion.div>
                       </td>
-                      <td className="py-4 px-6">
-                        <div className="text-sm text-gray-900 font-medium">
-                          {transaction.description}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-right">
-                        <div
-                          className={`text-sm font-bold ${
-                            transaction.type === "payment"
-                              ? "text-green-600"
-                              : "text-gray-900"
-                          }`}
-                        >
-                          {transaction.type === "payment" ? "+" : ""}₦
-                          {transaction.amount.toLocaleString()}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-right">
-                        <div
-                          className={`text-sm font-medium ${getBalanceColor(
-                            transaction.balance
-                          )}`}
-                        >
-                          ₦{Math.abs(transaction.balance).toLocaleString()}
-                          {transaction.balance < 0 && (
-                            <span className="text-xs ml-1">(debt)</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-center">
-                        <button
-                          onClick={() => setSelectedTransaction(transaction)}
-                          className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors"
-                          title="View Details"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center">
-                      <div className="text-gray-500">
-                        <Package className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
-                          No transactions found
-                        </h3>
-                        <p>Try adjusting your search criteria or filters</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
+                    </motion.tr>
+                  )}
+                </AnimatePresence>
               </tbody>
             </table>
-          </div>
+          </motion.div>
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
+            <motion.div
+              className="px-6 py-4 border-t border-gray-100 bg-gray-50"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-sm text-gray-600">
+                <motion.div
+                  className="text-sm text-gray-600"
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 0.4 }}
+                >
                   Page {currentPage} of {totalPages}
-                </div>
+                </motion.div>
                 <div className="flex items-center space-x-2">
-                  <button
+                  <motion.button
                     onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
                     className="flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    whileHover={{ scale: currentPage !== 1 ? 1.05 : 1 }}
+                    whileTap={{ scale: currentPage !== 1 ? 0.95 : 1 }}
+                    initial={{ x: -10, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.3, delay: 0.5 }}
                   >
                     <ChevronLeft className="w-4 h-4 mr-1" />
                     Previous
-                  </button>
+                  </motion.button>
 
                   {/* Page Numbers */}
                   <div className="flex items-center space-x-1">
@@ -946,146 +1278,246 @@ const CustomerDetailPage = () => {
                                 ...
                               </span>
                             )}
-                            <button
+                            <motion.button
                               onClick={() => setCurrentPage(page)}
                               className={`px-3 py-2 text-sm font-medium rounded-lg ${
                                 currentPage === page
                                   ? "bg-orange-500 text-white"
                                   : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
                               }`}
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              initial={{ scale: 0, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              transition={{
+                                duration: 0.2,
+                                delay: 0.6 + index * 0.05,
+                              }}
                             >
                               {page}
-                            </button>
+                            </motion.button>
                           </React.Fragment>
                         );
                       })}
                   </div>
 
-                  <button
+                  <motion.button
                     onClick={() =>
                       setCurrentPage(Math.min(totalPages, currentPage + 1))
                     }
                     disabled={currentPage === totalPages}
                     className="flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    whileHover={{
+                      scale: currentPage !== totalPages ? 1.05 : 1,
+                    }}
+                    whileTap={{ scale: currentPage !== totalPages ? 0.95 : 1 }}
+                    initial={{ x: 10, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.3, delay: 0.7 }}
                   >
                     Next
                     <ChevronRight className="w-4 h-4 ml-1" />
-                  </button>
+                  </motion.button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Transaction Detail Modal */}
-      {selectedTransaction && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">
-                  Transaction Details
-                </h2>
-                <button
-                  onClick={() => setSelectedTransaction(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XCircle className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-1">
-                    Transaction ID
-                  </h3>
-                  <p className="text-gray-900 font-mono text-sm">
-                    {selectedTransaction.id}
-                  </p>
+      <AnimatePresence>
+        {selectedTransaction && (
+          <motion.div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            onClick={() => setSelectedTransaction(null)}
+          >
+            <motion.div
+              className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+              initial={{ scale: 0.8, opacity: 0, y: 50 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.8, opacity: 0, y: 50 }}
+              transition={{ duration: 0.3, type: "spring", damping: 25 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <motion.div
+                className="p-6 border-b border-gray-200"
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+              >
+                <div className="flex justify-between items-center">
+                  <motion.h2
+                    className="text-xl font-bold text-gray-900"
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.3, delay: 0.2 }}
+                  >
+                    Transaction Details
+                  </motion.h2>
+                  <motion.button
+                    onClick={() => setSelectedTransaction(null)}
+                    className="text-gray-400 hover:text-gray-600"
+                    whileHover={{ scale: 1.1, rotate: 90 }}
+                    whileTap={{ scale: 0.9 }}
+                    initial={{ opacity: 0, rotate: -90 }}
+                    animate={{ opacity: 1, rotate: 0 }}
+                    transition={{ duration: 0.3, delay: 0.3 }}
+                  >
+                    <XCircle className="w-6 h-6" />
+                  </motion.button>
                 </div>
-                <div>
+              </motion.div>
+
+              <motion.div
+                className="p-6 space-y-4"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.2 }}
+              >
+                <motion.div
+                  className="grid grid-cols-2 gap-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                >
+                  {[
+                    {
+                      label: "Transaction ID",
+                      value: selectedTransaction.id,
+                      isCode: true,
+                    },
+                    {
+                      label: "Date",
+                      value: new Date(
+                        selectedTransaction.date
+                      ).toLocaleDateString(),
+                    },
+                    {
+                      label: "Type",
+                      value: (
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTransactionTypeColor(
+                            selectedTransaction.type
+                          )}`}
+                        >
+                          {getTransactionTypeIcon(selectedTransaction.type)}
+                          <span className="ml-1 capitalize">
+                            {selectedTransaction.type}
+                          </span>
+                        </span>
+                      ),
+                    },
+                    {
+                      label: "Amount",
+                      value: (
+                        <p
+                          className={`font-bold ${
+                            selectedTransaction.type === "payment"
+                              ? "text-green-600"
+                              : "text-gray-900"
+                          }`}
+                        >
+                          {selectedTransaction.type === "payment" ? "+" : ""}₦
+                          {selectedTransaction.amount.toLocaleString()}
+                        </p>
+                      ),
+                    },
+                  ].map((item, index) => (
+                    <motion.div
+                      key={item.label}
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ duration: 0.3, delay: 0.4 + index * 0.1 }}
+                    >
+                      <h3 className="text-sm font-medium text-gray-700 mb-1">
+                        {item.label}
+                      </h3>
+                      {typeof item.value === "string" ? (
+                        <p
+                          className={`text-gray-900 ${
+                            item.isCode ? "font-mono text-sm" : ""
+                          }`}
+                        >
+                          {item.value}
+                        </p>
+                      ) : (
+                        item.value
+                      )}
+                    </motion.div>
+                  ))}
+                </motion.div>
+
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 0.8 }}
+                >
                   <h3 className="text-sm font-medium text-gray-700 mb-1">
-                    Date
+                    Description
                   </h3>
                   <p className="text-gray-900">
-                    {new Date(selectedTransaction.date).toLocaleDateString()}
+                    {selectedTransaction.description}
                   </p>
-                </div>
-                <div>
+                </motion.div>
+
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 0.9 }}
+                >
                   <h3 className="text-sm font-medium text-gray-700 mb-1">
-                    Type
-                  </h3>
-                  <span
-                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTransactionTypeColor(
-                      selectedTransaction.type
-                    )}`}
-                  >
-                    {getTransactionTypeIcon(selectedTransaction.type)}
-                    <span className="ml-1 capitalize">
-                      {selectedTransaction.type}
-                    </span>
-                  </span>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-1">
-                    Amount
+                    Balance After Transaction
                   </h3>
                   <p
-                    className={`font-bold ${
-                      selectedTransaction.type === "payment"
-                        ? "text-green-600"
-                        : "text-gray-900"
-                    }`}
+                    className={`font-medium ${getBalanceColor(
+                      selectedTransaction.balance
+                    )}`}
                   >
-                    {selectedTransaction.type === "payment" ? "+" : ""}₦
-                    {selectedTransaction.amount.toLocaleString()}
+                    ₦{Math.abs(selectedTransaction.balance).toLocaleString()}
+                    {selectedTransaction.balance < 0 && (
+                      <span className="text-xs ml-1">(debt)</span>
+                    )}
                   </p>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
 
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </h3>
-                <p className="text-gray-900">
-                  {selectedTransaction.description}
-                </p>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-1">
-                  Balance After Transaction
-                </h3>
-                <p
-                  className={`font-medium ${getBalanceColor(
-                    selectedTransaction.balance
-                  )}`}
-                >
-                  ₦{Math.abs(selectedTransaction.balance).toLocaleString()}
-                  {selectedTransaction.balance < 0 && (
-                    <span className="text-xs ml-1">(debt)</span>
-                  )}
-                </p>
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
-              <button
-                onClick={() => setSelectedTransaction(null)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              <motion.div
+                className="p-6 border-t border-gray-200 flex justify-end space-x-3"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.4 }}
               >
-                Close
-              </button>
-              <button className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
-                Print Receipt
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                <motion.button
+                  onClick={() => setSelectedTransaction(null)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  initial={{ x: 20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 0.5 }}
+                >
+                  Close
+                </motion.button>
+                <motion.button
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  initial={{ x: 20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 0.6 }}
+                >
+                  Print Receipt
+                </motion.button>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Edit Customer Modal */}
       <EditCustomerModal
@@ -1094,7 +1526,7 @@ const CustomerDetailPage = () => {
         customer={currentCustomer}
         onSave={handleSaveCustomer}
       />
-    </div>
+    </motion.div>
   );
 };
 

@@ -19,6 +19,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { Customer, Product, CartItem } from "@/interfaces/interface";
 import { SaleType, PaymentMethod } from "@/types/types";
 import { customers } from "@/data/customers";
@@ -337,17 +338,32 @@ const NewSalePage = () => {
   const totalKegsInCart = calculateTotalKegsInCart();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+    <motion.div
+      className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-40">
+      <motion.header
+        className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-40"
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
-              <Link href="/">
-                <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
-                  <ArrowLeft className="w-5 h-5 text-orange-600" />
-                </button>
-              </Link>
+              <motion.div
+                whileHover={{ scale: 1.1, rotate: -5 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Link href="/">
+                  <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
+                    <ArrowLeft className="w-5 h-5 text-orange-600" />
+                  </button>
+                </Link>
+              </motion.div>
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center">
                   <ShoppingCart className="w-5 h-5 text-white" />
@@ -361,77 +377,127 @@ const NewSalePage = () => {
             <TransactionId />
           </div>
         </div>
-      </header>
+      </motion.header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
+      <motion.div
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.3, duration: 0.6 }}
+      >
+        <motion.div
+          className="grid lg:grid-cols-3 gap-8"
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+        >
           {/* Left Panel - Product Selection */}
           <div className="lg:col-span-2 space-y-6">
             {/* Sale Type Toggle */}
-            <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
+            <motion.div
+              className="bg-white rounded-xl p-6 shadow-lg border border-orange-100"
+              initial={{ x: -50, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+              whileHover={{
+                y: -2,
+                boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
+              }}
+            >
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 Sale Type
               </h2>
               <div className="flex space-x-4">
-                <button
+                <motion.button
                   onClick={() => setSaleType("retail")}
                   className={`flex-1 p-4 rounded-lg border-2 transition-all ${
                     saleType === "retail"
                       ? "border-orange-500 bg-orange-50 text-orange-700"
                       : "border-gray-200 bg-gray-50 text-gray-600 hover:border-orange-300"
                   }`}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   <div className="flex items-center justify-center space-x-2">
                     <Droplets className="w-5 h-5" />
                     <span className="font-medium">Retail (1-8 Kegs)</span>
                   </div>
-                </button>
-                <button
+                </motion.button>
+                <motion.button
                   onClick={() => setSaleType("wholesale")}
                   className={`flex-1 p-4 rounded-lg border-2 transition-all ${
                     saleType === "wholesale"
                       ? "border-orange-500 bg-orange-50 text-orange-700"
                       : "border-gray-200 bg-gray-50 text-gray-600 hover:border-orange-300"
                   }`}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   <div className="flex items-center justify-center space-x-2">
                     <Package className="w-5 h-5" />
                     <span className="font-medium">Wholesale (9 Kegs/Drum)</span>
                   </div>
-                </button>
+                </motion.button>
               </div>
-            </div>
+            </motion.div>
 
             {/* Customer Selection */}
-            <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
+            <motion.div
+              className="bg-white rounded-xl p-6 shadow-lg border border-orange-100"
+              initial={{ x: -50, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.7, duration: 0.5 }}
+              whileHover={{
+                y: -2,
+                boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
+              }}
+            >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-900">
                   Customer
                 </h2>
                 <div className="flex items-center space-x-3">
-                  <button
+                  <motion.button
                     onClick={() => {
                       setShowAddCustomerModal(true);
                       setShowCustomerModal(false);
                     }}
                     className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center space-x-2 text-sm font-medium shadow-sm"
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: 0.8 }}
                   >
                     <UserPlus className="w-4 h-4" />
                     <span>Add New</span>
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
                     onClick={() => setShowCustomerModal(true)}
                     className="text-orange-600 hover:text-orange-700 font-medium text-sm flex items-center transition-colors"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: 0.9 }}
                   >
                     <UserPlus className="w-4 h-4 mr-1" />
                     Select Customer
-                  </button>
+                  </motion.button>
                 </div>
               </div>
 
               {selectedCustomer ? (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
+                <motion.div
+                  className="space-y-3"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 1.0 }}
+                >
+                  <motion.div
+                    className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
+                    whileHover={{ scale: 1.02 }}
+                  >
                     <div>
                       <div className="font-medium text-gray-900">
                         {selectedCustomer.name}
@@ -440,16 +506,23 @@ const NewSalePage = () => {
                         {selectedCustomer.phone}
                       </div>
                     </div>
-                    <button
+                    <motion.button
                       onClick={() => setSelectedCustomer(null)}
                       className="text-gray-400 hover:text-gray-600"
+                      whileHover={{ scale: 1.1, rotate: 90 }}
+                      whileTap={{ scale: 0.9 }}
                     >
                       <X className="w-5 h-5" />
-                    </button>
-                  </div>
+                    </motion.button>
+                  </motion.div>
 
                   {selectedCustomer.balance < 0 && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <motion.div
+                      className="bg-red-50 border border-red-200 rounded-lg p-3"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3, delay: 1.1 }}
+                    >
                       <div className="flex items-center space-x-2">
                         <AlertCircle className="w-5 h-5 text-red-600" />
                         <div>
@@ -467,11 +540,16 @@ const NewSalePage = () => {
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   )}
 
                   {selectedCustomer.balance > 0 && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <motion.div
+                      className="bg-green-50 border border-green-200 rounded-lg p-3"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3, delay: 1.1 }}
+                    >
                       <div className="flex items-center space-x-2">
                         <Check className="w-5 h-5 text-green-600" />
                         <div>
@@ -486,30 +564,64 @@ const NewSalePage = () => {
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   )}
-                </div>
+                </motion.div>
               ) : (
-                <div className="p-4 border-2 border-dashed border-red-300 rounded-lg text-center text-red-500">
-                  <Users className="w-8 h-8 mx-auto mb-2 text-red-400" />
+                <motion.div
+                  className="p-4 border-2 border-dashed border-red-300 rounded-lg text-center text-red-500"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 1.0 }}
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <motion.div
+                    animate={{ y: [0, -5, 0] }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      repeatDelay: 2,
+                    }}
+                  >
+                    <Users className="w-8 h-8 mx-auto mb-2 text-red-400" />
+                  </motion.div>
                   <p className="font-medium">Customer required</p>
                   <p className="text-sm">
                     Please select a customer to complete sale
                   </p>
-                </div>
+                </motion.div>
               )}
-            </div>
+            </motion.div>
 
             {/* Product Selection */}
-            <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
+            <motion.div
+              className="bg-white rounded-xl p-6 shadow-lg border border-orange-100"
+              initial={{ x: -50, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.8, duration: 0.5 }}
+              whileHover={{
+                y: -2,
+                boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
+              }}
+            >
+              <motion.h2
+                className="text-xl font-semibold text-gray-900 mb-6"
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.9 }}
+              >
                 {saleType === "wholesale"
                   ? "Wholesale Products (9 Kegs/Drum)"
                   : `Retail Products (${remainingStock}L remaining, ${totalKegsInCart} kegs in cart)`}
-              </h2>
+              </motion.h2>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                {products[saleType].map((product) => {
+              <motion.div
+                className="grid md:grid-cols-2 gap-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 1.0 }}
+              >
+                {products[saleType].map((product, index) => {
                   const unitKegs = parseInt(product.unit);
 
                   // Check stock availability for this product
@@ -530,9 +642,13 @@ const NewSalePage = () => {
                   );
 
                   return (
-                    <div
+                    <motion.div
                       key={product.id}
                       className="border border-gray-200 rounded-lg p-4 hover:border-orange-300 transition-colors"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 1.1 + index * 0.1 }}
+                      whileHover={{ scale: 1.03, y: -3 }}
                     >
                       <div className="flex items-center justify-between mb-3">
                         <div>
@@ -562,7 +678,7 @@ const NewSalePage = () => {
                         </div>
                       </div>
 
-                      <button
+                      <motion.button
                         onClick={() => addToCart(product)}
                         disabled={isOutOfStock || availableProductUnits < 1}
                         className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
@@ -570,42 +686,97 @@ const NewSalePage = () => {
                             ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                             : "bg-orange-500 text-white hover:bg-orange-600"
                         }`}
+                        whileHover={
+                          isOutOfStock || availableProductUnits < 1
+                            ? {}
+                            : { scale: 1.05, y: -2 }
+                        }
+                        whileTap={
+                          isOutOfStock || availableProductUnits < 1
+                            ? {}
+                            : { scale: 0.95 }
+                        }
                       >
                         {isOutOfStock || availableProductUnits < 1
                           ? "Out of Stock"
                           : `Add to Cart (${unitKegs} keg${
                               unitKegs !== 1 ? "s" : ""
                             })`}
-                      </button>
-                    </div>
+                      </motion.button>
+                    </motion.div>
                   );
                 })}
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </div>
 
           {/* Right Panel - Cart & Checkout */}
-          <div className="space-y-6">
+          <motion.div
+            className="space-y-6"
+            initial={{ x: 50, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.6, duration: 0.6 }}
+          >
             {/* Cart */}
-            <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            <motion.div
+              className="bg-white rounded-xl p-6 shadow-lg border border-orange-100"
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.7, duration: 0.5 }}
+              whileHover={{
+                y: -2,
+                boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
+              }}
+            >
+              <motion.h2
+                className="text-xl font-semibold text-gray-900 mb-4"
+                initial={{ y: -10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.8 }}
+              >
                 Cart ({totalKegsInCart} kegs)
-              </h2>
+              </motion.h2>
 
               {cartItems.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <ShoppingCart className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <motion.div
+                  className="text-center py-8 text-gray-500"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.9 }}
+                >
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatDelay: 3,
+                    }}
+                  >
+                    <ShoppingCart className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  </motion.div>
                   <p>Cart is empty</p>
                   <p className="text-sm">Add products to get started</p>
-                </div>
+                </motion.div>
               ) : (
-                <div className="space-y-3">
-                  {cartItems.map((item) => {
+                <motion.div
+                  className="space-y-3"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.9 }}
+                >
+                  {cartItems.map((item, index) => {
                     const unitKegs = parseInt(item.unit);
                     return (
-                      <div
+                      <motion.div
                         key={item.id}
                         className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: 1.0 + index * 0.1 }}
+                        whileHover={{
+                          scale: 1.02,
+                          backgroundColor: "rgba(249, 250, 251, 1)",
+                        }}
                       >
                         <div className="flex-1">
                           <div className="font-medium text-gray-900 text-sm">
@@ -618,25 +789,29 @@ const NewSalePage = () => {
                         </div>
 
                         <div className="flex items-center space-x-2">
-                          <button
+                          <motion.button
                             onClick={() =>
                               updateQuantity(item.id, item.quantity - 1)
                             }
                             className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded hover:bg-gray-50"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
                           >
                             <Minus className="w-4 h-4" />
-                          </button>
+                          </motion.button>
                           <span className="w-8 text-center font-medium">
                             {item.quantity}
                           </span>
-                          <button
+                          <motion.button
                             onClick={() =>
                               updateQuantity(item.id, item.quantity + 1)
                             }
                             className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 rounded hover:bg-gray-50"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
                           >
                             <Plus className="w-4 h-4" />
-                          </button>
+                          </motion.button>
                         </div>
 
                         <div className="text-right ml-3">
@@ -648,89 +823,128 @@ const NewSalePage = () => {
                             {unitKegs * item.quantity !== 1 ? "s" : ""}
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     );
                   })}
-                </div>
+                </motion.div>
               )}
-            </div>
+            </motion.div>
 
             {/* Discount Section */}
             {cartItems.length > 0 && (
-              <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
+              <motion.div
+                className="bg-white rounded-xl p-6 shadow-lg border border-orange-100"
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.8, duration: 0.5 }}
+                whileHover={{
+                  y: -2,
+                  boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
+                }}
+              >
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-gray-900">
+                  <motion.h2
+                    className="text-xl font-semibold text-gray-900"
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.3, delay: 0.9 }}
+                  >
                     Discount
-                  </h2>
-                  <button
+                  </motion.h2>
+                  <motion.button
                     onClick={() => setShowDiscountInput(!showDiscountInput)}
                     className="text-orange-600 hover:text-orange-700 font-medium text-sm"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    initial={{ x: 20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.3, delay: 1.0 }}
                   >
                     {showDiscountInput ? "Hide" : "Add Discount"}
-                  </button>
+                  </motion.button>
                 </div>
 
-                {showDiscountInput && (
-                  <div className="space-y-4">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => setDiscountType("amount")}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                          discountType === "amount"
-                            ? "bg-orange-500 text-white"
-                            : "bg-gray-100 text-gray-600 hover:bg-orange-100"
-                        }`}
-                      >
-                        Amount (₦)
-                      </button>
-                      <button
-                        onClick={() => setDiscountType("percentage")}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                          discountType === "percentage"
-                            ? "bg-orange-500 text-white"
-                            : "bg-gray-100 text-gray-600 hover:bg-orange-100"
-                        }`}
-                      >
-                        Percentage (%)
-                      </button>
-                    </div>
-
-                    <div className="relative">
-                      <input
-                        type="number"
-                        value={discountAmount || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (value === "") {
-                            setDiscountAmount(0);
-                          } else {
-                            const numValue = parseFloat(value);
-                            if (!isNaN(numValue)) {
-                              setDiscountAmount(Math.max(0, numValue));
-                            }
-                          }
-                        }}
-                        placeholder={`Enter ${
-                          discountType === "amount" ? "amount" : "percentage"
-                        }`}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      />
-                      <span className="absolute right-3 top-3 text-gray-500">
-                        {discountType === "amount" ? "₦" : "%"}
-                      </span>
-                    </div>
-
-                    {discountAmount > 0 && (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                        <div className="text-sm text-green-700">
-                          Discount Applied: ₦
-                          {calculateDiscount().toLocaleString()}
-                        </div>
+                <AnimatePresence>
+                  {showDiscountInput && (
+                    <motion.div
+                      className="space-y-4"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="flex space-x-2">
+                        <motion.button
+                          onClick={() => setDiscountType("amount")}
+                          className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                            discountType === "amount"
+                              ? "bg-orange-500 text-white"
+                              : "bg-gray-100 text-gray-600 hover:bg-orange-100"
+                          }`}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          Amount (₦)
+                        </motion.button>
+                        <motion.button
+                          onClick={() => setDiscountType("percentage")}
+                          className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                            discountType === "percentage"
+                              ? "bg-orange-500 text-white"
+                              : "bg-gray-100 text-gray-600 hover:bg-orange-100"
+                          }`}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          Percentage (%)
+                        </motion.button>
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
+
+                      <motion.div className="relative">
+                        <input
+                          type="number"
+                          value={discountAmount || ""}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === "") {
+                              setDiscountAmount(0);
+                            } else {
+                              const numValue = parseFloat(value);
+                              if (!isNaN(numValue)) {
+                                setDiscountAmount(Math.max(0, numValue));
+                              }
+                            }
+                          }}
+                          placeholder={`Enter ${
+                            discountType === "amount" ? "amount" : "percentage"
+                          }`}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        />
+                        <span className="absolute right-3 top-3 text-gray-500">
+                          {discountType === "amount" ? "₦" : "%"}
+                        </span>
+                      </motion.div>
+
+                      <AnimatePresence>
+                        {discountAmount > 0 && (
+                          <motion.div
+                            className="bg-green-50 border border-green-200 rounded-lg p-3"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <div className="text-sm text-green-700">
+                              Discount Applied: ₦
+                              {calculateDiscount().toLocaleString()}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
             )}
 
             {/* Payment Method */}
@@ -1047,9 +1261,9 @@ const NewSalePage = () => {
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      </div>
+          </motion.div>
+        </motion.div>
+      </motion.div>
 
       {/* Customer Selection Modal */}
       {showCustomerModal && (
@@ -1172,7 +1386,7 @@ const NewSalePage = () => {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
 

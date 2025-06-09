@@ -20,6 +20,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { CustomerFilter } from "@/types/types";
 import { Customer } from "@/interfaces/interface";
 import { customers as users } from "@/data/customers";

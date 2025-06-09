@@ -15,6 +15,7 @@ import {
   Activity,
   Download,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { products } from "@/data/sales";
 import { InventoryCard } from "@/components/cards/inventoryCard";
 import { dashboardStat } from "@/data/stock";

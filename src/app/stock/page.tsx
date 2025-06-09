@@ -10,6 +10,7 @@ import {
   Cylinder,
 } from "lucide-react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { dashboardStat } from "@/data/stock";
 import { getFillColor, getFillDetails } from "@/utils/utils";
 import { InventoryCard } from "@/components/cards/inventoryCard";
@@ -44,9 +45,19 @@ const ManageStock: React.FC = () => {
 
   return (
     <ProtectedRoute requiredPermission="MANAGE_STOCK">
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+      <motion.div
+        className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         {/* Header */}
-        <header className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50">
+        <motion.header
+          className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50"
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between py-4">
               <div className="flex items-center space-x-4">
@@ -55,45 +66,89 @@ const ManageStock: React.FC = () => {
                   <ArrowLeft className="w-5 h-5 text-gray-600" />
                 </button>
               </Link> */}
-                <Link href="/">
-                  <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
-                    <ArrowLeft className="w-5 h-5 text-orange-600" />
-                  </button>
-                </Link>
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center">
-                    <Droplets className="w-6 h-6 text-white" />
-                  </div>
+                <motion.div
+                  whileHover={{ scale: 1.1, rotate: -5 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Link href="/">
+                    <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
+                      <ArrowLeft className="w-5 h-5 text-orange-600" />
+                    </button>
+                  </Link>
+                </motion.div>
+                <motion.div
+                  className="flex items-center space-x-3"
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.3, duration: 0.5 }}
+                >
+                  <motion.div
+                    className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center"
+                    animate={{
+                      rotate: [0, 10, -10, 0],
+                    }}
+                    transition={{
+                      delay: 2,
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatDelay: 5,
+                    }}
+                  >
+                    <Droplets className="w-5 h-5 text-white" />
+                  </motion.div>
                   <div>
-                    <h1 className="text-xl font-bold text-gray-900">
-                      Manage Stock
+                    <h1 className="text-lg font-bold text-gray-900">
+                      Stock Management
                     </h1>
                     <p className="text-xs text-orange-600">
-                      Inventory & Flow Management
+                      Monitor Inventory Levels
                     </p>
                   </div>
-                </div>
+                </motion.div>
               </div>
-              <div className="flex items-center space-x-4">
-                <button
+              <motion.div
+                className="flex items-center space-x-4"
+                initial={{ x: 50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+              >
+                <motion.button
                   onClick={handleRefresh}
                   className="flex items-center space-x-2 px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  <motion.div
+                    animate={{ rotate: 0 }}
+                    whileHover={{ rotate: 180 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </motion.div>
                   <span className="text-sm font-medium">Refresh</span>
-                </button>
-
-                <Link href="/inventory/settings">
-                  <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white  hover:bg-orange-50 transition-colors">
-                    <Settings className="w-5 h-5 text-orange-600" />
-                  </button>
-                </Link>
-              </div>
+                </motion.button>
+                <motion.div
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Link href="/inventory/settings">
+                    <button className="flex items-center space-x-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors">
+                      <Settings className="w-4 h-4" />
+                      <span className="text-sm font-medium">Settings</span>
+                    </button>
+                  </Link>
+                </motion.div>
+              </motion.div>
             </div>
           </div>
-        </header>
+        </motion.header>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <motion.div
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+        >
           {/* Current Stock Overview */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
@@ -106,47 +161,80 @@ const ManageStock: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.6 }}
+            >
               {/* Total Litres */}
-              <InventoryCard
-                value={totalAvailableStock}
-                unit="Litres"
-                icon={Droplets}
-                footerText="Total Available"
-              />
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0, y: 30 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                transition={{ delay: 0.7, duration: 0.5 }}
+                whileHover={{ scale: 1.05, y: -5 }}
+              >
+                <InventoryCard
+                  value={totalAvailableStock}
+                  unit="Litres Available"
+                  icon={Droplets}
+                  iconBg="bg-blue-100"
+                  iconColor="text-blue-600"
+                  footerText={`${totalKegs} kegs available`}
+                />
+              </motion.div>
 
               {/* Total Drums */}
-              <InventoryCard
-                value={totalDrums}
-                unit="Drums"
-                icon={Cylinder}
-                iconBg="bg-green-100"
-                iconColor="text-green-600"
-                footerText={`${totalDrums} Drums ${Math.floor(
-                  remainingKegs / KEG_CAPACITY
-                )} Kegs`}
-              />
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0, y: 30 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                transition={{ delay: 0.8, duration: 0.5 }}
+                whileHover={{ scale: 1.05, y: -5 }}
+              >
+                <InventoryCard
+                  value={totalDrums}
+                  unit="Drums"
+                  icon={Cylinder}
+                  iconBg="bg-green-100"
+                  iconColor="text-green-600"
+                  footerText="Storage containers"
+                />
+              </motion.div>
 
               {/* Total Kegs */}
-              <InventoryCard
-                value={totalKegs}
-                unit="Kegs"
-                icon={Cylinder}
-                iconColor="text-orange-600"
-                iconBg="bg-orange-100"
-                footerText={`${totalKegs} Kegs (${remainingLitres} Litres)`}
-              />
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0, y: 30 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                transition={{ delay: 0.9, duration: 0.5 }}
+                whileHover={{ scale: 1.05, y: -5 }}
+              >
+                <InventoryCard
+                  value={remainingKegs}
+                  unit="Available Kegs"
+                  icon={Droplets}
+                  iconBg="bg-orange-100"
+                  iconColor="text-orange-600"
+                  footerText="Ready for sale"
+                />
+              </motion.div>
 
               {/* Total Sold */}
-              <InventoryCard
-                value={stock?.soldStock || 0}
-                unit="Litres"
-                icon={Droplets}
-                iconBg="bg-blue-100"
-                iconColor="text-blue-600"
-                footerText="Total Sold Stock"
-              />
-            </div>
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0, y: 30 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                transition={{ delay: 1.0, duration: 0.5 }}
+                whileHover={{ scale: 1.05, y: -5 }}
+              >
+                <InventoryCard
+                  value={`${fillPercentage}%`}
+                  unit="Fill Status"
+                  icon={Gauge}
+                  iconBg="bg-purple-100"
+                  iconColor="text-purple-600"
+                  footerText="Current capacity"
+                />
+              </motion.div>
+            </motion.div>
           </div>
 
           {/* Storage Tank */}
@@ -154,7 +242,16 @@ const ManageStock: React.FC = () => {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
               Storage Tank
             </h2>
-            <div className="bg-white rounded-xl p-8 shadow-lg border border-orange-100">
+            <motion.div
+              className="bg-white rounded-xl p-8 shadow-lg border border-orange-100"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 1.2, duration: 0.6 }}
+              whileHover={{
+                y: -2,
+                boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
+              }}
+            >
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-2xl font-semibold text-gray-900">
@@ -208,10 +305,10 @@ const ManageStock: React.FC = () => {
                   <div className="text-sm text-gray-600">Sold Capacity (L)</div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </ProtectedRoute>
   );
 };
