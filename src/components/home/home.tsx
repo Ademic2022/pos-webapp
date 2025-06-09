@@ -133,7 +133,7 @@ const Home = () => {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.9, duration: 0.5, type: "spring" }}
-              whileHover={{ y: -5, scale: 1.02 }}
+              whileHover={{ y: -5, scale: 1.02, transition: { duration: 0.2 } }}
             >
               <StatsCard
                 title="Today's Sales"
@@ -262,16 +262,22 @@ const Home = () => {
                     <motion.button
                       onClick={() => setShowCalculator(true)}
                       className="border-2 border-white/30 text-white px-4 py-2.5 md:px-6 md:py-3 rounded-lg font-semibold hover:bg-white/10 transition-all duration-300 flex items-center justify-center text-sm md:text-base"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{
+                        scale: 1.05,
+                        transition: { duration: 0.2 },
+                      }}
+                      whileTap={{ scale: 0.95, transition: { duration: 0.1 } }}
                     >
                       <Calculator className="w-4 h-4 md:w-5 md:h-5 mr-2" />
                       Calculator
                     </motion.button>
 
                     <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{
+                        scale: 1.05,
+                        transition: { duration: 0.2 },
+                      }}
+                      whileTap={{ scale: 0.95, transition: { duration: 0.1 } }}
                     >
                       <Link
                         href="validate-sales"
@@ -309,7 +315,7 @@ const Home = () => {
               initial={{ x: 50, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: 1.5, duration: 0.5 }}
-              whileHover={{ scale: 1.02, y: -5 }}
+              whileHover={{ scale: 1.02, y: -5, transition: { duration: 0.2 } }}
             >
               <StockDisplay
                 totalAvailableStock={totalAvailableStock}
@@ -361,14 +367,15 @@ const Home = () => {
                   scale: 1.05,
                   y: -10,
                   boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.25)",
+                  transition: { duration: 0.2 },
                 }}
-                whileTap={{ scale: 0.95 }}
+                whileTap={{ scale: 0.95, transition: { duration: 0.1 } }}
               >
                 <Link href={card.route} passHref>
                   <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg border border-orange-100 hover:shadow-xl transition-all duration-300 group cursor-pointer">
                     <motion.div
                       className={`w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br ${card.gradientFrom} ${card.gradientTo} rounded-lg flex items-center justify-center mb-3 md:mb-4 group-hover:scale-110 transition-transform`}
-                      whileHover={{ rotate: 10 }}
+                      whileHover={{ rotate: 10, transition: { duration: 0.2 } }}
                     >
                       {card.icon}
                     </motion.div>
@@ -421,6 +428,7 @@ const Home = () => {
               whileHover={{
                 y: -5,
                 boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
+                transition: { duration: 0.2 },
               }}
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-2">
