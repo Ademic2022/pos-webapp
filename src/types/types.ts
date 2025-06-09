@@ -83,7 +83,8 @@ export type PermissionType =
   | "VALIDATE_SALES"
   | "MANAGE_STOCK"
   | "VIEW_FINANCIAL_DATA"
-  | "NEW_SALE";
+  | "NEW_SALE"
+  | "SECURITY_SETTINGS";
 
 // Filter and Sort Options Types
 export type FilterOptions = {

@@ -42,6 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         "PROCESS_RETURNS",
         "MANAGE_STOCK",
         "NEW_SALE",
+        "SECURITY_SETTINGS"
       ];
       return staffPermissions.includes(permission);
     }

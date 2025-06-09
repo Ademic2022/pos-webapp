@@ -50,7 +50,7 @@ const SecurityPage: React.FC = () => {
   );
 
   return (
-    <ProtectedRoute requiredPermission="MANAGE_USERS">
+    <ProtectedRoute requiredPermission="SECURITY_SETTINGS">
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
         {/* Header */}
         <header className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50">
