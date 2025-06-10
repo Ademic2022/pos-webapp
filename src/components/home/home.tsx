@@ -43,20 +43,10 @@ const Home = () => {
       transition={{ duration: 0.5 }}
     >
       {/* Header */}
-      <motion.header
-        className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50"
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6 }}
-      >
+      <header className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50 animate-fadeInUp">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-3 md:py-4">
-            <motion.div
-              className="flex items-center space-x-2 md:space-x-3"
-              initial={{ x: -50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-            >
+            <div className="flex items-center space-x-2 md:space-x-3">
               <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center">
                 <Droplets className="w-5 h-5 md:w-6 md:h-6 text-white" />
               </div>
@@ -66,13 +56,8 @@ const Home = () => {
                 </h1>
                 <p className="text-xs text-orange-600">POS Management System</p>
               </div>
-            </motion.div>
-            <motion.nav
-              className="hidden sm:flex items-center space-x-4 md:space-x-8"
-              initial={{ x: 50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-            >
+            </div>
+            <nav className="hidden sm:flex items-center space-x-4 md:space-x-8">
               <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600">
                 <Clock className="w-4 h-4" />
                 <span>Last Login: Today 9:30 AM</span>
@@ -95,46 +80,26 @@ const Home = () => {
                   userEmail="employee@store.com"
                 />
               </div>
-            </motion.nav>
+            </nav>
           </div>
         </div>
-      </motion.header>
+      </header>
 
       {/* Dashboard Overview */}
-      <motion.section
-        className="relative overflow-hidden py-8 md:py-12"
-        initial={{ y: 50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.5, duration: 0.6 }}
-      >
+      <section className="relative overflow-hidden py-8 md:py-12 animate-fadeInUp">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            className="mb-8 md:mb-12"
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.7, duration: 0.5 }}
-          >
+          <div className="mb-8 md:mb-12">
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
               Welcome Back to Your POS System
             </h1>
             <p className="text-base md:text-lg text-gray-600">
               Manage your groundnut oil distribution business efficiently
             </p>
-          </motion.div>
+          </div>
 
-          {/* Quick Stats */}
-          <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12"
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.8, duration: 0.6 }}
-          >
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.9, duration: 0.5, type: "spring" }}
-              whileHover={{ y: -5, scale: 1.02, transition: { duration: 0.2 } }}
-            >
+          {/* Quick Stats - Optimized with CSS hover */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
+            <div className="transform transition-all duration-150 hover:-translate-y-1 hover:scale-105">
               <StatsCard
                 title="Today's Sales"
                 value={`₦${dashboardStat.totalSales.toLocaleString()}`}
@@ -147,14 +112,9 @@ const Home = () => {
                 iconColor="text-green-600"
                 iconBg="bg-green-100"
               />
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 1.0, duration: 0.5, type: "spring" }}
-              whileHover={{ y: -5, scale: 1.02 }}
-            >
+            <div className="transform transition-all duration-150 hover:-translate-y-1 hover:scale-105">
               <StatsCard
                 title="Transactions"
                 value={dashboardStat.transaction.totalTransactionCount.toLocaleString()}
@@ -166,14 +126,9 @@ const Home = () => {
                 iconBg="bg-blue-100"
                 iconColor="text-blue-600"
               />
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 1.1, duration: 0.5, type: "spring" }}
-              whileHover={{ y: -5, scale: 1.02 }}
-            >
+            <div className="transform transition-all duration-150 hover:-translate-y-1 hover:scale-105">
               <StatsCard
                 title="Outstanding Debt"
                 value={`₦${dashboardStat.outstandingDebts.debtValue.toLocaleString()}`}
@@ -185,14 +140,9 @@ const Home = () => {
                 iconBg="bg-orange-100"
                 iconColor="text-orange-600"
               />
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 1.2, duration: 0.5, type: "spring" }}
-              whileHover={{ y: -5, scale: 1.02 }}
-            >
+            <div className="transform transition-all duration-150 hover:-translate-y-1 hover:scale-105">
               <StatsCard
                 title="Stock Alert"
                 titleColor={colorMap[litresStatus].textColor}
@@ -206,36 +156,13 @@ const Home = () => {
                   textColor: colorMap[litresStatus].textColor,
                 }}
               />
-            </motion.div>
+            </div>
+          </div>
 
-            {/* <StatsCard
-              title="Returns"
-              value={`₦${dashboardStat.returns.totalRefundValue.toLocaleString()}`}
-              change={{
-                value: `${dashboardStat.returns.pendingReturns} pending, ${dashboardStat.returns.processedReturns} processed`,
-                textColor: "text-red-600",
-              }}
-              icon={RotateCcw}
-              iconBg="bg-red-100"
-              iconColor="text-red-600"
-            /> */}
-          </motion.div>
-
-          {/* Main Action Cards */}
-          <motion.div
-            className="grid lg:grid-cols-2 gap-8 mb-12"
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 1.3, duration: 0.6 }}
-          >
+          {/* Main Action Cards - Optimized with CSS hover */}
+          <div className="grid lg:grid-cols-2 gap-8 mb-12">
             {/* Quick Sale */}
-            <motion.div
-              className="bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl p-6 md:p-8 text-white relative overflow-hidden"
-              initial={{ x: -50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 1.4, duration: 0.5 }}
-              whileHover={{ scale: 1.02, y: -5 }}
-            >
+            <div className="bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl p-6 md:p-8 text-white relative overflow-hidden transform transition-all duration-150 hover:scale-105 hover:-translate-y-1">
               <div className="relative z-10">
                 <h2 className="text-xl md:text-2xl font-bold mb-3 md:mb-4">
                   Process New Sale
@@ -245,48 +172,30 @@ const Home = () => {
                 </p>
 
                 <div className="flex flex-col gap-3 md:gap-4">
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  <Link
+                    href="/sales"
+                    className="w-full bg-white text-orange-600 px-4 py-2.5 md:px-6 md:py-3 rounded-lg font-semibold hover:bg-orange-50 transition-all duration-150 flex items-center justify-center text-sm md:text-base transform hover:scale-105"
                   >
-                    <Link
-                      href="/sales"
-                      className="w-full bg-white text-orange-600 px-4 py-2.5 md:px-6 md:py-3 rounded-lg font-semibold hover:bg-orange-50 transition-all duration-300 flex items-center justify-center text-sm md:text-base"
-                    >
-                      <ShoppingCart className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                      New Sale
-                    </Link>
-                  </motion.div>
+                    <ShoppingCart className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                    New Sale
+                  </Link>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                    <motion.button
+                    <button
                       onClick={() => setShowCalculator(true)}
-                      className="border-2 border-white/30 text-white px-4 py-2.5 md:px-6 md:py-3 rounded-lg font-semibold hover:bg-white/10 transition-all duration-300 flex items-center justify-center text-sm md:text-base"
-                      whileHover={{
-                        scale: 1.05,
-                        transition: { duration: 0.2 },
-                      }}
-                      whileTap={{ scale: 0.95, transition: { duration: 0.1 } }}
+                      className="border-2 border-white/30 text-white px-4 py-2.5 md:px-6 md:py-3 rounded-lg font-semibold hover:bg-white/10 transition-all duration-150 flex items-center justify-center text-sm md:text-base transform hover:scale-105"
                     >
                       <Calculator className="w-4 h-4 md:w-5 md:h-5 mr-2" />
                       Calculator
-                    </motion.button>
+                    </button>
 
-                    <motion.div
-                      whileHover={{
-                        scale: 1.05,
-                        transition: { duration: 0.2 },
-                      }}
-                      whileTap={{ scale: 0.95, transition: { duration: 0.1 } }}
+                    <Link
+                      href="validate-sales"
+                      className="border-2 border-white/30 text-white px-4 py-2.5 md:px-6 md:py-3 rounded-lg font-semibold hover:bg-white/10 transition-all duration-150 flex items-center justify-center text-sm md:text-base transform hover:scale-105"
                     >
-                      <Link
-                        href="validate-sales"
-                        className="border-2 border-white/30 text-white px-4 py-2.5 md:px-6 md:py-3 rounded-lg font-semibold hover:bg-white/10 transition-all duration-300 flex items-center justify-center text-sm md:text-base"
-                      >
-                        <CheckCircle className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                        Validate Sales
-                      </Link>
-                    </motion.div>
+                      <CheckCircle className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                      Validate Sales
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -300,7 +209,8 @@ const Home = () => {
                 animate={{ rotate: -360 }}
                 transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
               ></motion.div>
-            </motion.div>
+            </div>
+
             <AnimatePresence>
               {showCalculator && (
                 <CalculatorModal
@@ -310,13 +220,8 @@ const Home = () => {
               )}
             </AnimatePresence>
 
-            {/* Current Inventory */}
-            <motion.div
-              initial={{ x: 50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 1.5, duration: 0.5 }}
-              whileHover={{ scale: 1.02, y: -5, transition: { duration: 0.2 } }}
-            >
+            {/* Current Inventory - Optimized with CSS hover */}
+            <div className="transform transition-all duration-150 hover:scale-105 hover:-translate-y-1">
               <StockDisplay
                 totalAvailableStock={totalAvailableStock}
                 totalDrums={totalDrums}
@@ -324,61 +229,32 @@ const Home = () => {
                 remainingLitres={remainingLitres}
                 remainingKegs={remainingKegs}
               />
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </div>
-      </motion.section>
+      </section>
 
-      {/* Quick Actions */}
-      <motion.section
-        className="py-12 bg-white/50"
-        initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 1.6, duration: 0.8 }}
-      >
+      {/* Quick Actions - Ultra-optimized with CSS hover */}
+      <section className="py-12 bg-white/50 animate-fadeInUp">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.h2
-            className="text-2xl font-bold text-gray-900 mb-8"
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 1.7, duration: 0.5 }}
-          >
+          <h2 className="text-2xl font-bold text-gray-900 mb-8">
             Quick Actions
-          </motion.h2>
+          </h2>
 
-          <motion.div
-            className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 1.8, duration: 0.6 }}
-          >
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {cardsData.map((card, index) => (
-              <motion.div
+              <div
                 key={card.id}
-                initial={{ scale: 0.8, opacity: 0, y: 30 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                transition={{
-                  delay: 1.9 + index * 0.1,
-                  duration: 0.5,
-                  type: "spring",
-                  stiffness: 200,
-                }}
-                whileHover={{
-                  scale: 1.05,
-                  y: -10,
-                  boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.25)",
-                  transition: { duration: 0.2 },
-                }}
-                whileTap={{ scale: 0.95, transition: { duration: 0.1 } }}
+                className="transform transition-all duration-150 hover:scale-105 hover:-translate-y-2 hover:shadow-xl"
+                style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <Link href={card.route} passHref>
-                  <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg border border-orange-100 hover:shadow-xl transition-all duration-300 group cursor-pointer">
-                    <motion.div
-                      className={`w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br ${card.gradientFrom} ${card.gradientTo} rounded-lg flex items-center justify-center mb-3 md:mb-4 group-hover:scale-110 transition-transform`}
-                      whileHover={{ rotate: 10, transition: { duration: 0.2 } }}
+                  <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg border border-orange-100 hover:shadow-xl transition-all duration-150 group cursor-pointer">
+                    <div
+                      className={`w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br ${card.gradientFrom} ${card.gradientTo} rounded-lg flex items-center justify-center mb-3 md:mb-4 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-150`}
                     >
                       {card.icon}
-                    </motion.div>
+                    </div>
                     <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-2">
                       {card.title}
                     </h3>
@@ -386,7 +262,7 @@ const Home = () => {
                       {card.description}
                     </p>
                     <div
-                      className={`flex items-center ${card.textColor} font-medium text-xs md:text-sm`}
+                      className={`flex items-center ${card.textColor} font-medium text-xs md:text-sm group-hover:translate-x-1 transition-transform duration-150`}
                     >
                       {card.id === "customer-management"
                         ? "Open"
@@ -399,49 +275,29 @@ const Home = () => {
                     </div>
                   </div>
                 </Link>
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
         </div>
-      </motion.section>
+      </section>
 
-      {/* Recent Activity */}
-      <motion.section
-        className="py-12"
-        initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 2.3, duration: 0.8 }}
-      >
+      {/* Recent Activity - Optimized with CSS hover */}
+      <section className="py-12 animate-fadeInUp">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            className="grid lg:grid-cols-2 gap-8"
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 2.4, duration: 0.6 }}
-          >
+          <div className="grid lg:grid-cols-2 gap-8">
             {/* Recent Transactions */}
-            <motion.div
-              className="bg-white rounded-xl p-4 md:p-6 shadow-lg border border-orange-100"
-              initial={{ x: -50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 2.5, duration: 0.5 }}
-              whileHover={{
-                y: -5,
-                boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
-                transition: { duration: 0.2 },
-              }}
-            >
+            <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg border border-orange-100 transform transition-all duration-150 hover:-translate-y-1 hover:shadow-xl">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-2">
                 <h3 className="text-lg md:text-xl font-semibold text-gray-900">
                   Recent Transactions
                 </h3>
-                <button className="text-orange-600 hover:text-orange-700 font-medium text-sm text-left sm:text-right">
+                <button className="text-orange-600 hover:text-orange-700 font-medium text-sm text-left sm:text-right transition-colors duration-150">
                   View All
                 </button>
               </div>
 
               <div className="space-y-3 md:space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg gap-2 hover:bg-gray-100 transition-colors duration-150">
                   <div className="flex-1">
                     <div className="font-medium text-gray-900 text-sm md:text-base">
                       Adebayo Motors
@@ -459,7 +315,7 @@ const Home = () => {
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg gap-2 hover:bg-gray-100 transition-colors duration-150">
                   <div className="flex-1">
                     <div className="font-medium text-gray-900 text-sm md:text-base">
                       Mrs. Fatima
@@ -477,7 +333,7 @@ const Home = () => {
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg gap-2 hover:bg-gray-100 transition-colors duration-150">
                   <div className="flex-1">
                     <div className="font-medium text-gray-900 text-sm md:text-base">
                       Kemi&apos;s Store
@@ -495,30 +351,21 @@ const Home = () => {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
 
             {/* Alerts & Notifications */}
-            <motion.div
-              className="bg-white rounded-xl p-4 md:p-6 shadow-lg border border-orange-100"
-              initial={{ x: 50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 2.6, duration: 0.5 }}
-              whileHover={{
-                y: -5,
-                boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
-              }}
-            >
+            <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg border border-orange-100 transform transition-all duration-150 hover:-translate-y-1 hover:shadow-xl">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-2">
                 <h3 className="text-lg md:text-xl font-semibold text-gray-900">
                   Alerts & Reminders
                 </h3>
-                <button className="text-orange-600 hover:text-orange-700 font-medium text-sm text-left sm:text-right">
+                <button className="text-orange-600 hover:text-orange-700 font-medium text-sm text-left sm:text-right transition-colors duration-150">
                   Mark All Read
                 </button>
               </div>
 
               <div className="space-y-3 md:space-y-4">
-                <div className="flex items-start space-x-2 md:space-x-3 p-3 md:p-4 bg-red-50 rounded-lg border-l-4 border-red-400">
+                <div className="flex items-start space-x-2 md:space-x-3 p-3 md:p-4 bg-red-50 rounded-lg border-l-4 border-red-400 hover:bg-red-100 transition-colors duration-150">
                   <Bell className="w-4 h-4 md:w-5 md:h-5 text-red-600 mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
                     <div className="font-medium text-red-800 text-sm md:text-base">
@@ -531,7 +378,7 @@ const Home = () => {
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-2 md:space-x-3 p-3 md:p-4 bg-orange-50 rounded-lg border-l-4 border-orange-400">
+                <div className="flex items-start space-x-2 md:space-x-3 p-3 md:p-4 bg-orange-50 rounded-lg border-l-4 border-orange-400 hover:bg-orange-100 transition-colors duration-150">
                   <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-orange-600 mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
                     <div className="font-medium text-orange-800 text-sm md:text-base">
@@ -546,7 +393,7 @@ const Home = () => {
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-2 md:space-x-3 p-3 md:p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                <div className="flex items-start space-x-2 md:space-x-3 p-3 md:p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400 hover:bg-blue-100 transition-colors duration-150">
                   <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
                     <div className="font-medium text-blue-800 text-sm md:text-base">
@@ -560,50 +407,35 @@ const Home = () => {
                   </div>
                 </div>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* Footer */}
-      <motion.footer
-        className="bg-gray-900 text-white py-6 md:py-8"
-        initial={{ y: 50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 2.7, duration: 0.5 }}
-      >
+      <footer className="bg-gray-900 text-white py-6 md:py-8 animate-fadeInUp">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <motion.div
-              className="flex items-center space-x-2 md:space-x-3"
-              initial={{ x: -30, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 2.8, duration: 0.5 }}
-            >
+            <div className="flex items-center space-x-2 md:space-x-3">
               <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center">
                 <Droplets className="w-4 h-4 md:w-5 md:h-5 text-white" />
               </div>
               <span className="text-base md:text-lg font-bold">
                 Success Enterprise POS
               </span>
-            </motion.div>
+            </div>
 
-            <motion.div
-              className="text-center text-gray-400"
-              initial={{ x: 30, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 2.9, duration: 0.5 }}
-            >
+            <div className="text-center text-gray-400">
               <p className="text-sm md:text-base">
                 &copy; 2025 Success Enterprise. All rights reserved.
               </p>
               <p className="text-xs md:text-sm">
                 Internal POS Management System
               </p>
-            </motion.div>
+            </div>
           </div>
         </div>
-      </motion.footer>
+      </footer>
     </motion.div>
   );
 };

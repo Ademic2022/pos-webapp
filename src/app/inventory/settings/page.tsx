@@ -178,36 +178,20 @@ const InventorySettingsPage: React.FC = () => {
 
   return (
     <ProtectedRoute requireSuperuser={true}>
-      <motion.div
-        className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
         {/* Header */}
-        <motion.header
-          className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50"
-          initial={{ y: -100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-        >
+        <header className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between py-4">
               <div className="flex items-center space-x-4">
                 <Link
                   href="/"
-                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 hover:scale-110 hover:rotate-3 transition-all duration-200"
+                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 hover:scale-110 hover:rotate-2 transition-all duration-150"
                 >
                   <ArrowLeft className="w-5 h-5 text-orange-600" />
                 </Link>
 
-                <div
-                  className="opacity-0 animate-fadeInUp"
-                  style={{
-                    animationDelay: "0.2s",
-                    animationFillMode: "forwards",
-                  }}
-                >
+                <div>
                   <h1 className="text-xl font-bold text-gray-900">
                     Inventory Settings
                   </h1>
@@ -219,11 +203,7 @@ const InventorySettingsPage: React.FC = () => {
               <ProtectedElement requiredPermission="MANAGE_STOCK">
                 <button
                   onClick={() => setShowStockManagement(!showStockManagement)}
-                  className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg hover:from-orange-600 hover:to-amber-700 hover:scale-105 hover:-translate-y-1 transition-all duration-200 opacity-0 animate-fadeInUp"
-                  style={{
-                    animationDelay: "0.4s",
-                    animationFillMode: "forwards",
-                  }}
+                  className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg hover:from-orange-600 hover:to-amber-700 hover:scale-105 hover:-translate-y-0.5 transition-all duration-150"
                 >
                   <Plus className="w-4 h-4" />
                   <span>
@@ -235,23 +215,14 @@ const InventorySettingsPage: React.FC = () => {
               </ProtectedElement>
             </div>
           </div>
-        </motion.header>
+        </header>
 
-        <div
-          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 opacity-0 animate-fadeInUp"
-          style={{ animationDelay: "0.5s", animationFillMode: "forwards" }}
-        >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="space-y-8">
             {/* Inventory Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               {/* Total Litres */}
-              <div
-                className="hover:-translate-y-2 hover:scale-105 transition-transform duration-300 ease-out opacity-0 animate-fadeInUp"
-                style={{
-                  animationDelay: "0.8s",
-                  animationFillMode: "forwards",
-                }}
-              >
+              <div className="hover:-translate-y-1 hover:scale-105 transition-transform duration-150 ease-out">
                 <InventoryCard
                   value={totalAvailableStock}
                   unit="Litres"
@@ -261,13 +232,7 @@ const InventorySettingsPage: React.FC = () => {
               </div>
 
               {/* Total Drums */}
-              <div
-                className="hover:-translate-y-2 hover:scale-105 transition-transform duration-300 ease-out opacity-0 animate-fadeInUp"
-                style={{
-                  animationDelay: "0.9s",
-                  animationFillMode: "forwards",
-                }}
-              >
+              <div className="hover:-translate-y-1 hover:scale-105 transition-transform duration-150 ease-out">
                 <InventoryCard
                   value={totalDrums}
                   unit="Drums"
@@ -281,13 +246,7 @@ const InventorySettingsPage: React.FC = () => {
               </div>
 
               {/* Total Kegs */}
-              <div
-                className="hover:-translate-y-2 hover:scale-105 transition-transform duration-300 ease-out opacity-0 animate-fadeInUp"
-                style={{
-                  animationDelay: "1.0s",
-                  animationFillMode: "forwards",
-                }}
-              >
+              <div className="hover:-translate-y-1 hover:scale-105 transition-transform duration-150 ease-out">
                 <InventoryCard
                   value={totalKegs}
                   unit="Kegs"
@@ -299,13 +258,7 @@ const InventorySettingsPage: React.FC = () => {
               </div>
 
               {/* Total Sold */}
-              <div
-                className="hover:-translate-y-2 hover:scale-105 transition-transform duration-300 ease-out opacity-0 animate-fadeInUp"
-                style={{
-                  animationDelay: "1.1s",
-                  animationFillMode: "forwards",
-                }}
-              >
+              <div className="hover:-translate-y-1 hover:scale-105 transition-transform duration-150 ease-out">
                 <InventoryCard
                   value={stock?.soldStock || 0}
                   unit="Litres"
@@ -322,24 +275,18 @@ const InventorySettingsPage: React.FC = () => {
               {showStockManagement && (
                 <motion.div
                   className="space-y-8"
-                  initial={{ opacity: 0, height: 0, y: -50 }}
-                  animate={{ opacity: 1, height: "auto", y: 0 }}
-                  exit={{ opacity: 0, height: 0, y: -50 }}
-                  transition={{ duration: 0.6, ease: "easeInOut" }}
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  <div className="bg-white rounded-xl shadow-lg border border-orange-100 p-6 hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
-                    <h2
-                      className="text-2xl font-bold text-gray-900 mb-6 opacity-0 animate-fadeInUp"
-                      style={{
-                        animationDelay: "0.4s",
-                        animationFillMode: "forwards",
-                      }}
-                    >
+                  <div className="bg-white rounded-xl shadow-lg border border-orange-100 p-6 hover:shadow-xl transition-shadow duration-150">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">
                       Stock Management
                     </h2>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                       {/* Add Stock */}
-                      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-8 border border-green-100 hover:scale-105 hover:-translate-y-2 transition-transform duration-300">
+                      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-8 border border-green-100">
                         <div className="flex items-center justify-between mb-6">
                           <div>
                             <h3 className="text-xl font-semibold text-gray-900">
@@ -353,7 +300,7 @@ const InventorySettingsPage: React.FC = () => {
                             <Plus className="w-6 h-6 text-green-600" />
                           </div>
                         </div>
-
+                        
                         <div className="space-y-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -363,13 +310,11 @@ const InventorySettingsPage: React.FC = () => {
                               <input
                                 type="number"
                                 value={deliveryAmount}
-                                onChange={(e) =>
-                                  setDeliveryAmount(e.target.value)
-                                }
+                                onChange={(e) => setDeliveryAmount(e.target.value)}
                                 placeholder="Enter litres delivered"
                                 min="1"
                                 max={totalAvailableStock}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:scale-105 transition-all duration-200"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-150"
                                 required
                               />
                               <span className="absolute right-3 top-3 text-gray-500">
@@ -377,8 +322,7 @@ const InventorySettingsPage: React.FC = () => {
                               </span>
                             </div>
                             <p className="text-xs text-gray-500 mt-1">
-                              Maximum capacity:{" "}
-                              {totalAvailableStock.toLocaleString()}L
+                              Maximum capacity: {totalAvailableStock.toLocaleString()}L
                             </p>
                           </div>
 
@@ -388,10 +332,8 @@ const InventorySettingsPage: React.FC = () => {
                             </label>
                             <select
                               value={selectedSupplier}
-                              onChange={(e) =>
-                                setSelectedSupplier(e.target.value)
-                              }
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:scale-105 transition-all duration-200"
+                              onChange={(e) => setSelectedSupplier(e.target.value)}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-150"
                               required
                             >
                               <option value="">Select supplier</option>
@@ -411,7 +353,7 @@ const InventorySettingsPage: React.FC = () => {
                               type="date"
                               value={deliveryDate}
                               onChange={(e) => setDeliveryDate(e.target.value)}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:scale-105 transition-all duration-200"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-150"
                               required
                             />
                           </div>
@@ -419,7 +361,7 @@ const InventorySettingsPage: React.FC = () => {
                           <button
                             onClick={handleAddStock}
                             disabled={isSubmitting}
-                            className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 hover:scale-105 hover:-translate-y-1 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 hover:scale-[1.02] transition-all duration-150 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {isSubmitting ? "Recording..." : "Record Delivery"}
                           </button>
@@ -427,7 +369,7 @@ const InventorySettingsPage: React.FC = () => {
                       </div>
 
                       {/* Recent Deliveries */}
-                      <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-8 border border-blue-100 hover:scale-105 hover:-translate-y-2 transition-transform duration-300">
+                      <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-8 border border-blue-100">
                         <div className="flex items-center justify-between mb-6">
                           <div>
                             <h3 className="text-xl font-semibold text-gray-900">
@@ -446,7 +388,7 @@ const InventorySettingsPage: React.FC = () => {
                           {deliveryHistory.map((delivery) => (
                             <div
                               key={delivery.id}
-                              className="p-4 bg-white rounded-lg border border-blue-200 shadow-sm hover:scale-105 hover:-translate-y-1 transition-transform duration-200"
+                              className="p-4 bg-white rounded-lg border border-blue-200 shadow-sm hover:scale-[1.02] hover:-translate-y-0.5 transition-transform duration-150"
                             >
                               <div className="flex items-center justify-between mb-2">
                                 <span className="font-semibold text-gray-900">
@@ -484,10 +426,7 @@ const InventorySettingsPage: React.FC = () => {
             </AnimatePresence>
 
             {/* Product List */}
-            <div
-              className="bg-white rounded-xl shadow-lg border border-orange-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 opacity-0 animate-fadeInUp"
-              style={{ animationDelay: "1.2s", animationFillMode: "forwards" }}
-            >
+            <div className="bg-white rounded-xl shadow-lg border border-orange-100 hover:shadow-xl transition-shadow duration-150">
               <div className="p-6 border-b border-orange-100">
                 <h2 className="text-lg font-medium text-gray-900">
                   Product Inventory
@@ -521,16 +460,12 @@ const InventorySettingsPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-orange-100">
-                    {allProducts.map((product, index) => {
+                    {allProducts.map((product) => {
                       const status = getProductStatus(product.stock);
                       return (
                         <tr
                           key={product.id}
-                          className="hover:bg-orange-50 hover:scale-101 transition-all duration-200 opacity-0 animate-fadeInUp"
-                          style={{
-                            animationDelay: `${1.5 + index * 0.05}s`,
-                            animationFillMode: "forwards",
-                          }}
+                          className="hover:bg-orange-50 transition-colors duration-150"
                         >
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
@@ -543,9 +478,7 @@ const InventorySettingsPage: React.FC = () => {
                                 </div>
                                 <div className="text-sm text-gray-500">
                                   Unit: {product.unit}{" "}
-                                  {product.category === "wholesale"
-                                    ? "Drum"
-                                    : "Keg"}
+                                  {product.category === "wholesale" ? "Drum" : "Keg"}
                                 </div>
                               </div>
                             </div>
@@ -558,9 +491,7 @@ const InventorySettingsPage: React.FC = () => {
                                   : "bg-blue-100 text-blue-800"
                               }`}
                             >
-                              {product.category === "wholesale"
-                                ? "Wholesale"
-                                : "Retail"}
+                              {product.category === "wholesale" ? "Wholesale" : "Retail"}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -568,10 +499,7 @@ const InventorySettingsPage: React.FC = () => {
                               {product.stock}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {product.category === "wholesale"
-                                ? "Drums"
-                                : "Kegs"}{" "}
-                              available
+                              {product.category === "wholesale" ? "Drums" : "Kegs"} available
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -580,10 +508,7 @@ const InventorySettingsPage: React.FC = () => {
                                 {formatPrice(product.price)}
                               </div>
                               <div className="text-sm text-gray-500">
-                                per{" "}
-                                {product.category === "wholesale"
-                                  ? "drum"
-                                  : "keg"}
+                                per {product.category === "wholesale" ? "drum" : "keg"}
                               </div>
                             </div>
                           </td>
@@ -601,13 +526,13 @@ const InventorySettingsPage: React.FC = () => {
                               <ProtectedElement requiredPermission="EDIT_PRICES">
                                 <button
                                   onClick={() => handleOpenEditModal(product)}
-                                  className="text-orange-600 hover:text-orange-800 p-1 rounded-lg hover:bg-orange-50 hover:scale-125 transition-all duration-200"
+                                  className="text-orange-600 hover:text-orange-800 p-1 rounded-lg hover:bg-orange-50 hover:scale-110 transition-all duration-150"
                                 >
                                   <Edit className="w-4 h-4" />
                                 </button>
                               </ProtectedElement>
                               <ProtectedElement requiredPermission="DELETE_PRODUCTS">
-                                <button className="text-red-600 hover:text-red-800 p-1 rounded-lg hover:bg-red-50 hover:scale-125 transition-all duration-200">
+                                <button className="text-red-600 hover:text-red-800 p-1 rounded-lg hover:bg-red-50 hover:scale-110 transition-all duration-150">
                                   <Trash2 className="w-4 h-4" />
                                 </button>
                               </ProtectedElement>
@@ -622,10 +547,7 @@ const InventorySettingsPage: React.FC = () => {
             </div>
 
             {/* Inventory Settings */}
-            <div
-              className="bg-white rounded-xl shadow-lg border border-orange-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 opacity-0 animate-fadeInUp"
-              style={{ animationDelay: "1.8s", animationFillMode: "forwards" }}
-            >
+            <div className="bg-white rounded-xl shadow-lg border border-orange-100 hover:shadow-xl transition-shadow duration-150">
               <div className="p-6 border-b border-orange-100">
                 <h2 className="text-lg font-medium text-gray-900">
                   Inventory Settings
@@ -635,58 +557,38 @@ const InventorySettingsPage: React.FC = () => {
                 </p>
               </div>
               <div className="p-6 space-y-4">
-                <div
-                  className="flex items-center justify-between p-4 bg-orange-50 rounded-lg hover:scale-101 hover:translate-x-2 transition-all duration-200 opacity-0 animate-fadeInUp"
-                  style={{
-                    animationDelay: "2.1s",
-                    animationFillMode: "forwards",
-                  }}
-                >
+                <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors duration-150">
                   <div>
-                    <p className="font-medium text-gray-900">
-                      Low Stock Alerts
-                    </p>
+                    <p className="font-medium text-gray-900">Low Stock Alerts</p>
                     <p className="text-sm text-gray-600">
                       Get notified when products are running low
                     </p>
                   </div>
-                  <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-orange-200 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 hover:scale-110">
+                  <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-orange-200 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 hover:bg-orange-300">
                     <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6" />
                   </button>
                 </div>
 
-                <div
-                  className="flex items-center justify-between p-4 bg-orange-50 rounded-lg hover:scale-101 hover:translate-x-2 transition-all duration-200 opacity-0 animate-fadeInUp"
-                  style={{
-                    animationDelay: "2.2s",
-                    animationFillMode: "forwards",
-                  }}
-                >
+                <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors duration-150">
                   <div>
                     <p className="font-medium text-gray-900">Auto-Reorder</p>
                     <p className="text-sm text-gray-600">
                       Automatically reorder products when stock is low
                     </p>
                   </div>
-                  <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 hover:scale-110">
+                  <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 hover:bg-gray-300">
                     <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1" />
                   </button>
                 </div>
 
-                <div
-                  className="flex items-center justify-between p-4 bg-orange-50 rounded-lg hover:scale-101 hover:translate-x-2 transition-all duration-200 opacity-0 animate-fadeInUp"
-                  style={{
-                    animationDelay: "2.3s",
-                    animationFillMode: "forwards",
-                  }}
-                >
+                <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors duration-150">
                   <div>
                     <p className="font-medium text-gray-900">Stock Tracking</p>
                     <p className="text-sm text-gray-600">
                       Track all inventory movements and changes
                     </p>
                   </div>
-                  <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-orange-200 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 hover:scale-110">
+                  <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-orange-200 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 hover:bg-orange-300">
                     <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6" />
                   </button>
                 </div>
@@ -694,86 +596,57 @@ const InventorySettingsPage: React.FC = () => {
             </div>
 
             {/* Stock Reports */}
-            <div
-              className="bg-white rounded-xl shadow-lg border border-orange-100 hover:shadow-xl hover:-translate-y-2 transition-all duration-300 opacity-0 animate-fadeInUp"
-              style={{ animationDelay: "2.4s", animationFillMode: "forwards" }}
-            >
+            <div className="bg-white rounded-xl shadow-lg border border-orange-100 hover:shadow-xl transition-shadow duration-150">
               <div className="p-6 border-b border-orange-100">
-                <h2 className="text-lg font-medium text-gray-900">
-                  Stock Reports
-                </h2>
+                <h2 className="text-lg font-medium text-gray-900">Stock Reports</h2>
                 <p className="text-sm text-gray-600">
                   Generate and export inventory reports
                 </p>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div
-                    className="p-4 bg-orange-50 rounded-lg border border-orange-200 hover:scale-110 hover:-translate-y-2 transition-transform duration-300 opacity-0 animate-fadeInUp"
-                    style={{
-                      animationDelay: "2.8s",
-                      animationFillMode: "forwards",
-                    }}
-                  >
+                  <div className="p-4 bg-orange-50 rounded-lg border border-orange-200 hover:scale-105 hover:-translate-y-1 transition-transform duration-150">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-900">
-                        Daily Stock Summary
-                      </h4>
+                      <h4 className="font-medium text-gray-900">Daily Stock Summary</h4>
                       <Calendar className="w-5 h-5 text-orange-600" />
                     </div>
                     <p className="text-sm text-gray-600 mb-3">
                       Stock levels and movements for today
                     </p>
-                    <button className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 hover:scale-105 hover:-translate-y-1 transition-all duration-200 text-sm">
+                    <button className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 hover:scale-[1.02] transition-all duration-150 text-sm">
                       Generate Report
                     </button>
                   </div>
 
-                  <div
-                    className="p-4 bg-blue-50 rounded-lg border border-blue-200 hover:scale-110 hover:-translate-y-2 transition-transform duration-300 opacity-0 animate-fadeInUp"
-                    style={{
-                      animationDelay: "3.0s",
-                      animationFillMode: "forwards",
-                    }}
-                  >
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 hover:scale-105 hover:-translate-y-1 transition-transform duration-150">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-900">
-                        Weekly Inventory Report
-                      </h4>
+                      <h4 className="font-medium text-gray-900">Weekly Inventory Report</h4>
                       <TrendingUp className="w-5 h-5 text-blue-600" />
                     </div>
                     <p className="text-sm text-gray-600 mb-3">
                       Comprehensive weekly stock analysis
                     </p>
-                    <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 hover:scale-105 hover:-translate-y-1 transition-all duration-200 text-sm">
+                    <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 hover:scale-[1.02] transition-all duration-150 text-sm">
                       Generate Report
                     </button>
                   </div>
 
-                  <div
-                    className="p-4 bg-purple-50 rounded-lg border border-purple-200 hover:scale-110 hover:-translate-y-2 transition-transform duration-300 opacity-0 animate-fadeInUp"
-                    style={{
-                      animationDelay: "3.2s",
-                      animationFillMode: "forwards",
-                    }}
-                  >
+                  <div className="p-4 bg-purple-50 rounded-lg border border-purple-200 hover:scale-105 hover:-translate-y-1 transition-transform duration-150">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-900">
-                        Monthly Stock Analysis
-                      </h4>
+                      <h4 className="font-medium text-gray-900">Monthly Stock Analysis</h4>
                       <Activity className="w-5 h-5 text-purple-600" />
                     </div>
                     <p className="text-sm text-gray-600 mb-3">
                       Complete monthly inventory overview
                     </p>
-                    <button className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 hover:scale-105 hover:-translate-y-1 transition-all duration-200 text-sm">
+                    <button className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 hover:scale-[1.02] transition-all duration-150 text-sm">
                       Generate Report
                     </button>
                   </div>
                 </div>
-
+                
                 <div className="pt-6 border-t border-gray-200 mt-6">
-                  <button className="w-full flex items-center justify-center space-x-2 text-gray-600 hover:text-orange-600 hover:scale-105 hover:-translate-y-1 transition-all duration-200">
+                  <button className="w-full flex items-center justify-center space-x-2 text-gray-600 hover:text-orange-600 hover:scale-[1.02] transition-all duration-150">
                     <Download className="w-4 h-4" />
                     <span className="text-sm font-medium">Export All Data</span>
                   </button>
@@ -797,7 +670,7 @@ const InventorySettingsPage: React.FC = () => {
             />
           )}
         </AnimatePresence>
-      </motion.div>
+      </div>
     </ProtectedRoute>
   );
 };
