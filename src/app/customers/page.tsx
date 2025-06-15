@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Users,
   Search,
@@ -156,19 +157,37 @@ const CustomerManagementPage = () => {
 
   return (
     <ProtectedRoute requiredPermission="EDIT_CUSTOMER_DETAILS">
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50"
+      >
         {/* Header */}
-        <header className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-40">
+        <motion.header
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-40"
+        >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-4">
               <div className="flex items-center space-x-4">
                 <Link href="/">
-                  <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
+                  <motion.button
+                    whileHover={{ scale: 1.05, rotate: -5 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50"
+                  >
                     <ArrowLeft className="w-5 h-5 text-orange-600" />
-                  </button>
+                  </motion.button>
                 </Link>
 
-                <div className="flex items-center space-x-3">
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                  className="flex items-center space-x-3"
+                >
                   <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center">
                     <Users className="w-5 h-5 text-white" />
                   </div>
@@ -180,32 +199,63 @@ const CustomerManagementPage = () => {
                       Manage Customer Relationships
                     </p>
                   </div>
-                </div>
+                </motion.div>
               </div>
-              <div className="flex items-center space-x-4">
+              <motion.div
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="flex items-center space-x-4"
+              >
                 <ProtectedElement requiredPermission="EDIT_CUSTOMER_DETAILS">
-                  <button
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => setShowAddModal(true)}
-                    className="flex items-center space-x-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                    className="flex items-center space-x-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
                   >
-                    <Plus className="w-4 h-4" />
+                    <motion.div
+                      whileHover={{ rotate: 90 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </motion.div>
                     <span className="text-sm font-medium">Add Customer</span>
-                  </button>
+                  </motion.button>
                 </ProtectedElement>
                 <ProtectedElement requiredPermission="VIEW_FINANCIAL_DATA">
-                  <button className="flex items-center space-x-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors">
-                    <Download className="w-4 h-4" />
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex items-center space-x-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200"
+                  >
+                    <motion.div
+                      whileHover={{ y: -2 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Download className="w-4 h-4" />
+                    </motion.div>
                     <span className="text-sm font-medium">Export</span>
-                  </button>
+                  </motion.button>
                 </ProtectedElement>
-              </div>
+              </motion.div>
             </div>
           </div>
-        </header>
+        </motion.header>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <motion.div
+          initial={{ y: 5, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+        >
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <motion.div
+            initial={{ y: 4, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+          >
             <StatsCard
               title="Total Customers"
               value={customerStats.total}
@@ -256,12 +306,22 @@ const CustomerManagementPage = () => {
               iconBg="bg-orange-100"
               iconColor="text-orange-600"
             />
-          </div>
+          </motion.div>
 
           {/* Search and Filters */}
-          <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100 mb-8">
+          <motion.div
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.9 }}
+            className="bg-white rounded-xl p-6 shadow-lg border border-orange-100 mb-8"
+          >
             <div className="flex flex-col lg:flex-row gap-4">
-              <div className="flex-1 relative">
+              <motion.div
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 1.0 }}
+                className="flex-1 relative"
+              >
                 <Search className="w-5 h-5 absolute left-3 top-3 text-gray-400" />
                 <input
                   type="text"
@@ -271,20 +331,34 @@ const CustomerManagementPage = () => {
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
                 {(searchTerm || selectedFilter !== "all") && (
-                  <div className="absolute right-3 top-3 text-xs text-gray-500">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="absolute right-3 top-3 text-xs text-gray-500"
+                  >
                     {filteredCustomers.length} found
-                  </div>
+                  </motion.div>
                 )}
-              </div>
+              </motion.div>
 
-              <div className="flex flex-wrap gap-2">
+              <motion.div
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 1.1 }}
+                className="flex flex-wrap gap-2"
+              >
                 {(
                   ["all", "debt", "active", "inactive"] as CustomerFilter[]
-                ).map((filter) => (
-                  <button
+                ).map((filter, index) => (
+                  <motion.button
                     key={filter}
+                    initial={{ y: 10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 1.2 + index * 0.1 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedFilter(filter)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
                       selectedFilter === filter
                         ? "bg-orange-500 text-white"
                         : "bg-gray-100 text-gray-600 hover:bg-orange-100"
@@ -292,21 +366,36 @@ const CustomerManagementPage = () => {
                   >
                     {filter.charAt(0).toUpperCase() + filter.slice(1)}
                     {filter === "debt" && customerStats.withDebt > 0 && (
-                      <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 1.5 + index * 0.1 }}
+                        className="ml-1 bg-red-500 text-white text-xs rounded-full px-2 py-0.5"
+                      >
                         {customerStats.withDebt}
-                      </span>
+                      </motion.span>
                     )}
-                  </button>
+                  </motion.button>
                 ))}
-              </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Customer List */}
-          <div className="bg-white rounded-xl shadow-lg border border-orange-100 overflow-hidden">
+          <motion.div
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 1.6 }}
+            className="bg-white rounded-xl shadow-lg border border-orange-100 overflow-hidden"
+          >
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <motion.thead
+                  initial={{ y: -10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 1.7 }}
+                  className="bg-gray-50"
+                >
                   <tr>
                     <th className="text-left py-4 px-6 font-medium text-gray-900">
                       Customer
@@ -330,7 +419,7 @@ const CustomerManagementPage = () => {
                       Actions
                     </th>
                   </tr>
-                </thead>
+                </motion.thead>
                 <tbody>
                   {paginatedCustomers.map((customer) => (
                     <tr
@@ -424,7 +513,12 @@ const CustomerManagementPage = () => {
 
             {/* Pagination Controls */}
             {filteredCustomers.length > 0 && (
-              <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 2.5 }}
+                className="px-6 py-4 border-t border-gray-100 bg-gray-50"
+              >
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   {/* Results Summary */}
                   <div className="flex items-center space-x-4 text-sm text-gray-600">
@@ -450,7 +544,9 @@ const CustomerManagementPage = () => {
 
                   {/* Pagination Buttons */}
                   <div className="flex items-center space-x-2">
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={() =>
                         setCurrentPage(Math.max(1, currentPage - 1))
                       }
@@ -459,7 +555,7 @@ const CustomerManagementPage = () => {
                     >
                       <ChevronLeft className="w-4 h-4 mr-1" />
                       Previous
-                    </button>
+                    </motion.button>
 
                     {/* Page Numbers */}
                     <div className="flex items-center space-x-1">
@@ -483,7 +579,9 @@ const CustomerManagementPage = () => {
                                   ...
                                 </span>
                               )}
-                              <button
+                              <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
                                 onClick={() => setCurrentPage(page)}
                                 className={`px-3 py-2 text-sm font-medium rounded-lg ${
                                   currentPage === page
@@ -492,13 +590,15 @@ const CustomerManagementPage = () => {
                                 }`}
                               >
                                 {page}
-                              </button>
+                              </motion.button>
                             </React.Fragment>
                           );
                         })}
                     </div>
 
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={() =>
                         setCurrentPage(Math.min(totalPages, currentPage + 1))
                       }
@@ -507,25 +607,36 @@ const CustomerManagementPage = () => {
                     >
                       Next
                       <ChevronRight className="w-4 h-4 ml-1" />
-                    </button>
+                    </motion.button>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {filteredCustomers.length === 0 && (
-              <div className="text-center py-12">
-                <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 2.0 }}
+                className="text-center py-12"
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 2.2, type: "spring", stiffness: 300 }}
+                >
+                  <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                </motion.div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   No customers found
                 </h3>
                 <p className="text-gray-500">
                   Try adjusting your search or filters
                 </p>
-              </div>
+              </motion.div>
             )}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Add Customer Modal */}
         <AddCustomerModal
@@ -536,7 +647,7 @@ const CustomerManagementPage = () => {
           onSubmit={handleAddCustomer}
           validationError=""
         />
-      </div>
+      </motion.div>
     </ProtectedRoute>
   );
 };
