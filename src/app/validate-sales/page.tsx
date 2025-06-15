@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import {
   AlertTriangle,
@@ -114,19 +115,39 @@ const FuelValidationSystem: React.FC = () => {
 
   return (
     <ProtectedRoute requiredPermission="VALIDATE_SALES">
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50"
+      >
         {/* Header */}
-        <header className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50">
+        <motion.header
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50"
+        >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-4">
               <div className="flex items-center space-x-4">
-                <Link href="/customers">
-                  <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
-                    <ArrowLeft className="w-5 h-5 text-orange-600" />
-                  </button>
-                </Link>
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center">
+                <motion.div
+                  whileHover={{ scale: 1.1, rotate: -5 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Link href="/">
+                    <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
+                      <ArrowLeft className="w-5 h-5 text-orange-600" />
+                    </button>
+                  </Link>
+                </motion.div>
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                  className="flex items-center space-x-3"
+                >
+                  <div
+                    className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center"
+                  >
                     <Droplets className="w-6 h-6 text-white" />
                   </div>
                   <div>
@@ -137,14 +158,21 @@ const FuelValidationSystem: React.FC = () => {
                       Daily Meter Tracking
                     </p>
                   </div>
-                </div>
+                </motion.div>
               </div>
 
               {/* Tab Navigation */}
-              <div className="flex bg-gray-100 rounded-lg p-1">
-                <button
+              <motion.div
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="flex bg-gray-100 rounded-lg p-1"
+              >
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => setActiveTab("validation")}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-md text-sm font-medium ${
                     activeTab === "validation"
                       ? "bg-white text-orange-600 shadow-sm"
                       : "text-gray-600 hover:text-gray-900"
@@ -152,10 +180,12 @@ const FuelValidationSystem: React.FC = () => {
                 >
                   <Calculator className="w-4 h-4 inline mr-2" />
                   Validation
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => setActiveTab("reports")}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-md text-sm font-medium ${
                     activeTab === "reports"
                       ? "bg-white text-orange-600 shadow-sm"
                       : "text-gray-600 hover:text-gray-900"
@@ -163,22 +193,41 @@ const FuelValidationSystem: React.FC = () => {
                 >
                   <FileText className="w-4 h-4 inline mr-2" />
                   Reports
-                </button>
-              </div>
+                </motion.button>
+              </motion.div>
             </div>
           </div>
-        </header>
+        </motion.header>
 
-        <div className="max-w-7xl mx-auto p-6">
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="max-w-7xl mx-auto p-6"
+        >
           {activeTab === "validation" ? (
             <React.Fragment>
               {/* Page Title */}
-              <div className="mb-8">
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="mb-8"
+              >
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.5, type: "spring", stiffness: 300 }}
+                    className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center"
+                  >
                     <Fuel className="w-7 h-7 text-white" />
-                  </div>
-                  <div>
+                  </motion.div>
+                  <motion.div
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                  >
                     <h1 className="text-3xl font-bold text-gray-900">
                       Daily Validation
                     </h1>
@@ -186,17 +235,31 @@ const FuelValidationSystem: React.FC = () => {
                       Verify meter readings against recorded sales to detect
                       discrepancies
                     </p>
-                  </div>
+                  </motion.div>
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="grid lg:grid-cols-2 gap-8 mb-8">
+              <motion.div
+                initial={{ y: 40, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.6 }}
+                className="grid lg:grid-cols-2 gap-8 mb-8"
+              >
                 {/* Input Section */}
-                <div className="bg-white rounded-2xl p-8 shadow-lg border border-orange-100">
+                <motion.div
+                  initial={{ x: -40, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.7 }}
+                  className="bg-white rounded-2xl p-8 shadow-lg border border-orange-100"
+                >
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center">
+                    <motion.div
+                      whileHover={{ rotate: 360 }}
+                      transition={{ duration: 0.3 }}
+                      className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center"
+                    >
                       <Calculator className="w-5 h-5 text-white" />
-                    </div>
+                    </motion.div>
                     <h2 className="text-xl font-semibold text-gray-900">
                       Daily Readings
                     </h2>
@@ -270,142 +333,197 @@ const FuelValidationSystem: React.FC = () => {
                       </p>
                     </div>
                   </div>
-                </div>
+                </motion.div>
 
                 {/* Results Section */}
-                <div className="bg-white rounded-2xl p-8 shadow-lg border border-orange-100">
+                <motion.div
+                  initial={{ x: 40, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                  className="bg-white rounded-2xl p-8 shadow-lg border border-orange-100"
+                >
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                    <motion.div
+                      whileHover={{ scale: 1.1 }}
+                      className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center"
+                    >
                       <CheckCircle className="w-5 h-5 text-white" />
-                    </div>
+                    </motion.div>
                     <h2 className="text-xl font-semibold text-gray-900">
                       Validation Results
                     </h2>
                   </div>
 
-                  {validation ? (
-                    <div className="space-y-6">
-                      <div
-                        className={`p-6 rounded-xl border-2 ${getStatusColor(
-                          validation.status
-                        )} transition-all duration-300`}
+                  <AnimatePresence mode="wait">
+                    {validation ? (
+                      <motion.div
+                        key="validation-results"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="space-y-6"
                       >
-                        <div className="flex items-center gap-3 mb-3">
-                          {getStatusIcon(validation.status)}
-                          <span className="font-bold text-lg">
+                        <motion.div
+                          initial={{ scale: 0.95 }}
+                          animate={{ scale: 1 }}
+                          className={`p-6 rounded-xl border-2 ${getStatusColor(
+                            validation.status
+                          )}`}
+                        >
+                          <div className="flex items-center gap-3 mb-3">
+                            <motion.div
+                              initial={{ rotate: -90 }}
+                              animate={{ rotate: 0 }}
+                              transition={{ delay: 0.2 }}
+                            >
+                              {getStatusIcon(validation.status)}
+                            </motion.div>
+                            <motion.span
+                              initial={{ x: -10, opacity: 0 }}
+                              animate={{ x: 0, opacity: 1 }}
+                              transition={{ delay: 0.3 }}
+                              className="font-bold text-lg"
+                            >
+                              {validation.withinTolerance
+                                ? "VALIDATION PASSED"
+                                : "VALIDATION FAILED"}
+                            </motion.span>
+                          </div>
+                          <p className="text-sm leading-relaxed">
                             {validation.withinTolerance
-                              ? "VALIDATION PASSED"
-                              : "VALIDATION FAILED"}
-                          </span>
-                        </div>
-                        <p className="text-sm leading-relaxed">
-                          {validation.withinTolerance
-                            ? "Readings are within acceptable tolerance range"
-                            : "Significant discrepancy detected - investigation required"}
-                        </p>
-                      </div>
+                              ? "Readings are within acceptable tolerance range"
+                              : "Significant discrepancy detected - investigation required"}
+                          </p>
+                        </motion.div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
-                          <p className="text-xs text-gray-600 uppercase font-semibold mb-1">
-                            Meter Difference
-                          </p>
-                          <p className="text-xl font-bold text-gray-900">
-                            {validation.meterDifference} L
-                          </p>
-                        </div>
-                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
-                          <p className="text-xs text-blue-600 uppercase font-semibold mb-1">
-                            Recorded Sales
-                          </p>
-                          <p className="text-xl font-bold text-blue-900">
-                            {validation.totalSales} L
-                          </p>
-                        </div>
-                        <div
-                          className={`p-4 rounded-xl border-2 ${
-                            validation.withinTolerance
-                              ? "bg-gradient-to-br from-green-50 to-green-100 border-green-200"
-                              : "bg-gradient-to-br from-red-50 to-red-100 border-red-200"
-                          }`}
-                        >
-                          <p
-                            className={`text-xs uppercase font-semibold mb-1 ${
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
+                            <p className="text-xs text-gray-600 uppercase font-semibold mb-1">
+                              Meter Difference
+                            </p>
+                            <p className="text-xl font-bold text-gray-900">
+                              {validation.meterDifference} L
+                            </p>
+                          </div>
+                          <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
+                            <p className="text-xs text-blue-600 uppercase font-semibold mb-1">
+                              Recorded Sales
+                            </p>
+                            <p className="text-xl font-bold text-blue-900">
+                              {validation.totalSales} L
+                            </p>
+                          </div>
+                          <div
+                            className={`p-4 rounded-xl border-2 ${
                               validation.withinTolerance
-                                ? "text-green-600"
-                                : "text-red-600"
+                                ? "bg-gradient-to-br from-green-50 to-green-100 border-green-200"
+                                : "bg-gradient-to-br from-red-50 to-red-100 border-red-200"
                             }`}
                           >
-                            Discrepancy
-                          </p>
-                          <p
-                            className={`text-xl font-bold ${
+                            <p
+                              className={`text-xs uppercase font-semibold mb-1 ${
+                                validation.withinTolerance
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              Discrepancy
+                            </p>
+                            <p
+                              className={`text-xl font-bold ${
+                                validation.withinTolerance
+                                  ? "text-green-700"
+                                  : "text-red-700"
+                              }`}
+                            >
+                              ±{validation.discrepancy} L
+                            </p>
+                          </div>
+                          <div
+                            className={`p-4 rounded-xl border-2 ${
                               validation.withinTolerance
-                                ? "text-green-700"
-                                : "text-red-700"
+                                ? "bg-gradient-to-br from-green-50 to-green-100 border-green-200"
+                                : "bg-gradient-to-br from-red-50 to-red-100 border-red-200"
                             }`}
                           >
-                            ±{validation.discrepancy} L
-                          </p>
+                            <p
+                              className={`text-xs uppercase font-semibold mb-1 ${
+                                validation.withinTolerance
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              Variance %
+                            </p>
+                            <p
+                              className={`text-xl font-bold ${
+                                validation.withinTolerance
+                                  ? "text-green-700"
+                                  : "text-red-700"
+                              }`}
+                            >
+                              {validation.discrepancyPercentage}%
+                            </p>
+                          </div>
                         </div>
-                        <div
-                          className={`p-4 rounded-xl border-2 ${
-                            validation.withinTolerance
-                              ? "bg-gradient-to-br from-green-50 to-green-100 border-green-200"
-                              : "bg-gradient-to-br from-red-50 to-red-100 border-red-200"
-                          }`}
-                        >
-                          <p
-                            className={`text-xs uppercase font-semibold mb-1 ${
-                              validation.withinTolerance
-                                ? "text-green-600"
-                                : "text-red-600"
-                            }`}
-                          >
-                            Variance %
-                          </p>
-                          <p
-                            className={`text-xl font-bold ${
-                              validation.withinTolerance
-                                ? "text-green-700"
-                                : "text-red-700"
-                            }`}
-                          >
-                            {validation.discrepancyPercentage}%
-                          </p>
-                        </div>
-                      </div>
 
-                      <button
-                        onClick={saveReading}
-                        className="w-full bg-gradient-to-r from-orange-500 to-amber-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-orange-600 hover:to-amber-700 transition-all duration-300 shadow-lg"
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={saveReading}
+                          className="w-full bg-gradient-to-r from-orange-500 to-amber-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-orange-600 hover:to-amber-700 shadow-lg"
+                        >
+                          Save Reading
+                        </motion.button>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="no-validation"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-center py-12 text-gray-500"
                       >
-                        Save Reading
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 text-gray-500">
-                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Calculator className="w-8 h-8 opacity-50" />
-                      </div>
-                      <p className="text-lg font-medium">
-                        Enter end reading to validate
-                      </p>
-                      <p className="text-sm">
-                        Fill in all the required fields above
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: 0.2 }}
+                          className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"
+                        >
+                          <Calculator className="w-8 h-8 opacity-50" />
+                        </motion.div>
+                        <p className="text-lg font-medium">
+                          Enter end reading to validate
+                        </p>
+                        <p className="text-sm">
+                          Fill in all the required fields above
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              </motion.div>
 
               {/* Potential Issues & Actions */}
               {validation && !validation.withinTolerance && (
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-8 mb-6">
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.9 }}
+                  className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-8 mb-6"
+                >
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{
+                        delay: 1.0,
+                        type: "spring",
+                        stiffness: 300,
+                      }}
+                      className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center flex-shrink-0"
+                    >
                       <AlertTriangle className="w-6 h-6 text-white" />
-                    </div>
+                    </motion.div>
                     <div className="flex-1">
                       <h3 className="font-bold text-lg text-amber-800 mb-4">
                         Potential Issues to Investigate:
@@ -473,15 +591,23 @@ const FuelValidationSystem: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               )}
 
               {/* Quick Reference */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6">
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 1.1 }}
+                className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6"
+              >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                  <motion.div
+                    whileHover={{ rotate: 15 }}
+                    className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center"
+                  >
                     <Fuel className="w-5 h-5 text-white" />
-                  </div>
+                  </motion.div>
                   <h3 className="font-bold text-lg text-blue-800">
                     Quick Reference
                   </h3>
@@ -508,14 +634,14 @@ const FuelValidationSystem: React.FC = () => {
                     </p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </React.Fragment>
           ) : (
             // Reports Tab
             <MeterReadingReports />
           )}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </ProtectedRoute>
   );
 };
