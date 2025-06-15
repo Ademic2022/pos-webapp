@@ -117,7 +117,6 @@ const SecurityPage: React.FC = () => {
               className="bg-white rounded-xl shadow-lg border border-orange-100"
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
               whileHover={{
                 y: -2,
                 boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
@@ -157,7 +156,6 @@ const SecurityPage: React.FC = () => {
                     className="p-4 bg-green-50 rounded-lg border border-green-200"
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.7, duration: 0.5, type: "spring" }}
                     whileHover={{ scale: 1.05, y: -5 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -188,7 +186,6 @@ const SecurityPage: React.FC = () => {
                     className="p-4 bg-yellow-50 rounded-lg border border-yellow-200"
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.8, duration: 0.5, type: "spring" }}
                     whileHover={{ scale: 1.05, y: -5 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -219,7 +216,6 @@ const SecurityPage: React.FC = () => {
                     className="p-4 bg-green-50 rounded-lg border border-green-200"
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.9, duration: 0.5, type: "spring" }}
                     whileHover={{ scale: 1.05, y: -5 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -254,7 +250,7 @@ const SecurityPage: React.FC = () => {
               className="bg-white rounded-xl shadow-lg border border-orange-100"
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 1.0, duration: 0.5 }}
+              // transition={{ delay: 1.0, duration: 0.5 }}
               whileHover={{
                 y: -2,
                 boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
@@ -264,13 +260,13 @@ const SecurityPage: React.FC = () => {
                 className="p-6 border-b border-orange-100"
                 initial={{ x: -20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 1.1, duration: 0.5 }}
+                // transition={{ delay: 1.1, duration: 0.5 }}
               >
                 <div className="flex items-center space-x-3">
                   <motion.div
                     animate={{ rotate: [0, 360] }}
                     transition={{
-                      delay: 3.5,
+                      delay: 0.5,
                       duration: 2,
                       repeat: Infinity,
                       repeatDelay: 8,
@@ -292,7 +288,6 @@ const SecurityPage: React.FC = () => {
                 className="p-6 space-y-6"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 1.2, duration: 0.5 }}
               >
                 <motion.div
                   initial={{ x: -30, opacity: 0 }}
@@ -508,7 +503,6 @@ const SecurityPage: React.FC = () => {
               className="bg-white rounded-xl shadow-lg border border-orange-100"
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 1.9, duration: 0.5 }}
               whileHover={{
                 y: -2,
                 boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
@@ -526,12 +520,8 @@ const SecurityPage: React.FC = () => {
                       rotate: [0, 10, -10, 0],
                       scale: [1, 1.1, 1],
                     }}
-                    transition={{
-                      delay: 4,
-                      duration: 3,
-                      repeat: Infinity,
-                      repeatDelay: 6,
-                    }}
+                    
+
                   >
                     <Smartphone className="w-6 h-6 text-orange-600" />
                   </motion.div>
@@ -549,13 +539,11 @@ const SecurityPage: React.FC = () => {
                 className="p-6"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 2.1, duration: 0.5 }}
               >
                 <motion.div
                   className="flex items-center justify-between p-4 bg-orange-50 rounded-lg mb-6"
                   initial={{ scale: 0.95, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 2.2, duration: 0.5 }}
                   whileHover={{ scale: 1.02 }}
                 >
                   <div>
@@ -695,7 +683,6 @@ const SecurityPage: React.FC = () => {
               className="bg-white rounded-xl shadow-lg border border-orange-100"
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 2.4, duration: 0.5 }}
               whileHover={{
                 y: -2,
                 boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
@@ -705,7 +692,6 @@ const SecurityPage: React.FC = () => {
                 className="p-6 border-b border-orange-100"
                 initial={{ x: -20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 2.5, duration: 0.5 }}
               >
                 <h2 className="text-lg font-medium text-gray-900">
                   Recent Login Activity
@@ -718,14 +704,12 @@ const SecurityPage: React.FC = () => {
                 className="p-6"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 2.6, duration: 0.5 }}
               >
                 <div className="space-y-4">
                   <motion.div
                     className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
                     initial={{ x: -30, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 2.7, duration: 0.5 }}
                     whileHover={{ scale: 1.02, x: 5 }}
                   >
                     <div>
@@ -754,7 +738,6 @@ const SecurityPage: React.FC = () => {
                     className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                     initial={{ x: -30, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 2.8, duration: 0.5 }}
                     whileHover={{ scale: 1.02, x: 5 }}
                   >
                     <div>
@@ -781,7 +764,6 @@ const SecurityPage: React.FC = () => {
                     className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                     initial={{ x: -30, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 2.9, duration: 0.5 }}
                     whileHover={{ scale: 1.02, x: 5 }}
                   >
                     <div>

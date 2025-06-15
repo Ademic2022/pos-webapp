@@ -114,7 +114,6 @@ const NotificationsPage: React.FC = () => {
             className="bg-white rounded-xl shadow-lg border border-orange-100"
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
             whileHover={{
               y: -5,
               boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
@@ -124,7 +123,6 @@ const NotificationsPage: React.FC = () => {
               className="p-6 border-b border-orange-100"
               initial={{ x: -20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
             >
               <div className="flex items-center space-x-3">
                 <motion.div
@@ -158,7 +156,6 @@ const NotificationsPage: React.FC = () => {
                 className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
                 initial={{ x: -30, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.8, duration: 0.5 }}
                 whileHover={{ scale: 1.02, x: 5 }}
               >
                 <div className="flex items-center space-x-3">
@@ -187,7 +184,6 @@ const NotificationsPage: React.FC = () => {
                 className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
                 initial={{ x: -30, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.9, duration: 0.5 }}
                 whileHover={{ scale: 1.02, x: 5 }}
               >
                 <div className="flex items-center space-x-3">
@@ -216,7 +212,6 @@ const NotificationsPage: React.FC = () => {
                 className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
                 initial={{ x: -30, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 1.0, duration: 0.5 }}
                 whileHover={{ scale: 1.02, x: 5 }}
               >
                 <div className="flex items-center space-x-3">
@@ -248,7 +243,6 @@ const NotificationsPage: React.FC = () => {
             className="bg-white rounded-xl shadow-lg border border-orange-100"
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 1.1, duration: 0.5 }}
             whileHover={{
               y: -5,
               boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
@@ -275,7 +269,6 @@ const NotificationsPage: React.FC = () => {
                 className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
                 initial={{ x: -30, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 1.4, duration: 0.5 }}
                 whileHover={{ scale: 1.02, x: 5 }}
               >
                 <div>
@@ -294,7 +287,6 @@ const NotificationsPage: React.FC = () => {
                 className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
                 initial={{ x: -30, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 1.5, duration: 0.5 }}
                 whileHover={{ scale: 1.02, x: 5 }}
               >
                 <div>
@@ -313,7 +305,6 @@ const NotificationsPage: React.FC = () => {
                 className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
                 initial={{ x: -30, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 1.6, duration: 0.5 }}
                 whileHover={{ scale: 1.02, x: 5 }}
               >
                 <div>
@@ -335,7 +326,6 @@ const NotificationsPage: React.FC = () => {
             className="bg-white rounded-xl shadow-lg border border-orange-100"
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 1.7, duration: 0.5 }}
             whileHover={{
               y: -5,
               boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
@@ -419,7 +409,6 @@ const NotificationsPage: React.FC = () => {
             className="bg-white rounded-xl shadow-lg border border-orange-100"
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 2.2, duration: 0.5 }}
             whileHover={{
               y: -5,
               boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
@@ -429,7 +418,6 @@ const NotificationsPage: React.FC = () => {
               className="p-6 border-b border-orange-100"
               initial={{ x: -20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 2.3, duration: 0.5 }}
             >
               <h2 className="text-lg font-medium text-gray-900">
                 Recent Notifications
@@ -449,7 +437,6 @@ const NotificationsPage: React.FC = () => {
                   className="flex items-start space-x-3 p-4 bg-orange-50 rounded-lg"
                   initial={{ x: -30, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 2.5, duration: 0.5 }}
                   whileHover={{ scale: 1.02, x: 5 }}
                 >
                   <motion.div
@@ -479,7 +466,6 @@ const NotificationsPage: React.FC = () => {
                   className="flex items-start space-x-3 p-4 bg-orange-50 rounded-lg"
                   initial={{ x: -30, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 2.6, duration: 0.5 }}
                   whileHover={{ scale: 1.02, x: 5 }}
                 >
                   <motion.div
@@ -509,7 +495,6 @@ const NotificationsPage: React.FC = () => {
                   className="flex items-start space-x-3 p-4 bg-orange-50 rounded-lg"
                   initial={{ x: -30, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 2.7, duration: 0.5 }}
                   whileHover={{ scale: 1.02, x: 5 }}
                 >
                   <motion.div
