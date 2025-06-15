@@ -655,7 +655,6 @@ const ReturnsPage = () => {
               className="bg-white rounded-lg p-4 border border-orange-100 shadow-sm"
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.6, duration: 0.4 }}
               whileHover={{
                 y: -5,
                 boxShadow: "0 10px 25px -3px rgba(251, 146, 60, 0.1)",
@@ -675,7 +674,6 @@ const ReturnsPage = () => {
               className="bg-white rounded-lg p-4 border border-blue-100 shadow-sm"
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.7, duration: 0.4 }}
               whileHover={{
                 y: -5,
                 boxShadow: "0 10px 25px -3px rgba(59, 130, 246, 0.1)",
@@ -695,7 +693,6 @@ const ReturnsPage = () => {
               className="bg-white rounded-lg p-4 border border-green-100 shadow-sm"
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.8, duration: 0.4 }}
               whileHover={{
                 y: -5,
                 boxShadow: "0 10px 25px -3px rgba(34, 197, 94, 0.1)",
@@ -715,7 +712,6 @@ const ReturnsPage = () => {
               className="bg-white rounded-lg p-4 border border-purple-100 shadow-sm"
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.9, duration: 0.4 }}
               whileHover={{
                 y: -5,
                 boxShadow: "0 10px 25px -3px rgba(147, 51, 234, 0.1)",
@@ -738,7 +734,6 @@ const ReturnsPage = () => {
             className="bg-white rounded-xl shadow-lg border border-orange-100 p-6 mb-6"
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 1.0, duration: 0.5 }}
             whileHover={{
               y: -2,
               boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
@@ -780,8 +775,6 @@ const ReturnsPage = () => {
                   className="mt-6 pt-6 border-t border-gray-200"
                   initial={{ height: 0, opacity: 0, y: -20 }}
                   animate={{ height: "auto", opacity: 1, y: 0 }}
-                  exit={{ height: 0, opacity: 0, y: -20 }}
-                  transition={{ duration: 0.4, ease: "easeInOut" }}
                 >
                   <motion.div
                     className="grid grid-cols-1 md:grid-cols-3 gap-4"
@@ -880,7 +873,6 @@ const ReturnsPage = () => {
             className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 1.2, duration: 0.5 }}
           >
             <p className="text-gray-600">
               Showing {filteredAndSortedReturns.length} of{" "}
@@ -901,14 +893,11 @@ const ReturnsPage = () => {
                 className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4"
                 initial={{ height: 0, opacity: 0, y: -20 }}
                 animate={{ height: "auto", opacity: 1, y: 0 }}
-                exit={{ height: 0, opacity: 0, y: -20 }}
-                transition={{ duration: 0.4, ease: "easeInOut" }}
               >
                 <motion.div
                   className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.1, duration: 0.3 }}
                 >
                   <div className="text-sm text-blue-700">
                     {selectedReturns.length} return
@@ -952,7 +941,6 @@ const ReturnsPage = () => {
             className="bg-white rounded-xl shadow-lg border border-orange-100 overflow-hidden"
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 1.3, duration: 0.6 }}
             whileHover={{
               y: -2,
               boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
