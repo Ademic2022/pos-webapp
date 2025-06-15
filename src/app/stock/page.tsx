@@ -1,6 +1,6 @@
-
 "use client";
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   Droplets,
@@ -45,26 +45,42 @@ const ManageStock: React.FC = () => {
 
   return (
     <ProtectedRoute requiredPermission="MANAGE_STOCK">
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50"
+      >
         {/* Header */}
-        <header className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50">
+        <motion.header
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50"
+        >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between py-4">
               <div className="flex items-center space-x-4">
-                {/* <Link href="/">
-                <button className="p-2 hover:bg-orange-100 rounded-lg transition-colors">
-                  <ArrowLeft className="w-5 h-5 text-gray-600" />
-                </button>
-              </Link> */}
                 <Link href="/">
-                  <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
+                  <motion.button
+                    whileHover={{ scale: 1.1, rotate: -5 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50"
+                  >
                     <ArrowLeft className="w-5 h-5 text-orange-600" />
-                  </button>
+                  </motion.button>
                 </Link>
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center">
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                  className="flex items-center space-x-3"
+                >
+                  <motion.div
+                    // whileHover={{ rotate: 10 }}
+                    className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center"
+                  >
                     <Droplets className="w-6 h-6 text-white" />
-                  </div>
+                  </motion.div>
                   <div>
                     <h1 className="text-xl font-bold text-gray-900">
                       Manage Stock
@@ -73,90 +89,192 @@ const ManageStock: React.FC = () => {
                       Inventory & Flow Management
                     </p>
                   </div>
-                </div>
+                </motion.div>
               </div>
-              <div className="flex items-center space-x-4">
-                <button
+              <motion.div
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="flex items-center space-x-4"
+              >
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={handleRefresh}
-                  className="flex items-center space-x-2 px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors"
+                  className="flex items-center space-x-2 px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200"
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  <motion.div
+                    whileHover={{ rotate: 180 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </motion.div>
                   <span className="text-sm font-medium">Refresh</span>
-                </button>
+                </motion.button>
 
                 <Link href="/inventory/settings">
-                  <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white  hover:bg-orange-50 transition-colors">
-                    <Settings className="w-5 h-5 text-orange-600" />
-                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center justify-center w-10 h-10 rounded-lg bg-white hover:bg-orange-50"
+                  >
+                    <motion.div
+                      whileHover={{ rotate: 90 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Settings className="w-5 h-5 text-orange-600" />
+                    </motion.div>
+                  </motion.button>
                 </Link>
-              </div>
+              </motion.div>
             </div>
           </div>
-        </header>
+        </motion.header>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+        >
           {/* Current Stock Overview */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
+          <motion.div
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="mb-8"
+          >
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="flex items-center justify-between mb-6"
+            >
               <h2 className="text-2xl font-bold text-gray-900">
                 Current Stock Levels
               </h2>
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <Activity className="w-4 h-4" />
+              <motion.div
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.6 }}
+                className="flex items-center space-x-2 text-sm text-gray-600"
+              >
+                <motion.div
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [1, 0.7, 1],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                >
+                  <Activity className="w-4 h-4" />
+                </motion.div>
                 <span>Last updated: {lastUpdate.toLocaleTimeString()}</span>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.7 }}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12"
+            >
               {/* Total Litres */}
-              <InventoryCard
-                value={totalAvailableStock}
-                unit="Litres"
-                icon={Droplets}
-                footerText="Total Available"
-              />
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.8 }}
+              >
+                <InventoryCard
+                  value={totalAvailableStock}
+                  unit="Litres"
+                  icon={Droplets}
+                  footerText="Total Available"
+                />
+              </motion.div>
 
               {/* Total Drums */}
-              <InventoryCard
-                value={totalDrums}
-                unit="Drums"
-                icon={Cylinder}
-                iconBg="bg-green-100"
-                iconColor="text-green-600"
-                footerText={`${totalDrums} Drums ${Math.floor(
-                  remainingKegs / KEG_CAPACITY
-                )} Kegs`}
-              />
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.9 }}
+              >
+                <InventoryCard
+                  value={totalDrums}
+                  unit="Drums"
+                  icon={Cylinder}
+                  iconBg="bg-green-100"
+                  iconColor="text-green-600"
+                  footerText={`${totalDrums} Drums ${Math.floor(
+                    remainingKegs / KEG_CAPACITY
+                  )} Kegs`}
+                />
+              </motion.div>
 
               {/* Total Kegs */}
-              <InventoryCard
-                value={totalKegs}
-                unit="Kegs"
-                icon={Cylinder}
-                iconColor="text-orange-600"
-                iconBg="bg-orange-100"
-                footerText={`${totalKegs} Kegs (${remainingLitres} Litres)`}
-              />
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 1.0 }}
+              >
+                <InventoryCard
+                  value={totalKegs}
+                  unit="Kegs"
+                  icon={Cylinder}
+                  iconColor="text-orange-600"
+                  iconBg="bg-orange-100"
+                  footerText={`${totalKegs} Kegs (${remainingLitres} Litres)`}
+                />
+              </motion.div>
 
               {/* Total Sold */}
-              <InventoryCard
-                value={stock?.soldStock || 0}
-                unit="Litres"
-                icon={Droplets}
-                iconBg="bg-blue-100"
-                iconColor="text-blue-600"
-                footerText="Total Sold Stock"
-              />
-            </div>
-          </div>
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 1.1 }}
+              >
+                <InventoryCard
+                  value={stock?.soldStock || 0}
+                  unit="Litres"
+                  icon={Droplets}
+                  iconBg="bg-blue-100"
+                  iconColor="text-blue-600"
+                  footerText="Total Sold Stock"
+                />
+              </motion.div>
+            </motion.div>
+          </motion.div>
 
           {/* Storage Tank */}
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+          <motion.div
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 1.2 }}
+            className="mb-8"
+          >
+            <motion.h2
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 1.3 }}
+              className="text-2xl font-bold text-gray-900 mb-6"
+            >
               Storage Tank
-            </h2>
-            <div className="bg-white rounded-xl p-8 shadow-lg border border-orange-100">
-              <div className="flex items-center justify-between mb-6">
+            </motion.h2>
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 1.4 }}
+              className="bg-white rounded-xl p-8 shadow-lg border border-orange-100"
+            >
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 1.5 }}
+                className="flex items-center justify-between mb-6"
+              >
                 <div>
                   <h3 className="text-2xl font-semibold text-gray-900">
                     Main Storage Tank
@@ -165,54 +283,90 @@ const ManageStock: React.FC = () => {
                     {totalAvailableStock}L / {stock?.soldStock ?? 0}L
                   </p>
                 </div>
-                <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 1.6, type: "spring", stiffness: 300 }}
+                  whileHover={{ scale: 1.1, rotate: 10 }}
+                  className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center"
+                >
                   <Gauge className="w-8 h-8 text-blue-600" />
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
 
-              <div className="mb-6">
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 1.7 }}
+                className="mb-6"
+              >
                 <div className="flex justify-between text-lg text-gray-600 mb-3">
                   <span>Fill Level</span>
                   <span>{fillPercentage.toFixed(1)}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-6">
-                  <div
-                    className={`h-6 rounded-full transition-all duration-500 ${getFillColor(
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(fillPercentage, 100)}%` }}
+                    transition={{ delay: 1.8, duration: 1, ease: "easeOut" }}
+                    className={`h-6 rounded-full ${getFillColor(
                       fillPercentage
                     )}`}
-                    style={{ width: `${Math.min(fillPercentage, 100)}%` }}
-                  ></div>
+                  ></motion.div>
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <motion.div
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 1.9 }}
+                className="grid grid-cols-1 md:grid-cols-3 gap-6"
+              >
+                <motion.div
+                  initial={{ scale: 0.9 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 2.0 }}
+                  whileHover={{ scale: 1.02 }}
+                  className="text-center p-4 bg-blue-50 rounded-lg"
+                >
                   <div className="text-xl font-bold text-blue-600 mb-1">
                     {stock?.availableStock.toLocaleString()}
                   </div>
                   <div className="text-sm text-gray-600">
                     Volume (L) since last restock
                   </div>
-                </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
+                </motion.div>
+                <motion.div
+                  initial={{ scale: 0.9 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 2.1 }}
+                  whileHover={{ scale: 1.02 }}
+                  className="text-center p-4 bg-green-50 rounded-lg"
+                >
                   <div className="text-xl font-bold text-green-600 mb-1">
                     {totalAvailableStock.toLocaleString()}
                   </div>
                   <div className="text-sm text-gray-600">
                     Available Capacity (L)
                   </div>
-                </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
+                </motion.div>
+                <motion.div
+                  initial={{ scale: 0.9 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 2.2 }}
+                  whileHover={{ scale: 1.02 }}
+                  className="text-center p-4 bg-green-50 rounded-lg"
+                >
                   <div className="text-xl font-bold text-green-600 mb-1">
                     {stock.soldStock.toLocaleString()}
                   </div>
                   <div className="text-sm text-gray-600">Sold Capacity (L)</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+                </motion.div>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        </motion.div>
+      </motion.div>
     </ProtectedRoute>
   );
 };
