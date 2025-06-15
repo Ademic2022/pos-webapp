@@ -589,7 +589,7 @@ const NewSalePage = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
-                {products[saleType].map((product, index) => {
+                {products[saleType].map((product) => {
                   const unitKegs = parseInt(product.unit);
 
                   // Check stock availability for this product
@@ -731,7 +731,7 @@ const NewSalePage = () => {
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.5, delay: 0.9 }}
                 >
-                  {cartItems.map((item, index) => {
+                  {cartItems.map((item) => {
                     const unitKegs = parseInt(item.unit);
                     return (
                       <motion.div
