@@ -338,12 +338,7 @@ const NewSalePage = () => {
   const totalKegsInCart = calculateTotalKegsInCart();
 
   return (
-    <motion.div
-      className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
       {/* Header */}
       <motion.header
         className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-40"
@@ -394,15 +389,9 @@ const NewSalePage = () => {
           {/* Left Panel - Product Selection */}
           <div className="lg:col-span-2 space-y-6">
             {/* Sale Type Toggle */}
-            <motion.div
+            <div
               className="bg-white rounded-xl p-6 shadow-lg border border-orange-100"
-              initial={{ x: -50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
-              whileHover={{
-                y: -2,
-                boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
-              }}
+              
             >
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 Sale Type
@@ -439,18 +428,12 @@ const NewSalePage = () => {
                   </div>
                 </motion.button>
               </div>
-            </motion.div>
+            </div>
 
             {/* Customer Selection */}
-            <motion.div
+            <div
               className="bg-white rounded-xl p-6 shadow-lg border border-orange-100"
-              initial={{ x: -50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.7, duration: 0.5 }}
-              whileHover={{
-                y: -2,
-                boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
-              }}
+              
             >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-900">
@@ -521,7 +504,6 @@ const NewSalePage = () => {
                       className="bg-red-50 border border-red-200 rounded-lg p-3"
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3, delay: 1.1 }}
                     >
                       <div className="flex items-center space-x-2">
                         <AlertCircle className="w-5 h-5 text-red-600" />
@@ -548,7 +530,6 @@ const NewSalePage = () => {
                       className="bg-green-50 border border-green-200 rounded-lg p-3"
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3, delay: 1.1 }}
                     >
                       <div className="flex items-center space-x-2">
                         <Check className="w-5 h-5 text-green-600" />
@@ -572,16 +553,10 @@ const NewSalePage = () => {
                   className="p-4 border-2 border-dashed border-red-300 rounded-lg text-center text-red-500"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 1.0 }}
                   whileHover={{ scale: 1.02 }}
                 >
                   <motion.div
                     animate={{ y: [0, -5, 0] }}
-                    transition={{
-                      duration: 1,
-                      repeat: Infinity,
-                      repeatDelay: 2,
-                    }}
                   >
                     <Users className="w-8 h-8 mx-auto mb-2 text-red-400" />
                   </motion.div>
@@ -591,24 +566,18 @@ const NewSalePage = () => {
                   </p>
                 </motion.div>
               )}
-            </motion.div>
+            </div>
 
             {/* Product Selection */}
             <motion.div
               className="bg-white rounded-xl p-6 shadow-lg border border-orange-100"
               initial={{ x: -50, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.8, duration: 0.5 }}
-              whileHover={{
-                y: -2,
-                boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
-              }}
             >
               <motion.h2
                 className="text-xl font-semibold text-gray-900 mb-6"
                 initial={{ y: -20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.9 }}
               >
                 {saleType === "wholesale"
                   ? "Wholesale Products (9 Kegs/Drum)"
@@ -619,7 +588,6 @@ const NewSalePage = () => {
                 className="grid md:grid-cols-2 gap-4"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 1.0 }}
               >
                 {products[saleType].map((product, index) => {
                   const unitKegs = parseInt(product.unit);
@@ -647,7 +615,6 @@ const NewSalePage = () => {
                       className="border border-gray-200 rounded-lg p-4 hover:border-orange-300 transition-colors"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 1.1 + index * 0.1 }}
                       whileHover={{ scale: 1.03, y: -3 }}
                     >
                       <div className="flex items-center justify-between mb-3">
@@ -772,7 +739,6 @@ const NewSalePage = () => {
                         className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3, delay: 1.0 + index * 0.1 }}
                         whileHover={{
                           scale: 1.02,
                           backgroundColor: "rgba(249, 250, 251, 1)",
@@ -836,7 +802,7 @@ const NewSalePage = () => {
                 className="bg-white rounded-xl p-6 shadow-lg border border-orange-100"
                 initial={{ y: 30, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.8, duration: 0.5 }}
+                // transition={{ delay: 0.8, duration: 0.5 }}
                 whileHover={{
                   y: -2,
                   boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
@@ -847,7 +813,7 @@ const NewSalePage = () => {
                     className="text-xl font-semibold text-gray-900"
                     initial={{ x: -20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    transition={{ duration: 0.3, delay: 0.9 }}
+                    // transition={{ duration: 0.3, delay: 0.9 }}
                   >
                     Discount
                   </motion.h2>
@@ -858,7 +824,7 @@ const NewSalePage = () => {
                     whileTap={{ scale: 0.95 }}
                     initial={{ x: 20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    transition={{ duration: 0.3, delay: 1.0 }}
+                    // transition={{ duration: 0.3, delay: 1.0 }}
                   >
                     {showDiscountInput ? "Hide" : "Add Discount"}
                   </motion.button>
@@ -1386,7 +1352,7 @@ const NewSalePage = () => {
           </div>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 };
 
