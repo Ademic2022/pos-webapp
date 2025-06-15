@@ -802,7 +802,6 @@ const NewSalePage = () => {
                 className="bg-white rounded-xl p-6 shadow-lg border border-orange-100"
                 initial={{ y: 30, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                // transition={{ delay: 0.8, duration: 0.5 }}
                 whileHover={{
                   y: -2,
                   boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
@@ -813,7 +812,6 @@ const NewSalePage = () => {
                     className="text-xl font-semibold text-gray-900"
                     initial={{ x: -20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    // transition={{ duration: 0.3, delay: 0.9 }}
                   >
                     Discount
                   </motion.h2>
@@ -824,7 +822,6 @@ const NewSalePage = () => {
                     whileTap={{ scale: 0.95 }}
                     initial={{ x: 20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    // transition={{ duration: 0.3, delay: 1.0 }}
                   >
                     {showDiscountInput ? "Hide" : "Add Discount"}
                   </motion.button>
