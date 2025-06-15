@@ -716,7 +716,6 @@ const CustomerDetailPage = () => {
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
         >
           {[
             {
@@ -734,7 +733,6 @@ const CustomerDetailPage = () => {
                   }}
                 />
               ),
-              delay: 0.6,
             },
             {
               component: (
@@ -753,7 +751,6 @@ const CustomerDetailPage = () => {
                   iconColor="text-purple-600"
                 />
               ),
-              delay: 0.7,
             },
             {
               component: (
@@ -772,7 +769,6 @@ const CustomerDetailPage = () => {
                   iconColor="text-green-600"
                 />
               ),
-              delay: 0.8,
             },
             {
               component: (
@@ -792,15 +788,12 @@ const CustomerDetailPage = () => {
                   iconBg="bg-orange-100"
                   iconColor="text-orange-600"
                 />
-              ),
-              delay: 0.9,
-            },
+              ),            },
           ].map((item, index) => (
             <motion.div
               key={index}
               initial={{ scale: 0.8, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: item.delay }}
               whileHover={{ scale: 1.05, y: -5 }}
             >
               {item.component}

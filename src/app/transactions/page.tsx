@@ -471,7 +471,6 @@ const TransactionHistoryPage: React.FC = () => {
             className="bg-white rounded-xl shadow-lg border border-orange-100 p-6 mb-8"
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
             whileHover={{
               y: -5,
               boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
@@ -737,7 +736,6 @@ const TransactionHistoryPage: React.FC = () => {
             className="mb-6 flex justify-between items-center"
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 1.4, duration: 0.5 }}
           >
             <p className="text-gray-600">
               Showing {paginatedTransactions.length} of{" "}
@@ -756,7 +754,6 @@ const TransactionHistoryPage: React.FC = () => {
             className="bg-white rounded-xl shadow-lg border border-orange-100 overflow-hidden"
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 1.5, duration: 0.5 }}
             whileHover={{
               y: -5,
               boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
