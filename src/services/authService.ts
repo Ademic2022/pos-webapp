@@ -1,9 +1,22 @@
-import { graphqlClient, TOKEN_AUTH, VERIFY_TOKEN, REFRESH_TOKEN, setAuthToken, clearAuthToken } from '@/lib/graphql';
+import { graphqlClient, TOKEN_AUTH, VERIFY_TOKEN, REFRESH_TOKEN, UPDATE_ACCOUNT, VIEW_ME, setAuthToken, clearAuthToken } from '@/lib/graphql';
 import { User } from '@/interfaces/interface';
 
 export interface LoginCredentials {
   username: string;
   password: string;
+}
+
+export interface UpdateAccountInput {
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  address?: string;
+}
+
+export interface UpdateAccountResponse {
+  success: boolean;
+  errors?: string[];
 }
 
 export interface AuthTokens {
@@ -31,6 +44,8 @@ interface TokenAuthResponse {
       firstName: string;
       lastName: string;
       username: string;
+      phone: string;
+      address: string;
       isSuperuser: boolean;
       isStaff: boolean;
     };
@@ -57,6 +72,13 @@ interface RefreshTokenResponse {
   };
 }
 
+interface UpdateAccountGraphQLResponse {
+  updateAccount: {
+    success: boolean;
+    errors: string[] | null;
+  };
+}
+
 class AuthService {
   private readonly TOKEN_KEY = 'pos_auth_token';
   private readonly REFRESH_TOKEN_KEY = 'pos_refresh_token';
@@ -75,7 +97,8 @@ class AuthService {
           name: `${tokenAuth.user.firstName} ${tokenAuth.user.lastName}`.trim() || tokenAuth.user.username,
           email: tokenAuth.user.email,
           username: tokenAuth.user.username,
-          phone: '', // Not returned by backend, will need to be fetched separately if needed
+          phone: tokenAuth.user.phone || '',
+          address: tokenAuth.user.address || '',
           is_staff: tokenAuth.user.isStaff,
           is_superuser: tokenAuth.user.isSuperuser,
           createdAt: new Date().toISOString(),
@@ -245,6 +268,68 @@ class AuthService {
     // If both verification and refresh failed, clear stored data
     this.logout();
     return null;
+  }
+
+  async updateAccount(updateData: UpdateAccountInput): Promise<UpdateAccountResponse> {
+    try {
+      // Filter out undefined values
+      const filteredData = Object.fromEntries(
+        Object.entries(updateData).filter(([_, value]) => value !== undefined && value !== '')
+      );
+
+      const response = await graphqlClient.request(UPDATE_ACCOUNT, filteredData) as UpdateAccountGraphQLResponse;
+      const { updateAccount } = response;
+
+      if (updateAccount.success) {
+        // If update is successful, fetch fresh user data from server
+        try {
+          interface ViewMeResponse {
+            viewMe: {
+              firstName: string;
+              lastName: string;
+              phone: string;
+              address: string;
+              email: string;
+              username: string;
+            };
+          }
+
+          const profileResponse = await graphqlClient.request(VIEW_ME) as ViewMeResponse;
+          const storedUser = this.getStoredUser();
+          
+          if (storedUser) {
+            // Update stored user with fresh data from server
+            const updatedUser: User = {
+              ...storedUser,
+              name: `${profileResponse.viewMe.firstName} ${profileResponse.viewMe.lastName}`.trim(),
+              email: profileResponse.viewMe.email,
+              phone: profileResponse.viewMe.phone,
+              address: profileResponse.viewMe.address,
+            };
+            
+            this.storeUser(updatedUser);
+          }
+        } catch (fetchError) {
+          console.warn('Failed to fetch updated profile data:', fetchError);
+          // Continue with success even if profile fetch fails
+        }
+
+        return {
+          success: true,
+        };
+      } else {
+        return {
+          success: false,
+          errors: updateAccount.errors || ['Update failed'],
+        };
+      }
+    } catch (error) {
+      console.error('Update account error:', error);
+      return {
+        success: false,
+        errors: ['Network error or server unavailable'],
+      };
+    }
   }
 }
 

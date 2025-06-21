@@ -24,6 +24,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { usePageLoading, useAsyncLoading } from "@/hooks/usePageLoading";
+import { authService } from "@/services/authService";
 
 const ProfilePage: React.FC = () => {
   const { user } = useAuth();
@@ -74,7 +75,7 @@ const ProfilePage: React.FC = () => {
         lastName,
         email: user.email,
         phone: user.phone || "+1 (555) 123-4567", // Default if not provided
-        address: "123 Business St, Commerce City, CA 90210", // Default address
+        address: user.address || "123 Business St, Commerce City, CA 90210",
         role,
         department,
         employeeId: `EMP${String(user.id).padStart(3, "0")}`, // Generate employee ID from user ID
@@ -92,20 +93,25 @@ const ProfilePage: React.FC = () => {
 
   const handleSave = async () => {
     await withLoading(async () => {
-      // Here you would typically save to an API
-      console.log("Saving profile data:", profileData);
+      // Use the real authService to update the account
+      const updateData = {
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        phone: profileData.phone,
+        address: profileData.address,
+      };
 
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const response = await authService.updateAccount(updateData);
 
-      // TODO: Implement API call to update user profile
-      // const updatedUser = await updateUserProfile(profileData);
-
-      setIsEditing(false);
-
-      // You could show a success notification here
-      // For now, we'll just log it
-      console.log("Profile updated successfully!");
+      if (response.success) {
+        setIsEditing(false);
+        console.log("Profile updated successfully!");
+        // You could show a success notification here
+      } else {
+        console.error("Profile update failed:", response.errors);
+        // You could show an error notification here
+        throw new Error(response.errors?.[0] || "Update failed");
+      }
     }, "Saving profile changes");
   };
 
@@ -132,7 +138,7 @@ const ProfilePage: React.FC = () => {
         lastName,
         email: user.email,
         phone: user.phone || "+1 (555) 123-4567",
-        address: "123 Business St, Commerce City, CA 90210",
+        address: user.address || "123 Business St, Commerce City, CA 90210",
         role,
         department,
         employeeId: `EMP${String(user.id).padStart(3, "0")}`,

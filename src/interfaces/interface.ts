@@ -95,6 +95,7 @@ export interface User {
   email: string;
   username: string;
   phone: string;
+  address: string;
   createdAt: string;
   isActive: boolean;
   is_staff: boolean;

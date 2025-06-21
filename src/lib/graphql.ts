@@ -33,6 +33,8 @@ export const TOKEN_AUTH = `
         firstName
         lastName
         username
+        phone
+        address
         isSuperuser
         isStaff
       }
@@ -56,6 +58,42 @@ export const REFRESH_TOKEN = `
   mutation RefreshToken($refreshToken: String!) {
     refreshToken(refreshToken: $refreshToken) {
       token
+      success
+      errors
+    }
+  }
+`;
+
+// View current user profile query
+export const VIEW_ME = `
+  query {
+    viewMe {
+      firstName
+      lastName
+      phone
+      address
+      email
+      username
+    }
+  }
+`;
+
+// Update account mutation
+export const UPDATE_ACCOUNT = `
+  mutation UpdateAccount(
+    $username: String,
+    $firstName: String,
+    $lastName: String,
+    $phone: String,
+    $address: String
+  ) {
+    updateAccount(
+      username: $username,
+      firstName: $firstName,
+      lastName: $lastName,
+      phone: $phone,
+      address: $address
+    ) {
       success
       errors
     }
