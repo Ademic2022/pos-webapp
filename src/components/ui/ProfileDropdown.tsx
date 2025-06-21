@@ -22,7 +22,19 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+
+  // Use real user data if available, otherwise fall back to props
+  const displayName = user?.name || userName;
+  const displayEmail = user?.email || userEmail;
+  const displayInitials = user
+    ? user.name
+        .split(" ")
+        .map((word) => word[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : userInitials;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -94,7 +106,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
       >
         <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
           <span className="text-sm font-medium text-orange-700">
-            {userInitials}
+            {displayInitials}
           </span>
         </div>
         <ChevronDown
@@ -112,12 +124,14 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                 <span className="text-lg font-semibold text-orange-700">
-                  {userInitials}
+                  {displayInitials}
                 </span>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900">{userName}</p>
-                <p className="text-sm text-gray-500">{userEmail}</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {displayName}
+                </p>
+                <p className="text-sm text-gray-500">{displayEmail}</p>
               </div>
             </div>
           </div>
