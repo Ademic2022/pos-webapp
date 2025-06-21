@@ -1,58 +1,82 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import { User, AuthContextType } from "@/interfaces/interface";
 import { PermissionType } from "@/types/types";
-import { loggedInUser } from "@/data/user";
+import { authService } from "@/services/authService";
+import { useRouter } from "next/navigation";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize with logged-in user data
-    // In a real app, this would check localStorage, cookies, or make an API call
-    setUser(loggedInUser);
+    // Initialize authentication on app load
+    const initializeAuth = async () => {
+      try {
+        const userData = await authService.initializeAuth();
+        if (userData) {
+          setUser(userData);
+        }
+      } catch (error) {
+        console.error("Auth initialization error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
   }, []);
 
-  const login = (userData: User) => {
+  const login = useCallback((userData: User) => {
     setUser(userData);
-    // In a real app, you'd also store in localStorage or cookies
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
+    authService.logout();
     setUser(null);
-    // In a real app, you'd also clear localStorage or cookies
-  };
+    router.push("/signin");
+  }, [router]);
 
-  const checkPermission = (permission: PermissionType): boolean => {
-    if (!user) return false;
+  const checkPermission = useCallback(
+    (permission: PermissionType): boolean => {
+      if (!user) return false;
 
-    // Superusers have access to everything
-    if (user.is_superuser) return true;
+      // Superusers have access to everything
+      if (user.is_superuser) return true;
 
-    // Staff permissions (more restrictive)
-    if (user.is_staff) {
-      const staffPermissions: PermissionType[] = [
-        "VIEW_REPORTS",
-        "EDIT_CUSTOMER_DETAILS",
-        "PROCESS_RETURNS",
-        "MANAGE_STOCK",
-        "NEW_SALE",
-        "SECURITY_SETTINGS"
+      // Staff permissions (more restrictive)
+      if (user.is_staff) {
+        const staffPermissions: PermissionType[] = [
+          "VIEW_REPORTS",
+          "EDIT_CUSTOMER_DETAILS",
+          "PROCESS_RETURNS",
+          "MANAGE_STOCK",
+          "NEW_SALE",
+          "SECURITY_SETTINGS",
+        ];
+        return staffPermissions.includes(permission);
+      }
+
+      // Regular users have very limited permissions
+      const regularUserPermissions: PermissionType[] = [
+        "VIEW_REPORTS", // Basic reports only
       ];
-      return staffPermissions.includes(permission);
-    }
-
-    // Regular users have very limited permissions
-    const regularUserPermissions: PermissionType[] = [
-      "VIEW_REPORTS", // Basic reports only
-    ];
-    return regularUserPermissions.includes(permission);
-  };
+      return regularUserPermissions.includes(permission);
+    },
+    [user]
+  );
 
   const isAuthenticated = !!user;
   const isSuperuser = user?.is_superuser || false;
@@ -68,6 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         login,
         logout,
         checkPermission,
+        isLoading,
       }}
     >
       {children}

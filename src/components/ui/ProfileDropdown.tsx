@@ -13,6 +13,7 @@ import {
   FileText,
 } from "lucide-react";
 import { ProfileDropdownProps } from "@/interfaces/interface";
+import { useAuth } from "@/context/AuthContext";
 
 const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   userName = "Store Employee",
@@ -21,6 +22,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { logout } = useAuth();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -40,12 +42,8 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   }, []);
 
   const handleLogout = () => {
-    // Add logout logic here
-    console.log("Logging out...");
-    // For now, just close the dropdown
+    logout();
     setIsOpen(false);
-    // You can add actual logout functionality here
-    // e.g., clear local storage, redirect to login, etc.
   };
 
   const menuItems = [

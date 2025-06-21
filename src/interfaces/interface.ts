@@ -132,6 +132,7 @@ export interface AuthContextType {
   login: (userData: User) => void;
   logout: () => void;
   checkPermission: (permission: PermissionType) => boolean;
+  isLoading?: boolean;
 }
 
 // Loading Context Interfaces

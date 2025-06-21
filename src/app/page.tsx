@@ -2,6 +2,7 @@
 import React from "react";
 import Home from "@/components/home/home";
 import { usePageLoading } from "@/hooks/usePageLoading";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 const HomePage = () => {
   usePageLoading({
@@ -9,7 +10,11 @@ const HomePage = () => {
     minDuration: 800,
   });
 
-  return <Home />;
+  return (
+    <ProtectedRoute>
+      <Home />
+    </ProtectedRoute>
+  );
 };
 
 export default HomePage;
