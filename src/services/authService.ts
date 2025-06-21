@@ -274,7 +274,7 @@ class AuthService {
     try {
       // Filter out undefined values
       const filteredData = Object.fromEntries(
-        Object.entries(updateData).filter(([_, value]) => value !== undefined && value !== '')
+        Object.entries(updateData).filter(([value]) => value !== undefined && value !== '')
       );
 
       const response = await graphqlClient.request(UPDATE_ACCOUNT, filteredData) as UpdateAccountGraphQLResponse;
