@@ -6,6 +6,7 @@ export const graphqlClient = new GraphQLClient(GRAPHQL_ENDPOINT, {
   headers: {
     'Content-Type': 'application/json',
   },
+  errorPolicy: 'all', // Return both data and errors
 });
 
 // Function to set authorization header

@@ -132,8 +132,18 @@ class AuthService {
       }
 
       return { valid: false };
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Token verification error:', error);
+      
+      // Check if it's a JWT expiration error
+      if (error && typeof error === 'object' && 'response' in error) {
+        const graphqlError = error as { response?: { errors?: Array<{ message?: string }> } };
+        if (graphqlError.response?.errors?.[0]?.message?.includes('expired') || 
+            graphqlError.response?.errors?.[0]?.message?.includes('Signature has expired')) {
+          console.log('Token has expired, will attempt refresh...');
+        }
+      }
+      
       return { valid: false };
     }
   }

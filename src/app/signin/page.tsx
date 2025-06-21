@@ -12,7 +12,6 @@ import {
   Shield,
   Loader2,
   AlertCircle,
-  CheckCircle,
 } from "lucide-react";
 import { authService, LoginCredentials } from "@/services/authService";
 import { useAuth } from "@/context/AuthContext";

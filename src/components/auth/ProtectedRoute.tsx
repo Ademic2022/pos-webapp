@@ -4,7 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { ProtectedRouteProps } from "@/interfaces/interface";
-import { ShieldX, Lock } from "lucide-react";
+import { ShieldX } from "lucide-react";
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
