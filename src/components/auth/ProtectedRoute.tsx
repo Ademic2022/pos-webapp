@@ -16,16 +16,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const router = useRouter();
   const { user, isSuperuser, isStaff, checkPermission, isLoading } = useAuth();
 
-  // Show loading while checking authentication
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 flex items-center justify-center">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-lg text-gray-700">Loading...</span>
-        </div>
-      </div>
-    );
+  // Show loading while checking authentication - but only if user is not available and auth is loading
+  if (isLoading && !user) {
+    return null; // Let the global loading system handle this
   }
 
   // Check if user is authenticated

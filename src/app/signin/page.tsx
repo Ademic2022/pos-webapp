@@ -15,10 +15,17 @@ import {
 } from "lucide-react";
 import { authService, LoginCredentials } from "@/services/authService";
 import { useAuth } from "@/context/AuthContext";
+import { usePageLoading } from "@/hooks/usePageLoading";
 
 const LoginPage: React.FC = () => {
   const router = useRouter();
   const { login: contextLogin, isAuthenticated } = useAuth();
+
+  // Use the existing loading system for initial page load
+  usePageLoading({
+    text: "Checking authentication...",
+    minDuration: 500,
+  });
 
   const [credentials, setCredentials] = useState<LoginCredentials>({
     username: "",
@@ -27,7 +34,6 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>("");
-  const [isInitializing, setIsInitializing] = useState(true);
 
   // Check if user is already authenticated
   useEffect(() => {
@@ -41,8 +47,6 @@ const LoginPage: React.FC = () => {
         }
       } catch (error) {
         console.error("Auth initialization error:", error);
-      } finally {
-        setIsInitializing(false);
       }
     };
 
@@ -51,10 +55,10 @@ const LoginPage: React.FC = () => {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated && !isInitializing) {
+    if (isAuthenticated) {
       router.replace("/");
     }
-  }, [isAuthenticated, isInitializing, router]);
+  }, [isAuthenticated, router]);
 
   const handleInputChange = (field: keyof LoginCredentials, value: string) => {
     setCredentials((prev) => ({ ...prev, [field]: value }));
@@ -92,24 +96,6 @@ const LoginPage: React.FC = () => {
       setIsLoading(false);
     }
   };
-
-  // Show loading spinner while checking authentication
-  if (isInitializing) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex items-center space-x-3"
-        >
-          <Loader2 className="w-8 h-8 text-orange-600 animate-spin" />
-          <span className="text-lg text-gray-700">
-            Checking authentication...
-          </span>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
