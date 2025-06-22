@@ -102,8 +102,24 @@ export const UPDATE_ACCOUNT = `
 
 // Customer queries
 export const GET_CUSTOMERS = `
-  query GetCustomers($first: Int, $after: String) {
-    customers(first: $first, after: $after) {
+  query GetCustomers(
+    $first: Int, 
+    $after: String,
+    $name_Icontains: String,
+    $type: CustomerTypeEnum,
+    $status: CustomerStatusEnum,
+    $balance_Gt: Decimal,
+    $balance_Lt: Decimal
+  ) {
+    customers(
+      first: $first, 
+      after: $after,
+      name_Icontains: $name_Icontains,
+      type: $type,
+      status: $status,
+      balance_Gt: $balance_Gt,
+      balance_Lt: $balance_Lt
+    ) {
       edges {
         node {
           id

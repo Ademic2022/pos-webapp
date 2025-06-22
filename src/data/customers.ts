@@ -2,7 +2,7 @@ import { Customer, CustomerTransaction } from "@/interfaces/interface";
 
 export const customers: Customer[] = [
   {
-    id: 1,
+    id: "1",
     name: "Adebayo Motors",
     phone: "08123456789",
     email: "adebayo@motors.com",
@@ -17,7 +17,7 @@ export const customers: Customer[] = [
     notes: "Reliable wholesale customer, always pays on time",
   },
   {
-    id: 2,
+    id: "2",
     name: "Mrs. Fatima Ibrahim",
     phone: "08134567890",
     email: "",
@@ -32,7 +32,7 @@ export const customers: Customer[] = [
     notes: "Regular retail customer, prefers cash payments",
   },
   {
-    id: 3,
+    id: "3",
     name: "Kemi's Store",
     phone: "08145678901",
     email: "kemi@store.ng",
@@ -47,7 +47,7 @@ export const customers: Customer[] = [
     notes: "Good customer but sometimes late on payments",
   },
   {
-    id: 4,
+    id: "4",
     name: "Taiwo Enterprises",
     phone: "08156789012",
     email: "taiwo@enterprises.com",
@@ -62,7 +62,7 @@ export const customers: Customer[] = [
     notes: "Large wholesale customer, requires extended credit terms",
   },
   {
-    id: 5,
+    id: "5",
     name: "Blessing Oil Depot",
     phone: "08167890123",
     email: "blessing@oildepot.ng",
@@ -77,7 +77,7 @@ export const customers: Customer[] = [
     notes: "New but promising wholesale customer",
   },
   {
-    id: 6,
+    id: "6",
     name: "Chief Okafor",
     phone: "08178901234",
     email: "",
@@ -93,8 +93,8 @@ export const customers: Customer[] = [
   },
 ];
 
-export const customerTransactions: Record<number, CustomerTransaction[]> = {
-  1: [
+export const customerTransactions: Record<string, CustomerTransaction[]> = {
+  "1": [
     {
       id: "TXN001",
       date: "2025-06-02",
@@ -120,7 +120,7 @@ export const customerTransactions: Record<number, CustomerTransaction[]> = {
       balance: 0,
     },
   ],
-  2: [
+  "2": [
     {
       id: "TXN002",
       date: "2025-06-02",
@@ -176,7 +176,7 @@ export const customerTransactions: Record<number, CustomerTransaction[]> = {
       balance: 2000,
     },
   ],
-  3: [
+  "3": [
     {
       id: "TXN003",
       date: "2025-06-02",
@@ -212,7 +212,7 @@ export const customerTransactions: Record<number, CustomerTransaction[]> = {
       balance: 0,
     },
   ],
-  4: [
+  "4": [
     {
       id: "TXN004",
       date: "2025-06-01",
@@ -249,7 +249,7 @@ export const customerTransactions: Record<number, CustomerTransaction[]> = {
       balance: 0,
     },
   ],
-  5: [
+  "5": [
     {
       id: "TXN005",
       date: "2025-06-01",

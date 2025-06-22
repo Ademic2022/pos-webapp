@@ -4,7 +4,7 @@
 interface ReturnAnalyticsData {
   id: string;
   originalTransactionId: string;
-  customerId: number;
+  customerId: string;
   customerName: string;
   originalDate: string;
   requestDate: string;
@@ -24,7 +24,7 @@ interface ReturnAnalyticsData {
 
 interface SalesData {
   id: string;
-  customerId: number;
+  customerId: string;
   date: string;
   total: number;
   items: Array<{
@@ -35,7 +35,7 @@ interface SalesData {
 }
 
 interface CustomerAnalysis {
-  customerId: number;
+  customerId: string;
   customerName: string;
   returnCount: number;
   totalRefundAmount: number;
@@ -76,7 +76,7 @@ interface AnalyticsResult {
   };
   customerAnalysis: {
     topReturningCustomers: Array<{
-      customerId: number;
+      customerId: string;
       customerName: string;
       returnCount: number;
       totalRefundAmount: number;
@@ -221,7 +221,7 @@ export class ReturnAnalyticsEngine {
       }
       acc[r.customerId].returns.push(r);
       return acc;
-    }, {} as Record<number, { customerId: number; customerName: string; returns: ReturnAnalyticsData[] }>);
+    }, {} as Record<string, { customerId: string; customerName: string; returns: ReturnAnalyticsData[] }>);
 
     // Calculate customer metrics
     const topReturningCustomers = Object.values(customerReturns).map(customer => {

@@ -30,7 +30,7 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 // Local interfaces for analytics
 interface AnalyticsSalesData {
   id: string;
-  customerId: number;
+  customerId: string;
   date: string;
   total: number;
   items: Array<{
@@ -221,7 +221,7 @@ const ReturnAnalyticsDashboard: React.FC<{
 interface ReturnRequest {
   id: string;
   originalTransactionId: string;
-  customerId: number;
+  customerId: string;
   customerName: string;
   originalDate: string;
   requestDate: string;
@@ -255,7 +255,7 @@ const mockReturnRequests: ReturnRequest[] = [
   {
     id: "RET-2025-001",
     originalTransactionId: "TXN001",
-    customerId: 1,
+    customerId: "1",
     customerName: "Adebayo Motors",
     originalDate: "2025-06-02",
     requestDate: "2025-06-05",
@@ -275,7 +275,7 @@ const mockReturnRequests: ReturnRequest[] = [
   {
     id: "RET-2025-002",
     originalTransactionId: "TXN002",
-    customerId: 2,
+    customerId: "2",
     customerName: "Mrs. Fatima Ibrahim",
     originalDate: "2025-06-02",
     requestDate: "2025-06-04",
@@ -288,7 +288,7 @@ const mockReturnRequests: ReturnRequest[] = [
   {
     id: "RET-2025-003",
     originalTransactionId: "TXN003",
-    customerId: 3,
+    customerId: "3",
     customerName: "Kemi's Store",
     originalDate: "2025-06-02",
     requestDate: "2025-06-03",
@@ -491,11 +491,9 @@ const ReturnsPage = () => {
       .flat()
       .map((tx) => ({
         id: tx.id,
-        customerId: parseInt(
-          Object.keys(customerTransactions).find((custId) =>
-            customerTransactions[parseInt(custId)].some((t) => t.id === tx.id)
-          ) || "0"
-        ),
+        customerId: Object.keys(customerTransactions).find((custId) =>
+          customerTransactions[parseInt(custId)].some((t) => t.id === tx.id)
+        ) || "0",
         date: tx.date,
         total: tx.amount,
         items: [], // Would need to parse from description in real app
@@ -1442,13 +1440,11 @@ const ReturnsPage = () => {
                       .flat()
                       .map((tx) => ({
                         id: tx.id,
-                        customerId: parseInt(
-                          Object.keys(customerTransactions).find((custId) =>
-                            customerTransactions[parseInt(custId)].some(
-                              (t) => t.id === tx.id
-                            )
-                          ) || "0"
-                        ),
+                        customerId: Object.keys(customerTransactions).find((custId) =>
+                          customerTransactions[parseInt(custId)].some(
+                            (t) => t.id === tx.id
+                          )
+                        ) || "0",
                         date: tx.date,
                         total: tx.amount,
                         items: [],

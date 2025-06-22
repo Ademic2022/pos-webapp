@@ -20,7 +20,7 @@ export interface ReturnValidationContext {
       total: number;
     }>;
     reason: string;
-    customerId: number;
+    customerId: string;
   };
   customerBalance: number;
   customerType: "wholesale" | "retail";

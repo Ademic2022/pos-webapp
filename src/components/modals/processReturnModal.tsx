@@ -113,7 +113,7 @@ const ProcessReturnModal: React.FC<ProcessReturnModalProps> = ({
   };
 
   const simulateCustomerBalanceUpdate = async (
-    customerId: number,
+    customerId: string,
     amount: number,
     method: string
   ) => {

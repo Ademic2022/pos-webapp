@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -70,22 +70,7 @@ const CustomerManagementPage = () => {
     notes: "",
   });
 
-  // Load customers and stats on component mount
-  useEffect(() => {
-    loadCustomers();
-    loadCustomerStats();
-  }, []);
-
-  // Reload customers when search or filter changes
-  useEffect(() => {
-    const delayedSearch = setTimeout(() => {
-      loadCustomers();
-    }, 300);
-
-    return () => clearTimeout(delayedSearch);
-  }, [searchTerm, selectedFilter]);
-
-  const loadCustomers = async () => {
+  const loadCustomers = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -121,7 +106,22 @@ const CustomerManagementPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, selectedFilter]);
+
+  // Load customers and stats on component mount
+  useEffect(() => {
+    loadCustomers();
+    loadCustomerStats();
+  }, [loadCustomers]);
+
+  // Reload customers when search or filter changes
+  useEffect(() => {
+    const delayedSearch = setTimeout(() => {
+      loadCustomers();
+    }, 300);
+
+    return () => clearTimeout(delayedSearch);
+  }, [loadCustomers]);
 
   const loadCustomerStats = async () => {
     try {
@@ -184,9 +184,9 @@ const CustomerManagementPage = () => {
   // Calculate summary statistics from current displayed customers (for fallback)
   const localStats = {
     total: customers.length,
-    withDebt: customers.filter((c) => c.balance > 0).length, // Positive balance = debt
+    withDebt: customers.filter((c) => c.balance < 0).length, // Negative balance = debt
     totalDebt: customers.reduce(
-      (sum, c) => sum + Math.max(0, c.balance), // Positive balance = debt
+      (sum, c) => sum + Math.abs(Math.min(0, c.balance)), // Negative balance = debt (absolute value)
       0
     ),
     totalRevenue: customers.reduce((sum, c) => sum + c.totalPurchases, 0),

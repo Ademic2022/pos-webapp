@@ -14,8 +14,35 @@ export interface CustomerFilters {
   search?: string;
   type?: 'retail' | 'wholesale';
   status?: 'active' | 'inactive' | 'blocked';
-  hasBalance?: boolean;
+  hasBalance?: boolean; // For customers with negative balance (debt)
   hasCreditLimit?: boolean;
+}
+
+interface GraphQLVariables {
+  first: number;
+  after?: string | null;
+  name_Icontains?: string;
+  type?: string;
+  status?: string;
+  balance_Gt?: number;
+  balance_Lt?: number;
+}
+
+interface RawCustomerData {
+  id: string;
+  name: string;
+  email?: string;
+  phone: string;
+  address?: string;
+  type: string;
+  status: string;
+  balance: string | number;
+  creditLimit: string | number;
+  totalPurchases: string | number;
+  lastPurchase?: string;
+  joinDate?: string;
+  createdAt?: string;
+  notes?: string;
 }
 
 export interface CustomerStats {
@@ -77,10 +104,28 @@ class CustomerService {
     offset: number = 0
   ): Promise<CustomersResponse> {
     try {
-      const variables = {
+      const variables: GraphQLVariables = {
         first: limit,
-        after: offset > 0 ? btoa(`cursor${offset}`) : null // Convert offset to cursor
+        after: offset > 0 ? btoa(`cursor${offset}`) : null
       };
+
+      // Add filter parameters to variables
+      if (filters) {
+        if (filters.search) {
+          variables.name_Icontains = filters.search;
+        }
+        if (filters.type) {
+          // Convert to uppercase enum value: 'retail' -> 'RETAIL'
+          variables.type = filters.type.toUpperCase();
+        }
+        if (filters.status) {
+          // Convert to uppercase enum value: 'active' -> 'ACTIVE'
+          variables.status = filters.status.toUpperCase();
+        }
+        if (filters.hasBalance) {
+          variables.balance_Lt = 0; // Filter for customers with negative balance (debt)
+        }
+      }
 
       const response = await graphqlClient.request(GET_CUSTOMERS, variables) as {
         customers: {
@@ -296,18 +341,18 @@ class CustomerService {
     }
   }
 
-  private formatCustomer(customer: any): Customer {
+  private formatCustomer(customer: RawCustomerData): Customer {
     return {
-      id: parseInt(customer.id),
+      id: customer.id, // Keep as string - no parseInt needed
       name: customer.name,
       email: customer.email || '',
       phone: customer.phone,
       address: customer.address || '',
       type: customer.type.toLowerCase() as 'retail' | 'wholesale',
       status: customer.status.toLowerCase() as 'active' | 'inactive' | 'blocked',
-      balance: parseFloat(customer.balance) || 0,
-      creditLimit: parseFloat(customer.creditLimit) || 0,
-      totalPurchases: parseFloat(customer.totalPurchases) || 0,
+      balance: typeof customer.balance === 'number' ? customer.balance : parseFloat(customer.balance) || 0,
+      creditLimit: typeof customer.creditLimit === 'number' ? customer.creditLimit : parseFloat(customer.creditLimit) || 0,
+      totalPurchases: typeof customer.totalPurchases === 'number' ? customer.totalPurchases : parseFloat(customer.totalPurchases) || 0,
       lastPurchase: customer.lastPurchase || '',
       joinDate: customer.joinDate || customer.createdAt || '',
       notes: customer.notes || ''

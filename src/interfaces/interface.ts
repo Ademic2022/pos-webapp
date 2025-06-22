@@ -34,7 +34,7 @@ export interface ReportFilters {
   }
 
 export interface Customer {
-  id: number;
+  id: string;
   name: string;
   phone: string;
   email?: string;
@@ -196,7 +196,7 @@ export interface ReturnModalProps {
   show: boolean;
   onClose: () => void;
   customers: Customer[];
-  customerTransactions: Record<number, CustomerTransaction[]>;
+  customerTransactions: Record<string, CustomerTransaction[]>;
 }
 
 export interface EditPriceModalProps {
@@ -351,7 +351,7 @@ export interface ReceiptData {
 export interface ReturnRequest {
   id: string;
   originalTransactionId: string;
-  customerId: number;
+  customerId: string;
   customerName: string;
   originalDate: string;
   requestDate: string;
@@ -381,7 +381,7 @@ export interface Transaction {
 // Analytics Interfaces
 export interface AnalyticsSalesData {
   id: string;
-  customerId: number;
+  customerId: string;
   date: string;
   total: number;
   items: Array<{
@@ -409,7 +409,7 @@ export interface ReturnMetrics {
 }
 
 export interface CustomerReturnAnalytics {
-  customerId: number;
+  customerId: string;
   customerName: string;
   totalReturns: number;
   totalRefundValue: number;
@@ -429,7 +429,7 @@ export interface ReturnValidationRule {
 export interface ReturnValidationContext {
   returnRequest: {
     originalTransactionId: string;
-    customerId: number;
+    customerId: string;
     returnItems: Array<{
       name: string;
       quantity: number;
@@ -441,7 +441,7 @@ export interface ReturnValidationContext {
   originalTransaction: {
     id: string;
     date: string;
-    customerId: number;
+    customerId: string;
     items: Array<{
       name: string;
       quantity: number;
@@ -477,7 +477,7 @@ export interface ReturnValidationResult {
 export interface ReturnReceiptData {
   returnId: string;
   originalTransactionId: string;
-  customerId: number;
+  customerId: string;
   customerName: string;
   returnDate: string;
   processedBy: string;
