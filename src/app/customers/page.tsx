@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -23,14 +23,20 @@ import {
 import Link from "next/link";
 import { CustomerFilter } from "@/types/types";
 import { Customer } from "@/interfaces/interface";
-import { customers as users } from "@/data/customers";
 import AddCustomerModal from "@/components/modals/addCustomerModal";
 import { StatsCard } from "@/components/cards/statCard";
-import { usePageLoading } from "@/hooks/usePageLoading";
+import { usePageLoading, useAsyncLoading } from "@/hooks/usePageLoading";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ProtectedElement from "@/components/auth/ProtectedElement";
+import {
+  customerService,
+  CustomerFilters,
+  CustomerStats,
+} from "@/services/customerService";
 
 const CustomerManagementPage = () => {
+  const { withLoading } = useAsyncLoading();
+
   usePageLoading({
     text: "Loading customers",
     minDuration: 600,
@@ -39,17 +45,21 @@ const CustomerManagementPage = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedFilter, setSelectedFilter] = useState<CustomerFilter>("all");
-
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
+
+  // Data state
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customerStats, setCustomerStats] = useState<CustomerStats | null>(
+    null
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
 
-  // Sample customer data
-  const [customers, setCustomers] = useState<Customer[]>(users);
-
-  // New customer form state
+  // New customer form state for modal
   const [newCustomer, setNewCustomer] = useState<Partial<Customer>>({
     name: "",
     phone: "",
@@ -60,29 +70,105 @@ const CustomerManagementPage = () => {
     notes: "",
   });
 
-  // Filter customers based on search and filter criteria
-  const filteredCustomers = customers.filter((customer) => {
-    const matchesSearch =
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phone.includes(searchTerm) ||
-      (customer.email &&
-        customer.email.toLowerCase().includes(searchTerm.toLowerCase()));
+  // Load customers and stats on component mount
+  useEffect(() => {
+    loadCustomers();
+    loadCustomerStats();
+  }, []);
 
-    const matchesFilter = (() => {
+  // Reload customers when search or filter changes
+  useEffect(() => {
+    const delayedSearch = setTimeout(() => {
+      loadCustomers();
+    }, 300);
+
+    return () => clearTimeout(delayedSearch);
+  }, [searchTerm, selectedFilter]);
+
+  const loadCustomers = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const filters: CustomerFilters = {};
+
+      if (searchTerm.trim()) {
+        filters.search = searchTerm.trim();
+      }
+
       switch (selectedFilter) {
         case "debt":
-          return customer.balance < 0;
+          filters.hasBalance = true;
+          break;
         case "active":
-          return customer.status === "active";
+          filters.status = "active";
+          break;
         case "inactive":
-          return customer.status === "inactive";
-        default:
-          return true;
+          filters.status = "inactive";
+          break;
       }
-    })();
 
-    return matchesSearch && matchesFilter;
-  });
+      const response = await customerService.getCustomers(filters, 100, 0);
+
+      if (response.success && response.customers) {
+        setCustomers(response.customers);
+      } else {
+        setError(response.errors?.[0] || "Failed to load customers");
+      }
+    } catch (error) {
+      console.error("Failed to load customers:", error);
+      setError("Failed to load customers");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadCustomerStats = async () => {
+    try {
+      const response = await customerService.getCustomerStats();
+
+      if (response.success && response.stats) {
+        setCustomerStats(response.stats);
+      }
+    } catch (error) {
+      console.error("Failed to load customer stats:", error);
+    }
+  };
+
+  const handleAddCustomer = async () => {
+    await withLoading(async () => {
+      const response = await customerService.createCustomer({
+        name: newCustomer.name || "",
+        phone: newCustomer.phone || "",
+        email: newCustomer.email || "",
+        address: newCustomer.address || "",
+        type: (newCustomer.type as "retail" | "wholesale") || "retail",
+        creditLimit: newCustomer.creditLimit || 0,
+        notes: newCustomer.notes || "",
+      });
+
+      if (response.success) {
+        setShowAddModal(false);
+        // Reset form
+        setNewCustomer({
+          name: "",
+          phone: "",
+          email: "",
+          address: "",
+          type: "retail",
+          creditLimit: 5000,
+          notes: "",
+        });
+        await loadCustomers(); // Reload customers
+        await loadCustomerStats(); // Reload stats
+      } else {
+        throw new Error(response.errors?.[0] || "Failed to create customer");
+      }
+    }, "Creating customer");
+  };
+
+  // Filter customers for pagination (client-side filtering for now)
+  const filteredCustomers = customers;
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
@@ -95,45 +181,15 @@ const CustomerManagementPage = () => {
     setCurrentPage(1);
   }, [searchTerm, selectedFilter]);
 
-  // Calculate summary statistics
-  const customerStats = {
+  // Calculate summary statistics from current displayed customers (for fallback)
+  const localStats = {
     total: customers.length,
-    withDebt: customers.filter((c) => c.balance < 0).length,
+    withDebt: customers.filter((c) => c.balance > 0).length, // Positive balance = debt
     totalDebt: customers.reduce(
-      (sum, c) => sum + Math.abs(Math.min(0, c.balance)),
+      (sum, c) => sum + Math.max(0, c.balance), // Positive balance = debt
       0
     ),
     totalRevenue: customers.reduce((sum, c) => sum + c.totalPurchases, 0),
-  };
-
-  const handleAddCustomer = () => {
-    const customer: Customer = {
-      id: Math.max(...customers.map((c) => c.id)) + 1,
-      name: newCustomer.name || "",
-      phone: newCustomer.phone || "",
-      email: newCustomer.email || "",
-      address: newCustomer.address || "",
-      type: newCustomer.type || "retail",
-      balance: 0,
-      creditLimit: newCustomer.creditLimit || 5000,
-      totalPurchases: 0,
-      lastPurchase: "",
-      joinDate: new Date().toISOString().split("T")[0],
-      status: "active",
-      notes: newCustomer.notes || "",
-    };
-
-    setCustomers([...customers, customer]);
-    setNewCustomer({
-      name: "",
-      phone: "",
-      email: "",
-      address: "",
-      type: "retail",
-      creditLimit: 5000,
-      notes: "",
-    });
-    setShowAddModal(false);
   };
 
   const getStatusColor = (status: string): string => {
@@ -258,19 +314,23 @@ const CustomerManagementPage = () => {
           >
             <StatsCard
               title="Total Customers"
-              value={customerStats.total}
+              value={customerStats?.totalCustomers || localStats.total}
               icon={Users}
               iconBg="bg-blue-100"
               iconColor="text-blue-600"
             />
 
             <StatsCard
-              title="Outstanding Debt"
-              value={`₦${customerStats.totalDebt.toLocaleString()}`}
+              title="Outstanding Balance"
+              value={`₦${(
+                customerStats?.totalOutstandingBalance || localStats.totalDebt
+              ).toLocaleString()}`}
               change={{
-                value: `${customerStats.withDebt} customers`,
+                value: `${
+                  customerStats?.activeCustomers || localStats.total
+                } active`,
                 icon: AlertCircle,
-                textColor: "text-red-600",
+                textColor: "text-green-600",
               }}
               icon={DollarSign}
               iconBg="bg-red-100"
@@ -278,10 +338,12 @@ const CustomerManagementPage = () => {
             />
 
             <StatsCard
-              title="Stock Alert"
-              value={`${customerStats.totalRevenue}L`}
+              title="Credit Issued"
+              value={`₦${(
+                customerStats?.totalCreditIssued || 0
+              ).toLocaleString()}`}
               change={{
-                value: "Lifetime value",
+                value: `${customerStats?.wholesaleCustomers || 0} wholesale`,
                 icon: TrendingUp,
                 textColor: "text-green-600",
               }}
@@ -292,13 +354,14 @@ const CustomerManagementPage = () => {
 
             <StatsCard
               title="Active Customers"
-              value={customers.filter((c) => c.status === "active").length}
+              value={
+                customerStats?.activeCustomers ||
+                customers.filter((c) => c.status === "active").length
+              }
               change={{
-                value: `${(
-                  (customers.filter((c) => c.status === "active").length /
-                    customerStats.total) *
-                  100
-                ).toFixed(1)}% active rate`,
+                value: `${
+                  customerStats?.retailCustomers || 0
+                } retail customers`,
                 icon: CheckCircle,
                 textColor: "text-orange-600",
               }}
@@ -365,21 +428,52 @@ const CustomerManagementPage = () => {
                     }`}
                   >
                     {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                    {filter === "debt" && customerStats.withDebt > 0 && (
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 1.5 + index * 0.1 }}
-                        className="ml-1 bg-red-500 text-white text-xs rounded-full px-2 py-0.5"
-                      >
-                        {customerStats.withDebt}
-                      </motion.span>
-                    )}
+                    {filter === "debt" &&
+                      (customerStats?.totalOutstandingBalance ||
+                        localStats.withDebt) > 0 && (
+                        <motion.span
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: 1.5 + index * 0.1 }}
+                          className="ml-1 bg-red-500 text-white text-xs rounded-full px-2 py-0.5"
+                        >
+                          {localStats.withDebt}
+                        </motion.span>
+                      )}
                   </motion.button>
                 ))}
               </motion.div>
             </div>
           </motion.div>
+
+          {/* Error State */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6"
+            >
+              <div className="flex items-center space-x-2 text-red-700">
+                <AlertCircle className="w-5 h-5" />
+                <span className="font-medium">Error loading customers</span>
+              </div>
+              <p className="text-red-600 text-sm mt-1">{error}</p>
+            </motion.div>
+          )}
+
+          {/* Loading State */}
+          {loading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-white rounded-xl shadow-lg border border-orange-100 p-8 text-center mb-6"
+            >
+              <div className="flex flex-col items-center space-y-4">
+                <div className="w-8 h-8 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
+                <p className="text-gray-600">Loading customers...</p>
+              </div>
+            </motion.div>
+          )}
 
           {/* Customer List */}
           <motion.div
@@ -421,92 +515,127 @@ const CustomerManagementPage = () => {
                   </tr>
                 </motion.thead>
                 <tbody>
-                  {paginatedCustomers.map((customer) => (
-                    <tr
-                      key={customer.id}
-                      className="border-b border-gray-100 hover:bg-gray-50"
-                    >
-                      <td className="py-4 px-6">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                            {customer.type === "wholesale" ? (
-                              <Building className="w-5 h-5 text-orange-600" />
-                            ) : (
-                              <User className="w-5 h-5 text-orange-600" />
-                            )}
+                  {paginatedCustomers.length === 0 && !loading ? (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center">
+                        <div className="flex flex-col items-center space-y-4">
+                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                            <Users className="w-8 h-8 text-gray-400" />
                           </div>
                           <div>
-                            <div className="font-medium text-gray-900">
-                              {customer.name}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              ID: {customer.id}
-                            </div>
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">
+                              No customers found
+                            </h3>
+                            <p className="text-gray-500 mb-4">
+                              {searchTerm || selectedFilter !== "all"
+                                ? "Try adjusting your search or filters"
+                                : "Get started by adding your first customer"}
+                            </p>
+                            {!searchTerm && selectedFilter === "all" && (
+                              <ProtectedElement requiredPermission="EDIT_CUSTOMER_DETAILS">
+                                <motion.button
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() => setShowAddModal(true)}
+                                  className="flex items-center space-x-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                  <span>Add First Customer</span>
+                                </motion.button>
+                              </ProtectedElement>
+                            )}
                           </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="text-sm">
-                          <div className="flex items-center space-x-1 mb-1">
-                            <Phone className="w-4 h-4 text-gray-400" />
-                            <span className="text-gray-900">
-                              {customer.phone}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div
-                          className={`font-medium ${getBalanceColor(
-                            customer.balance
-                          )}`}
-                        >
-                          ₦{Math.abs(customer.balance).toLocaleString()}
-                          {customer.balance < 0 && (
-                            <span className="text-xs ml-1">(debt)</span>
-                          )}
-                          {customer.balance > 0 && (
-                            <span className="text-xs ml-1">(credit)</span>
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Limit: ₦{customer.creditLimit.toLocaleString()}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="font-medium text-gray-900">
-                          ₦{customer.totalPurchases.toLocaleString()}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="text-sm text-gray-900">
-                          {customer.lastPurchase || "Never"}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span
-                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                            customer.status
-                          )}`}
-                        >
-                          {customer.status}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => {
-                              router.push(`/customer/${customer.id}`);
-                            }}
-                            className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                            title="View Transaction History"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    paginatedCustomers.map((customer) => (
+                      <tr
+                        key={customer.id}
+                        className="border-b border-gray-100 hover:bg-gray-50"
+                      >
+                        <td className="py-4 px-6">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                              {customer.type === "wholesale" ? (
+                                <Building className="w-5 h-5 text-orange-600" />
+                              ) : (
+                                <User className="w-5 h-5 text-orange-600" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-900">
+                                {customer.name}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                ID: {customer.id}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="text-sm">
+                            <div className="flex items-center space-x-1 mb-1">
+                              <Phone className="w-4 h-4 text-gray-400" />
+                              <span className="text-gray-900">
+                                {customer.phone}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div
+                            className={`font-medium ${getBalanceColor(
+                              customer.balance
+                            )}`}
+                          >
+                            ₦{Math.abs(customer.balance).toLocaleString()}
+                            {customer.balance < 0 && (
+                              <span className="text-xs ml-1">(debt)</span>
+                            )}
+                            {customer.balance > 0 && (
+                              <span className="text-xs ml-1">(credit)</span>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Limit: ₦{customer.creditLimit.toLocaleString()}
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="font-medium text-gray-900">
+                            ₦{customer.totalPurchases.toLocaleString()}
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="text-sm text-gray-900">
+                            {customer.lastPurchase || "Never"}
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                              customer.status
+                            )}`}
+                          >
+                            {customer.status}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => {
+                                router.push(`/customer/${customer.id}`);
+                              }}
+                              className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                              title="View Transaction History"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

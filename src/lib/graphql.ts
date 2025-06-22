@@ -99,3 +99,157 @@ export const UPDATE_ACCOUNT = `
     }
   }
 `;
+
+// Customer queries
+export const GET_CUSTOMERS = `
+  query GetCustomers($first: Int, $after: String) {
+    customers(first: $first, after: $after) {
+      edges {
+        node {
+          id
+          name
+          email
+          phone
+          address
+          type
+          status
+          balance
+          creditLimit
+          totalPurchases
+          lastPurchase
+          joinDate
+          notes
+          availableCredit
+          isCreditAvailable
+        }
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+    }
+  }
+`;
+
+export const GET_CUSTOMER = `
+  query GetCustomer($id: ID!) {
+    customer(id: $id) {
+      id
+      name
+      email
+      phone
+      address
+      type
+      status
+      balance
+      creditLimit
+      totalPurchases
+      lastPurchase
+      joinDate
+      notes
+      availableCredit
+      isCreditAvailable
+    }
+  }
+`;
+
+export const GET_CUSTOMER_BY_PHONE = `
+  query GetCustomerByPhone($phone: String!) {
+    customerByPhone(phone: $phone) {
+      id
+      name
+      email
+      phone
+      address
+      type
+      status
+      balance
+      creditLimit
+      totalPurchases
+      lastPurchase
+      joinDate
+      notes
+      availableCredit
+      isCreditAvailable
+    }
+  }
+`;
+
+export const GET_CUSTOMER_STATS = `
+  query GetCustomerStats {
+    customerStats {
+      totalCustomers
+      retailCustomers
+      wholesaleCustomers
+      activeCustomers
+      inactiveCustomers
+      blockedCustomers
+      totalCreditIssued
+      totalOutstandingBalance
+    }
+  }
+`;
+
+// Customer mutations
+export const CREATE_CUSTOMER = `
+  mutation CreateCustomer($input: CreateCustomerInput!) {
+    createCustomer(input: $input) {
+      success
+      customer {
+        id
+        name
+        email
+        phone
+        address
+        type
+        status
+        balance
+        creditLimit
+        totalPurchases
+        lastPurchase
+        joinDate
+        notes
+        availableCredit
+        isCreditAvailable
+      }
+      errors
+    }
+  }
+`;
+
+export const UPDATE_CUSTOMER = `
+  mutation UpdateCustomer($input: UpdateCustomerInput!) {
+    updateCustomer(input: $input) {
+      success
+      customer {
+        id
+        name
+        email
+        phone
+        address
+        type
+        status
+        balance
+        creditLimit
+        totalPurchases
+        lastPurchase
+        joinDate
+        notes
+        availableCredit
+        isCreditAvailable
+      }
+      errors
+    }
+  }
+`;
+
+export const DELETE_CUSTOMER = `
+  mutation DeleteCustomer($id: ID!) {
+    deleteCustomer(id: $id) {
+      success
+      errors
+    }
+  }
+`;
