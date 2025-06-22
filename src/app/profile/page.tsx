@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
@@ -27,6 +28,7 @@ import { usePageLoading, useAsyncLoading } from "@/hooks/usePageLoading";
 import { authService } from "@/services/authService";
 
 const ProfilePage: React.FC = () => {
+  const router = useRouter();
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const { withLoading } = useAsyncLoading();
@@ -165,8 +167,8 @@ const ProfilePage: React.FC = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between py-4">
               <div className="flex items-center space-x-4">
-                <Link
-                  href="/"
+                <button
+                  onClick={() => router.back()}
                   className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50"
                 >
                   <motion.div
@@ -175,7 +177,7 @@ const ProfilePage: React.FC = () => {
                   >
                     <ArrowLeft className="w-5 h-5 text-orange-600" />
                   </motion.div>
-                </Link>
+                </button>
                 <motion.div
                   initial={{ x: -20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}

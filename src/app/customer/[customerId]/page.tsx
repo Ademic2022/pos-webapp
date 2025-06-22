@@ -22,7 +22,7 @@ import {
   Edit3,
 } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { CustomerTransaction, Customer } from "@/interfaces/interface";
 import { usePageLoading } from "@/hooks/usePageLoading";
 import EditCustomerModal from "@/components/modals/editCustomerModal";
@@ -41,6 +41,7 @@ const CustomerDetailPage = () => {
   });
 
   const params = useParams();
+  const router = useRouter();
   const customerId = params.customerId as string;
 
   // State management
@@ -244,18 +245,17 @@ const CustomerDetailPage = () => {
           >
             The customer you&apos;re looking for doesn&apos;t exist.
           </motion.p>
-          <Link href="/customers">
-            <motion.button
-              className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.7 }}
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Back to Customers
-            </motion.button>
-          </Link>
+          <motion.button
+            onClick={() => router.back()}
+            className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.7 }}
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Go Back
+          </motion.button>
         </motion.div>
       </motion.div>
     );
@@ -285,23 +285,22 @@ const CustomerDetailPage = () => {
           >
             {/* Breadcrumb Navigation */}
             <div className="flex items-center space-x-4">
-              <Link href="/customers">
-                <motion.button
-                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors"
-                  whileHover={{ scale: 1.1, rotate: -10 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <ArrowLeft className="w-5 h-5 text-orange-600" />
-                </motion.button>
-              </Link>
+              <motion.button
+                onClick={() => router.back()}
+                className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors"
+                whileHover={{ scale: 1.1, rotate: -10 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <ArrowLeft className="w-5 h-5 text-orange-600" />
+              </motion.button>
 
               <nav className="flex items-center space-x-2 text-sm">
-                <Link
-                  href="/customers"
+                <button
+                  onClick={() => router.back()}
                   className="text-orange-600 hover:text-orange-700"
                 >
-                  Customers
-                </Link>
+                  Back
+                </button>
                 <span className="text-gray-400">/</span>
                 <span className="text-gray-900 font-medium">
                   {customer.name}

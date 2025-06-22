@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -21,6 +22,8 @@ import { dailyMeterReading } from "@/data/stock";
 import { usePageLoading } from "@/hooks/usePageLoading";
 
 const FuelValidationSystem: React.FC = () => {
+  const router = useRouter();
+
   usePageLoading({
     text: "Loading validation system",
     minDuration: 700,
@@ -133,11 +136,12 @@ const FuelValidationSystem: React.FC = () => {
                   whileHover={{ scale: 1.1, rotate: -5 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Link href="/">
-                    <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
-                      <ArrowLeft className="w-5 h-5 text-orange-600" />
-                    </button>
-                  </Link>
+                  <button
+                    onClick={() => router.back()}
+                    className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors"
+                  >
+                    <ArrowLeft className="w-5 h-5 text-orange-600" />
+                  </button>
                 </motion.div>
                 <motion.div
                   initial={{ x: -20, opacity: 0 }}
@@ -145,9 +149,7 @@ const FuelValidationSystem: React.FC = () => {
                   transition={{ delay: 0.1 }}
                   className="flex items-center space-x-3"
                 >
-                  <div
-                    className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center"
-                  >
+                  <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center">
                     <Droplets className="w-6 h-6 text-white" />
                   </div>
                   <div>

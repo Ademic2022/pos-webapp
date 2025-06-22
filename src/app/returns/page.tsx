@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   Search,
   Filter,
@@ -303,6 +304,8 @@ const mockReturnRequests: ReturnRequest[] = [
 ];
 
 const ReturnsPage = () => {
+  const router = useRouter();
+
   usePageLoading({
     text: "Loading returns...",
     minDuration: 600,
@@ -579,11 +582,12 @@ const ReturnsPage = () => {
                   whileHover={{ scale: 1.1, rotate: -5 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Link href="/">
-                    <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
-                      <ArrowLeft className="w-5 h-5 text-orange-600" />
-                    </button>
-                  </Link>
+                  <button
+                    onClick={() => router.back()}
+                    className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors"
+                  >
+                    <ArrowLeft className="w-5 h-5 text-orange-600" />
+                  </button>
                 </motion.div>
                 <motion.div
                   initial={{ x: -20, opacity: 0 }}

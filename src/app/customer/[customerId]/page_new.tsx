@@ -326,13 +326,13 @@ const CustomerDetailPage = () => {
           <p className="text-gray-600 mb-4">
             {error || "The requested customer could not be found."}
           </p>
-          <Link
-            href="/customers"
+          <button
+            onClick={() => router.back()}
             className="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Customers
-          </Link>
+            Go Back
+          </button>
         </div>
       </div>
     );
@@ -356,23 +356,22 @@ const CustomerDetailPage = () => {
           <div className="flex items-center justify-between">
             {/* Navigation */}
             <div className="flex items-center space-x-4">
-              <Link href="/customers">
-                <motion.button
-                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors"
-                  whileHover={{ scale: 1.1, rotate: -10 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <ArrowLeft className="w-5 h-5 text-orange-600" />
-                </motion.button>
-              </Link>
+              <motion.button
+                onClick={() => router.back()}
+                className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors"
+                whileHover={{ scale: 1.1, rotate: -10 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <ArrowLeft className="w-5 h-5 text-orange-600" />
+              </motion.button>
 
               <nav className="flex items-center space-x-2 text-sm">
-                <Link
-                  href="/customers"
+                <button
+                  onClick={() => router.back()}
                   className="text-orange-600 hover:text-orange-700"
                 >
-                  Customers
-                </Link>
+                  Back
+                </button>
                 <span className="text-gray-400">/</span>
                 <span className="text-gray-900 font-medium">
                   {customer.name}

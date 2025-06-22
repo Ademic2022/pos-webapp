@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   Search,
   Filter,
@@ -197,6 +198,8 @@ const mockTransactions: Transaction[] = [
 ];
 
 const TransactionHistoryPage: React.FC = () => {
+  const router = useRouter();
+
   usePageLoading({
     text: "Loading transactions",
     minDuration: 650,
@@ -407,11 +410,12 @@ const TransactionHistoryPage: React.FC = () => {
                   whileHover={{ scale: 1.1, rotate: -5 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Link href="/">
-                    <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
-                      <ArrowLeft className="w-5 h-5 text-orange-600" />
-                    </button>
-                  </Link>
+                  <button
+                    onClick={() => router.back()}
+                    className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors"
+                  >
+                    <ArrowLeft className="w-5 h-5 text-orange-600" />
+                  </button>
                 </motion.div>
                 <motion.div
                   className="flex items-center space-x-3"
