@@ -273,7 +273,9 @@ const NewSalePage = () => {
     }
 
     // Generate a new customer ID (in a real app, this would come from the backend)
-    const newId = `CUST_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const newId = `CUST_${Date.now()}_${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
 
     const customerToAdd: Customer = {
       id: newId,

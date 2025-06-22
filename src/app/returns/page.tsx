@@ -491,9 +491,10 @@ const ReturnsPage = () => {
       .flat()
       .map((tx) => ({
         id: tx.id,
-        customerId: Object.keys(customerTransactions).find((custId) =>
-          customerTransactions[parseInt(custId)].some((t) => t.id === tx.id)
-        ) || "0",
+        customerId:
+          Object.keys(customerTransactions).find((custId) =>
+            customerTransactions[parseInt(custId)].some((t) => t.id === tx.id)
+          ) || "0",
         date: tx.date,
         total: tx.amount,
         items: [], // Would need to parse from description in real app
@@ -1440,11 +1441,12 @@ const ReturnsPage = () => {
                       .flat()
                       .map((tx) => ({
                         id: tx.id,
-                        customerId: Object.keys(customerTransactions).find((custId) =>
-                          customerTransactions[parseInt(custId)].some(
-                            (t) => t.id === tx.id
-                          )
-                        ) || "0",
+                        customerId:
+                          Object.keys(customerTransactions).find((custId) =>
+                            customerTransactions[parseInt(custId)].some(
+                              (t) => t.id === tx.id
+                            )
+                          ) || "0",
                         date: tx.date,
                         total: tx.amount,
                         items: [],
