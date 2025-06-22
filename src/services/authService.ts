@@ -86,7 +86,11 @@ class AuthService {
 
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
     try {
-      const response = await graphqlClient.request(TOKEN_AUTH, credentials) as TokenAuthResponse;
+      const variables: Record<string, unknown> = {
+        username: credentials.username,
+        password: credentials.password
+      };
+      const response = await graphqlClient.request(TOKEN_AUTH, variables) as TokenAuthResponse;
       const { tokenAuth } = response;
 
       if (tokenAuth.success && tokenAuth.token) {

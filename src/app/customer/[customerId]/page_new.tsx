@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useMemo, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   User,
@@ -15,19 +15,35 @@ import {
   Filter,
   Search,
   Download,
+  Eye,
   Plus,
   Package,
+  CheckCircle,
   AlertCircle,
+  XCircle,
+  ChevronLeft,
+  ChevronRight,
   ChevronDown,
+  FileText,
+  Receipt,
   Edit3,
+  RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { CustomerTransaction, Customer } from "@/interfaces/interface";
+import { StatsCard } from "@/components/cards/statCard";
 import { usePageLoading } from "@/hooks/usePageLoading";
 import EditCustomerModal from "@/components/modals/editCustomerModal";
 import ProtectedElement from "@/components/auth/ProtectedElement";
 import { customerService } from "@/services/customerService";
+import { useJWT } from "@/context/JWTContext";
+
+interface TransactionFilters {
+  dateRange: "all" | "week" | "month" | "quarter" | "year";
+  type: "all" | "sale" | "payment" | "credit" | "return";
+  amountRange: "all" | "0-1000" | "1000-5000" | "5000-10000" | "10000+";
+}
 
 interface SortOptions {
   field: "date" | "amount" | "type";
@@ -35,6 +51,9 @@ interface SortOptions {
 }
 
 const CustomerDetailPage = () => {
+  const { request } = useJWT();
+  const router = useRouter();
+
   usePageLoading({
     text: "Loading customer details",
     minDuration: 600,
@@ -51,12 +70,20 @@ const CustomerDetailPage = () => {
 
   // State for filters and pagination
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [filters, setFilters] = useState<TransactionFilters>({
+    dateRange: "all",
+    type: "all",
+    amountRange: "all",
+  });
   const [sortBy, setSortBy] = useState<SortOptions>({
     field: "date",
     direction: "desc",
   });
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
   const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<CustomerTransaction | null>(null);
 
   // Modal state management
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
@@ -158,7 +185,7 @@ const CustomerDetailPage = () => {
     // Implementation for exporting transactions
   };
 
-  // Filter and sort transactions (simplified)
+  // Filter and sort transactions
   const filteredAndSortedTransactions = useMemo(() => {
     const filtered = transactions.filter((transaction) => {
       const matchesSearch =
@@ -167,7 +194,49 @@ const CustomerDetailPage = () => {
           .includes(searchTerm.toLowerCase()) ||
         transaction.id.toLowerCase().includes(searchTerm.toLowerCase());
 
-      return matchesSearch;
+      const matchesType =
+        filters.type === "all" || transaction.type === filters.type;
+
+      const matchesAmountRange = (() => {
+        const amount = transaction.amount;
+        switch (filters.amountRange) {
+          case "0-1000":
+            return amount <= 1000;
+          case "1000-5000":
+            return amount > 1000 && amount <= 5000;
+          case "5000-10000":
+            return amount > 5000 && amount <= 10000;
+          case "10000+":
+            return amount > 10000;
+          default:
+            return true;
+        }
+      })();
+
+      const matchesDateRange = (() => {
+        const transactionDate = new Date(transaction.date);
+        const today = new Date();
+        const daysDiff = Math.floor(
+          (today.getTime() - transactionDate.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        switch (filters.dateRange) {
+          case "week":
+            return daysDiff <= 7;
+          case "month":
+            return daysDiff <= 30;
+          case "quarter":
+            return daysDiff <= 90;
+          case "year":
+            return daysDiff <= 365;
+          default:
+            return true;
+        }
+      })();
+
+      return (
+        matchesSearch && matchesType && matchesAmountRange && matchesDateRange
+      );
     });
 
     // Sort transactions
@@ -192,7 +261,46 @@ const CustomerDetailPage = () => {
     });
 
     return filtered;
-  }, [transactions, searchTerm, sortBy]);
+  }, [transactions, searchTerm, filters, sortBy]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(
+    filteredAndSortedTransactions.length / itemsPerPage
+  );
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTransactions = filteredAndSortedTransactions.slice(
+    startIndex,
+    endIndex
+  );
+
+  // Reset pagination when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filters, sortBy]);
+
+  // Customer statistics
+  const customerStats = useMemo(() => {
+    const salesTransactions = transactions.filter((t) => t.type === "sale");
+    const paymentTransactions = transactions.filter(
+      (t) => t.type === "payment"
+    );
+
+    return {
+      totalTransactions: transactions.length,
+      totalSales: salesTransactions.reduce((sum, t) => sum + t.amount, 0),
+      totalPayments: paymentTransactions.reduce((sum, t) => sum + t.amount, 0),
+      averageTransaction:
+        transactions.length > 0
+          ? transactions.reduce((sum, t) => sum + t.amount, 0) /
+            transactions.length
+          : 0,
+      lastTransaction:
+        transactions.length > 0
+          ? Math.max(...transactions.map((t) => new Date(t.date).getTime()))
+          : null,
+    };
+  }, [transactions]);
 
   // Show loading state
   if (loading) {
@@ -209,55 +317,24 @@ const CustomerDetailPage = () => {
   // Show error state
   if (error || !customer) {
     return (
-      <motion.div
-        className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 flex items-center justify-center"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <motion.div
-          className="text-center"
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <motion.div
-            className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"
-            animate={{ rotate: [0, -10, 10, 0] }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <AlertCircle className="w-8 h-8 text-red-600" />
-          </motion.div>
-          <motion.h2
-            className="text-2xl font-bold text-gray-900 mb-2"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-          >
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
             Customer Not Found
-          </motion.h2>
-          <motion.p
-            className="text-gray-600 mb-6"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
+          </h2>
+          <p className="text-gray-600 mb-4">
+            {error || "The requested customer could not be found."}
+          </p>
+          <Link
+            href="/customers"
+            className="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
           >
-            The customer you&apos;re looking for doesn&apos;t exist.
-          </motion.p>
-          <Link href="/customers">
-            <motion.button
-              className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.7 }}
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Back to Customers
-            </motion.button>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Customers
           </Link>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     );
   }
 
@@ -269,21 +346,15 @@ const CustomerDetailPage = () => {
       transition={{ duration: 0.5 }}
     >
       {/* Header */}
-      {/* Header */}
       <motion.header
-        className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-40"
-        initial={{ y: -100, opacity: 0 }}
+        className="bg-gradient-to-r from-orange-600 to-amber-600 shadow-lg"
+        initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
+        transition={{ duration: 0.6 }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            className="flex justify-between items-center py-4"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            {/* Breadcrumb Navigation */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            {/* Navigation */}
             <div className="flex items-center space-x-4">
               <Link href="/customers">
                 <motion.button
@@ -322,7 +393,7 @@ const CustomerDetailPage = () => {
                 </motion.button>
               </ProtectedElement>
             </div>
-          </motion.div>
+          </div>
         </div>
       </motion.header>
 
@@ -611,7 +682,7 @@ const CustomerDetailPage = () => {
                 No transactions yet
               </h3>
               <p className="text-gray-500">
-                This customer hasn&apos;t made any transactions yet.
+                This customer hasn't made any transactions yet.
               </p>
             </div>
           ) : (

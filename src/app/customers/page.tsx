@@ -37,6 +37,9 @@ import {
 const CustomerManagementPage = () => {
   const { withLoading } = useAsyncLoading();
 
+  // Remove the manual auth error handler - let enhanced GraphQL client handle everything
+  // const { handleAuthError } = useAuthErrorHandler({...});
+
   usePageLoading({
     text: "Loading customers",
     minDuration: 600,
@@ -70,6 +73,14 @@ const CustomerManagementPage = () => {
     notes: "",
   });
 
+  // Create a ref to avoid dependency issues
+  // const handleAuthErrorRef = useRef(handleAuthError);
+
+  // Update ref when handleAuthError changes
+  // useEffect(() => {
+  //   handleAuthErrorRef.current = handleAuthError;
+  // }, [handleAuthError]);
+
   const loadCustomers = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -102,28 +113,27 @@ const CustomerManagementPage = () => {
       }
     } catch (error) {
       console.error("Failed to load customers:", error);
-      setError("Failed to load customers");
+
+      // Enhanced GraphQL client handles auth errors automatically
+      // Only show user-friendly messages for final failures
+      if (
+        error instanceof Error &&
+        error.message?.includes("Unable to refresh token")
+      ) {
+        setError("Session expired. Please sign in again.");
+      } else if (
+        error instanceof Error &&
+        !error.message?.includes("Authentication")
+      ) {
+        setError("Failed to load customers. Please try again.");
+      }
+      // For recoverable auth errors, don't show anything - enhanced client will handle
     } finally {
       setLoading(false);
     }
   }, [searchTerm, selectedFilter]);
 
-  // Load customers and stats on component mount
-  useEffect(() => {
-    loadCustomers();
-    loadCustomerStats();
-  }, [loadCustomers]);
-
-  // Reload customers when search or filter changes
-  useEffect(() => {
-    const delayedSearch = setTimeout(() => {
-      loadCustomers();
-    }, 300);
-
-    return () => clearTimeout(delayedSearch);
-  }, [loadCustomers]);
-
-  const loadCustomerStats = async () => {
+  const loadCustomerStats = useCallback(async () => {
     try {
       const response = await customerService.getCustomerStats();
 
@@ -132,37 +142,58 @@ const CustomerManagementPage = () => {
       }
     } catch (error) {
       console.error("Failed to load customer stats:", error);
+      // Enhanced GraphQL client handles auth errors automatically
     }
-  };
+  }, []);
+
+  // Load customers and stats on component mount
+  useEffect(() => {
+    loadCustomers();
+    loadCustomerStats();
+  }, [loadCustomers, loadCustomerStats]); // Include dependencies
+
+  // Reload customers when search or filter changes
+  useEffect(() => {
+    const delayedSearch = setTimeout(() => {
+      loadCustomers();
+    }, 300);
+
+    return () => clearTimeout(delayedSearch);
+  }, [searchTerm, selectedFilter, loadCustomers]); // Include loadCustomers dependency
 
   const handleAddCustomer = async () => {
     await withLoading(async () => {
-      const response = await customerService.createCustomer({
-        name: newCustomer.name || "",
-        phone: newCustomer.phone || "",
-        email: newCustomer.email || "",
-        address: newCustomer.address || "",
-        type: (newCustomer.type as "retail" | "wholesale") || "retail",
-        creditLimit: newCustomer.creditLimit || 0,
-        notes: newCustomer.notes || "",
-      });
-
-      if (response.success) {
-        setShowAddModal(false);
-        // Reset form
-        setNewCustomer({
-          name: "",
-          phone: "",
-          email: "",
-          address: "",
-          type: "retail",
-          creditLimit: 5000,
-          notes: "",
+      try {
+        const response = await customerService.createCustomer({
+          name: newCustomer.name || "",
+          phone: newCustomer.phone || "",
+          email: newCustomer.email || "",
+          address: newCustomer.address || "",
+          type: (newCustomer.type as "retail" | "wholesale") || "retail",
+          creditLimit: newCustomer.creditLimit || 0,
+          notes: newCustomer.notes || "",
         });
-        await loadCustomers(); // Reload customers
-        await loadCustomerStats(); // Reload stats
-      } else {
-        throw new Error(response.errors?.[0] || "Failed to create customer");
+
+        if (response.success) {
+          setShowAddModal(false);
+          // Reset form
+          setNewCustomer({
+            name: "",
+            phone: "",
+            email: "",
+            address: "",
+            type: "retail",
+            creditLimit: 5000,
+            notes: "",
+          });
+          await loadCustomers(); // Reload customers
+          await loadCustomerStats(); // Reload stats
+        } else {
+          throw new Error(response.errors?.[0] || "Failed to create customer");
+        }
+      } catch (error) {
+        // Enhanced GraphQL client handles auth errors automatically
+        throw error; // Re-throw to let withLoading handle the error display
       }
     }, "Creating customer");
   };
