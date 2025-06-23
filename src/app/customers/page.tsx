@@ -37,6 +37,9 @@ import {
 const CustomerManagementPage = () => {
   const { withLoading } = useAsyncLoading();
 
+  // Remove the manual auth error handler - let enhanced GraphQL client handle everything
+  // const { handleAuthError } = useAuthErrorHandler({...});
+
   usePageLoading({
     text: "Loading customers",
     minDuration: 600,
@@ -70,6 +73,14 @@ const CustomerManagementPage = () => {
     notes: "",
   });
 
+  // Create a ref to avoid dependency issues
+  // const handleAuthErrorRef = useRef(handleAuthError);
+
+  // Update ref when handleAuthError changes
+  // useEffect(() => {
+  //   handleAuthErrorRef.current = handleAuthError;
+  // }, [handleAuthError]);
+
   const loadCustomers = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -102,28 +113,27 @@ const CustomerManagementPage = () => {
       }
     } catch (error) {
       console.error("Failed to load customers:", error);
-      setError("Failed to load customers");
+
+      // Enhanced GraphQL client handles auth errors automatically
+      // Only show user-friendly messages for final failures
+      if (
+        error instanceof Error &&
+        error.message?.includes("Unable to refresh token")
+      ) {
+        setError("Session expired. Please sign in again.");
+      } else if (
+        error instanceof Error &&
+        !error.message?.includes("Authentication")
+      ) {
+        setError("Failed to load customers. Please try again.");
+      }
+      // For recoverable auth errors, don't show anything - enhanced client will handle
     } finally {
       setLoading(false);
     }
   }, [searchTerm, selectedFilter]);
 
-  // Load customers and stats on component mount
-  useEffect(() => {
-    loadCustomers();
-    loadCustomerStats();
-  }, [loadCustomers]);
-
-  // Reload customers when search or filter changes
-  useEffect(() => {
-    const delayedSearch = setTimeout(() => {
-      loadCustomers();
-    }, 300);
-
-    return () => clearTimeout(delayedSearch);
-  }, [loadCustomers]);
-
-  const loadCustomerStats = async () => {
+  const loadCustomerStats = useCallback(async () => {
     try {
       const response = await customerService.getCustomerStats();
 
@@ -132,37 +142,58 @@ const CustomerManagementPage = () => {
       }
     } catch (error) {
       console.error("Failed to load customer stats:", error);
+      // Enhanced GraphQL client handles auth errors automatically
     }
-  };
+  }, []);
+
+  // Load customers and stats on component mount
+  useEffect(() => {
+    loadCustomers();
+    loadCustomerStats();
+  }, [loadCustomers, loadCustomerStats]); // Include dependencies
+
+  // Reload customers when search or filter changes
+  useEffect(() => {
+    const delayedSearch = setTimeout(() => {
+      loadCustomers();
+    }, 300);
+
+    return () => clearTimeout(delayedSearch);
+  }, [searchTerm, selectedFilter, loadCustomers]); // Include loadCustomers dependency
 
   const handleAddCustomer = async () => {
     await withLoading(async () => {
-      const response = await customerService.createCustomer({
-        name: newCustomer.name || "",
-        phone: newCustomer.phone || "",
-        email: newCustomer.email || "",
-        address: newCustomer.address || "",
-        type: (newCustomer.type as "retail" | "wholesale") || "retail",
-        creditLimit: newCustomer.creditLimit || 0,
-        notes: newCustomer.notes || "",
-      });
-
-      if (response.success) {
-        setShowAddModal(false);
-        // Reset form
-        setNewCustomer({
-          name: "",
-          phone: "",
-          email: "",
-          address: "",
-          type: "retail",
-          creditLimit: 5000,
-          notes: "",
+      try {
+        const response = await customerService.createCustomer({
+          name: newCustomer.name || "",
+          phone: newCustomer.phone || "",
+          email: newCustomer.email || "",
+          address: newCustomer.address || "",
+          type: (newCustomer.type as "retail" | "wholesale") || "retail",
+          creditLimit: newCustomer.creditLimit || 0,
+          notes: newCustomer.notes || "",
         });
-        await loadCustomers(); // Reload customers
-        await loadCustomerStats(); // Reload stats
-      } else {
-        throw new Error(response.errors?.[0] || "Failed to create customer");
+
+        if (response.success) {
+          setShowAddModal(false);
+          // Reset form
+          setNewCustomer({
+            name: "",
+            phone: "",
+            email: "",
+            address: "",
+            type: "retail",
+            creditLimit: 5000,
+            notes: "",
+          });
+          await loadCustomers(); // Reload customers
+          await loadCustomerStats(); // Reload stats
+        } else {
+          throw new Error(response.errors?.[0] || "Failed to create customer");
+        }
+      } catch (error) {
+        // Enhanced GraphQL client handles auth errors automatically
+        throw error; // Re-throw to let withLoading handle the error display
       }
     }, "Creating customer");
   };
@@ -228,15 +259,14 @@ const CustomerManagementPage = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-4">
               <div className="flex items-center space-x-4">
-                <Link href="/">
-                  <motion.button
-                    whileHover={{ scale: 1.05, rotate: -5 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50"
-                  >
-                    <ArrowLeft className="w-5 h-5 text-orange-600" />
-                  </motion.button>
-                </Link>
+                <motion.button
+                  onClick={() => router.back()}
+                  whileHover={{ scale: 1.05, rotate: -5 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50"
+                >
+                  <ArrowLeft className="w-5 h-5 text-orange-600" />
+                </motion.button>
 
                 <motion.div
                   initial={{ x: -20, opacity: 0 }}
@@ -517,35 +547,49 @@ const CustomerManagementPage = () => {
                 <tbody>
                   {paginatedCustomers.length === 0 && !loading ? (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center">
-                        <div className="flex flex-col items-center space-y-4">
-                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                            <Users className="w-8 h-8 text-gray-400" />
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      <td colSpan={7} className="py-16 text-center">
+                        <motion.div
+                          className="flex flex-col items-center justify-center space-y-6"
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.5 }}
+                        >
+                          <motion.div
+                            className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center"
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{
+                              delay: 0.2,
+                              type: "spring",
+                              stiffness: 300,
+                            }}
+                          >
+                            <Users className="w-10 h-10 text-gray-400" />
+                          </motion.div>
+                          <div className="text-center max-w-md mx-auto">
+                            <h3 className="text-xl font-semibold text-gray-900 mb-3">
                               No customers found
                             </h3>
-                            <p className="text-gray-500 mb-4">
+                            <p className="text-gray-500 mb-6 text-base">
                               {searchTerm || selectedFilter !== "all"
-                                ? "Try adjusting your search or filters"
-                                : "Get started by adding your first customer"}
+                                ? "Try adjusting your search or filters to find what you're looking for"
+                                : "Get started by adding your first customer to begin managing relationships"}
                             </p>
                             {!searchTerm && selectedFilter === "all" && (
                               <ProtectedElement requiredPermission="EDIT_CUSTOMER_DETAILS">
                                 <motion.button
-                                  whileHover={{ scale: 1.05 }}
+                                  whileHover={{ scale: 1.05, y: -2 }}
                                   whileTap={{ scale: 0.95 }}
                                   onClick={() => setShowAddModal(true)}
-                                  className="flex items-center space-x-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+                                  className="inline-flex items-center space-x-2 px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-medium shadow-lg hover:shadow-xl transition-all"
                                 >
-                                  <Plus className="w-4 h-4" />
+                                  <Plus className="w-5 h-5" />
                                   <span>Add First Customer</span>
                                 </motion.button>
                               </ProtectedElement>
                             )}
                           </div>
-                        </div>
+                        </motion.div>
                       </td>
                     </tr>
                   ) : (
@@ -739,29 +783,6 @@ const CustomerManagementPage = () => {
                     </motion.button>
                   </div>
                 </div>
-              </motion.div>
-            )}
-
-            {filteredCustomers.length === 0 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 2.0 }}
-                className="text-center py-12"
-              >
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 2.2, type: "spring", stiffness: 300 }}
-                >
-                  <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                </motion.div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No customers found
-                </h3>
-                <p className="text-gray-500">
-                  Try adjusting your search or filters
-                </p>
               </motion.div>
             )}
           </motion.div>

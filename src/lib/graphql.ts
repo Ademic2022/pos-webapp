@@ -1,22 +1,18 @@
-import { GraphQLClient } from 'graphql-request';
+import { enhancedGraphqlClient } from './enhancedGraphqlClient';
 
-const GRAPHQL_ENDPOINT = 'http://127.0.0.1:8000/graphql/';
+// Use the enhanced client with automatic token refresh
+export const graphqlClient = enhancedGraphqlClient;
 
-export const graphqlClient = new GraphQLClient(GRAPHQL_ENDPOINT, {
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  errorPolicy: 'all', // Return both data and errors
-});
+// Also export the enhanced client directly
+export { enhancedGraphqlClient };
 
-// Function to set authorization header
+// Backward compatibility functions
 export const setAuthToken = (token: string) => {
-  graphqlClient.setHeader('Authorization', `Bearer ${token}`);
+  enhancedGraphqlClient.setAuthToken(token);
 };
 
-// Function to clear authorization header
 export const clearAuthToken = () => {
-  graphqlClient.setHeader('Authorization', '');
+  enhancedGraphqlClient.clearAuthToken();
 };
 
 // Auth mutation

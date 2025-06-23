@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -19,6 +20,8 @@ import { usePageLoading } from "@/hooks/usePageLoading";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 const ManageStock: React.FC = () => {
+  const router = useRouter();
+
   usePageLoading({
     text: "Loading stock data",
     minDuration: 600,
@@ -60,15 +63,14 @@ const ManageStock: React.FC = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between py-4">
               <div className="flex items-center space-x-4">
-                <Link href="/">
-                  <motion.button
-                    whileHover={{ scale: 1.1, rotate: -5 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50"
-                  >
-                    <ArrowLeft className="w-5 h-5 text-orange-600" />
-                  </motion.button>
-                </Link>
+                <motion.button
+                  onClick={() => router.back()}
+                  whileHover={{ scale: 1.1, rotate: -5 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50"
+                >
+                  <ArrowLeft className="w-5 h-5 text-orange-600" />
+                </motion.button>
                 <motion.div
                   initial={{ x: -20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}

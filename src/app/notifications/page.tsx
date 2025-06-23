@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Bell, Mail, MessageSquare, Smartphone } from "lucide-react";
 import { motion } from "framer-motion";
 
 const NotificationsPage: React.FC = () => {
+  const router = useRouter();
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [smsNotifications, setSmsNotifications] = useState(false);
   const [pushNotifications, setPushNotifications] = useState(true);
@@ -63,12 +65,12 @@ const NotificationsPage: React.FC = () => {
                 whileHover={{ scale: 1.1, rotate: -5 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Link
-                  href="/"
+                <button
+                  onClick={() => router.back()}
                   className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5 text-orange-600" />
-                </Link>
+                </button>
               </motion.div>
               <motion.div
                 className="flex items-center space-x-3"

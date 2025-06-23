@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 
 const HelpPage: React.FC = () => {
+  const router = useRouter();
   const faqItems = [
     {
       question: "How do I process a return?",
@@ -73,13 +75,13 @@ const HelpPage: React.FC = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-4">
             <div className="flex items-center space-x-4">
-              <Link
-                href="/"
+              <button
+                onClick={() => router.back()}
                 className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 mr-2" />
-                Back to Dashboard
-              </Link>
+                Go Back
+              </button>
             </div>
           </div>
         </div>

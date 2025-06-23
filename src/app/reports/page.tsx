@@ -1,5 +1,6 @@
 "use client";
 import React, { JSX, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   BarChart3,
   TrendingUp,
@@ -27,6 +28,8 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ProtectedElement from "@/components/auth/ProtectedElement";
 
 const SalesReportPage = () => {
+  const router = useRouter();
+
   usePageLoading({
     text: "Loading reports",
     minDuration: 750,
@@ -115,14 +118,14 @@ const SalesReportPage = () => {
 
   return (
     <ProtectedRoute requiredPermission="VIEW_REPORTS">
-      <motion.div 
+      <motion.div
         className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
         {/* Header */}
-        <motion.header 
+        <motion.header
           className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-40"
           initial={{ y: -100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -135,22 +138,28 @@ const SalesReportPage = () => {
                   whileHover={{ scale: 1.1, rotate: -5 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Link href="/">
-                    <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors">
-                      <ArrowLeft className="w-5 h-5 text-orange-600" />
-                    </button>
-                  </Link>
+                  <button
+                    onClick={() => router.back()}
+                    className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-orange-200 hover:bg-orange-50 transition-colors"
+                  >
+                    <ArrowLeft className="w-5 h-5 text-orange-600" />
+                  </button>
                 </motion.div>
-                <motion.div 
+                <motion.div
                   className="flex items-center space-x-3"
                   initial={{ x: -20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.3, duration: 0.5 }}
                 >
-                  <motion.div 
+                  <motion.div
                     className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center"
                     animate={{ rotate: [0, 10, -10, 0] }}
-                    transition={{ delay: 2, duration: 2, repeat: Infinity, repeatDelay: 5 }}
+                    transition={{
+                      delay: 2,
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatDelay: 5,
+                    }}
                   >
                     <BarChart3 className="w-5 h-5 text-white" />
                   </motion.div>
@@ -164,7 +173,7 @@ const SalesReportPage = () => {
                   </div>
                 </motion.div>
               </div>
-              <motion.div 
+              <motion.div
                 className="flex items-center space-x-4"
                 initial={{ x: 50, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
@@ -180,7 +189,7 @@ const SalesReportPage = () => {
                   <span className="text-sm font-medium">Filters</span>
                 </motion.button>
                 <ProtectedElement requiredPermission="VIEW_FINANCIAL_DATA">
-                  <motion.button 
+                  <motion.button
                     className="flex items-center space-x-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
                     whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
@@ -194,7 +203,7 @@ const SalesReportPage = () => {
           </div>
         </motion.header>
 
-        <motion.div 
+        <motion.div
           className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -203,14 +212,14 @@ const SalesReportPage = () => {
           {/* Filters Panel */}
           <AnimatePresence>
             {showFilters && (
-              <motion.div 
+              <motion.div
                 className="bg-white rounded-xl p-6 shadow-lg border border-orange-100 mb-8"
                 initial={{ height: 0, opacity: 0, y: -20 }}
                 animate={{ height: "auto", opacity: 1, y: 0 }}
                 exit={{ height: 0, opacity: 0, y: -20 }}
                 transition={{ duration: 0.4, ease: "easeInOut" }}
               >
-                <motion.h3 
+                <motion.h3
                   className="text-lg font-semibold text-gray-900 mb-4"
                   initial={{ x: -20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
@@ -218,105 +227,106 @@ const SalesReportPage = () => {
                 >
                   Filter Reports
                 </motion.h3>
-                <motion.div 
+                <motion.div
                   className="grid md:grid-cols-2 lg:grid-cols-4 gap-4"
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.3, duration: 0.4 }}
                 >
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Date Range
-                  </label>
-                  <select
-                    value={filters.dateRange}
-                    onChange={(e) =>
-                      setFilters({
-                        ...filters,
-                        dateRange: e.target.value as ReportFilters["dateRange"],
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  >
-                    <option value="today">Today</option>
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
-                    <option value="year">This Year</option>
-                    <option value="custom">Custom Range</option>
-                  </select>
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Date Range
+                    </label>
+                    <select
+                      value={filters.dateRange}
+                      onChange={(e) =>
+                        setFilters({
+                          ...filters,
+                          dateRange: e.target
+                            .value as ReportFilters["dateRange"],
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    >
+                      <option value="today">Today</option>
+                      <option value="week">This Week</option>
+                      <option value="month">This Month</option>
+                      <option value="year">This Year</option>
+                      <option value="custom">Custom Range</option>
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Customer Type
-                  </label>
-                  <select
-                    value={filters.customerType}
-                    onChange={(e) =>
-                      setFilters({
-                        ...filters,
-                        customerType: e.target
-                          .value as ReportFilters["customerType"],
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  >
-                    <option value="all">All Customers</option>
-                    <option value="wholesale">Wholesale Only</option>
-                    <option value="retail">Retail Only</option>
-                  </select>
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Customer Type
+                    </label>
+                    <select
+                      value={filters.customerType}
+                      onChange={(e) =>
+                        setFilters({
+                          ...filters,
+                          customerType: e.target
+                            .value as ReportFilters["customerType"],
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    >
+                      <option value="all">All Customers</option>
+                      <option value="wholesale">Wholesale Only</option>
+                      <option value="retail">Retail Only</option>
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Payment Method
-                  </label>
-                  <select
-                    value={filters.paymentMethod}
-                    onChange={(e) =>
-                      setFilters({
-                        ...filters,
-                        paymentMethod: e.target
-                          .value as ReportFilters["paymentMethod"],
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  >
-                    <option value="all">All Methods</option>
-                    <option value="cash">Cash Only</option>
-                    <option value="transfer">Transfer Only</option>
-                    <option value="credit">Credit Only</option>
-                    <option value="part_payment">Part Payment</option>
-                  </select>
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Payment Method
+                    </label>
+                    <select
+                      value={filters.paymentMethod}
+                      onChange={(e) =>
+                        setFilters({
+                          ...filters,
+                          paymentMethod: e.target
+                            .value as ReportFilters["paymentMethod"],
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    >
+                      <option value="all">All Methods</option>
+                      <option value="cash">Cash Only</option>
+                      <option value="transfer">Transfer Only</option>
+                      <option value="credit">Credit Only</option>
+                      <option value="part_payment">Part Payment</option>
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Status
-                  </label>
-                  <select
-                    value={filters.status}
-                    onChange={(e) =>
-                      setFilters({
-                        ...filters,
-                        status: e.target.value as ReportFilters["status"],
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="paid">Paid</option>
-                    <option value="partial">Partial Payment</option>
-                    <option value="pending">Pending</option>
-                  </select>
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Status
+                    </label>
+                    <select
+                      value={filters.status}
+                      onChange={(e) =>
+                        setFilters({
+                          ...filters,
+                          status: e.target.value as ReportFilters["status"],
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="paid">Paid</option>
+                      <option value="partial">Partial Payment</option>
+                      <option value="pending">Pending</option>
+                    </select>
+                  </div>
                 </motion.div>
               </motion.div>
             )}
           </AnimatePresence>
 
           {/* Summary Cards */}
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -375,11 +385,11 @@ const SalesReportPage = () => {
                   value: "3 customers",
                   icon: TrendingDown,
                   textColor: "text-red-600",
-              }}
-              icon={AlertCircle}
-              iconBg="bg-red-100"
-              iconColor="text-red-600"
-            />
+                }}
+                icon={AlertCircle}
+                iconBg="bg-red-100"
+                iconColor="text-red-600"
+              />
             </motion.div>
 
             <motion.div
@@ -404,14 +414,17 @@ const SalesReportPage = () => {
           </motion.div>
 
           {/* Tabs Navigation */}
-          <motion.div 
+          <motion.div
             className="bg-white rounded-xl shadow-lg border border-orange-100 overflow-hidden"
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 1.2, duration: 0.6 }}
-            whileHover={{ y: -2, boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)" }}
+            whileHover={{
+              y: -2,
+              boxShadow: "0 25px 50px -12px rgba(251, 146, 60, 0.15)",
+            }}
           >
-            <motion.div 
+            <motion.div
               className="border-b border-gray-200"
               initial={{ x: -50, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
@@ -459,13 +472,13 @@ const SalesReportPage = () => {
 
             {/* Overview Tab */}
             {activeTab === "overview" && (
-              <motion.div 
+              <motion.div
                 className="p-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <motion.div 
+                <motion.div
                   className="grid lg:grid-cols-2 gap-8"
                   initial={{ y: 30, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -480,13 +493,13 @@ const SalesReportPage = () => {
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
                       Sales Breakdown
                     </h3>
-                    <motion.div 
+                    <motion.div
                       className="space-y-4"
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 0.4, duration: 0.5 }}
                     >
-                      <motion.div 
+                      <motion.div
                         className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
                         initial={{ x: -20, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
@@ -513,7 +526,7 @@ const SalesReportPage = () => {
                         </div>
                       </motion.div>
 
-                      <motion.div 
+                      <motion.div
                         className="flex items-center justify-between p-4 bg-amber-50 rounded-lg"
                         initial={{ x: -20, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
@@ -540,7 +553,7 @@ const SalesReportPage = () => {
                         </div>
                       </motion.div>
 
-                      <motion.div 
+                      <motion.div
                         className="flex items-center justify-between p-4 bg-green-50 rounded-lg"
                         initial={{ x: -20, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
@@ -574,7 +587,7 @@ const SalesReportPage = () => {
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
                       Payment Methods
                     </h3>
-                    <motion.div 
+                    <motion.div
                       className="space-y-3"
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
@@ -600,7 +613,10 @@ const SalesReportPage = () => {
                               className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                               initial={{ x: -20, opacity: 0 }}
                               animate={{ x: 0, opacity: 1 }}
-                              transition={{ delay: 0.5 + index * 0.1, duration: 0.4 }}
+                              transition={{
+                                delay: 0.5 + index * 0.1,
+                                duration: 0.4,
+                              }}
                               whileHover={{ scale: 1.02, x: 5 }}
                             >
                               <div className="flex items-center space-x-3">
@@ -629,19 +645,19 @@ const SalesReportPage = () => {
 
             {/* Transactions Tab */}
             {activeTab === "transactions" && (
-              <motion.div 
+              <motion.div
                 className="p-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <motion.div 
+                <motion.div
                   className="overflow-x-auto"
                   initial={{ y: 30, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.2, duration: 0.5 }}
                 >
-                  <motion.table 
+                  <motion.table
                     className="w-full"
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
@@ -678,12 +694,18 @@ const SalesReportPage = () => {
                     <tbody>
                       {salesData.map((sale, index) => (
                         <React.Fragment key={sale.id}>
-                          <motion.tr 
+                          <motion.tr
                             className="border-b border-gray-100 hover:bg-gray-50"
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.4 + index * 0.05, duration: 0.4 }}
-                            whileHover={{ backgroundColor: "rgba(249, 250, 251, 1)", x: 5 }}
+                            transition={{
+                              delay: 0.4 + index * 0.05,
+                              duration: 0.4,
+                            }}
+                            whileHover={{
+                              backgroundColor: "rgba(249, 250, 251, 1)",
+                              x: 5,
+                            }}
                           >
                             <td className="py-3 px-4 font-mono text-sm">
                               {sale.id}
@@ -780,7 +802,7 @@ const SalesReportPage = () => {
                                   colSpan={8}
                                   className="py-4 px-4 bg-orange-50 border-b"
                                 >
-                                  <motion.div 
+                                  <motion.div
                                     className="space-y-2"
                                     initial={{ y: 10, opacity: 0 }}
                                     animate={{ y: 0, opacity: 1 }}
@@ -800,7 +822,10 @@ const SalesReportPage = () => {
                                             className="text-sm text-gray-600"
                                             initial={{ x: -10, opacity: 0 }}
                                             animate={{ x: 0, opacity: 1 }}
-                                            transition={{ delay: 0.2 + index * 0.05, duration: 0.3 }}
+                                            transition={{
+                                              delay: 0.2 + index * 0.05,
+                                              duration: 0.3,
+                                            }}
                                           >
                                             {item.name} x {item.quantity} = ₦
                                             {item.total.toLocaleString()}
@@ -811,11 +836,14 @@ const SalesReportPage = () => {
                                         <h5 className="text-sm font-medium text-gray-700 mb-2">
                                           Payment Summary
                                         </h5>
-                                        <motion.div 
+                                        <motion.div
                                           className="text-sm text-gray-600 space-y-1"
                                           initial={{ x: 10, opacity: 0 }}
                                           animate={{ x: 0, opacity: 1 }}
-                                          transition={{ delay: 0.3, duration: 0.3 }}
+                                          transition={{
+                                            delay: 0.3,
+                                            duration: 0.3,
+                                          }}
                                         >
                                           <div>
                                             Subtotal: ₦
@@ -828,7 +856,8 @@ const SalesReportPage = () => {
                                             </div>
                                           )}
                                           <div>
-                                            Total: ₦{sale.total.toLocaleString()}
+                                            Total: ₦
+                                            {sale.total.toLocaleString()}
                                           </div>
                                           <div>
                                             Amount Paid: ₦
@@ -858,13 +887,13 @@ const SalesReportPage = () => {
 
             {/* Customer Analysis Tab */}
             {activeTab === "customers" && (
-              <motion.div 
+              <motion.div
                 className="p-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <motion.div 
+                <motion.div
                   className="grid lg:grid-cols-2 gap-8"
                   initial={{ y: 30, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -879,7 +908,7 @@ const SalesReportPage = () => {
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
                       Top Customers (by Revenue)
                     </h3>
-                    <motion.div 
+                    <motion.div
                       className="space-y-3"
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
@@ -914,7 +943,10 @@ const SalesReportPage = () => {
                             className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                             initial={{ x: -20, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.5 + index * 0.1, duration: 0.4 }}
+                            transition={{
+                              delay: 0.5 + index * 0.1,
+                              duration: 0.4,
+                            }}
                             whileHover={{ scale: 1.02, x: 5 }}
                           >
                             <div className="flex items-center space-x-3">
@@ -954,7 +986,7 @@ const SalesReportPage = () => {
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
                       Outstanding Debts
                     </h3>
-                    <motion.div 
+                    <motion.div
                       className="space-y-3"
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
@@ -969,7 +1001,10 @@ const SalesReportPage = () => {
                             className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200"
                             initial={{ x: 20, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.5 + index * 0.1, duration: 0.4 }}
+                            transition={{
+                              delay: 0.5 + index * 0.1,
+                              duration: 0.4,
+                            }}
                             whileHover={{ scale: 1.02, x: -5 }}
                           >
                             <div>
@@ -997,7 +1032,7 @@ const SalesReportPage = () => {
 
                       {salesData.filter((sale) => sale.balance > 0).length ===
                         0 && (
-                        <motion.div 
+                        <motion.div
                           className="text-center py-8 text-gray-500"
                           initial={{ scale: 0.8, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
@@ -1015,13 +1050,13 @@ const SalesReportPage = () => {
                 </motion.div>
 
                 {/* Customer Performance Metrics */}
-                <motion.div 
+                <motion.div
                   className="mt-8"
                   initial={{ y: 50, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.6, duration: 0.6 }}
                 >
-                  <motion.h3 
+                  <motion.h3
                     className="text-lg font-semibold text-gray-900 mb-4"
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
@@ -1029,13 +1064,13 @@ const SalesReportPage = () => {
                   >
                     Customer Performance Metrics
                   </motion.h3>
-                  <motion.div 
+                  <motion.div
                     className="grid md:grid-cols-3 gap-6"
                     initial={{ y: 30, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.8, duration: 0.5 }}
                   >
-                    <motion.div 
+                    <motion.div
                       className="bg-blue-50 rounded-lg p-4"
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
@@ -1059,7 +1094,7 @@ const SalesReportPage = () => {
                       </div>
                     </motion.div>
 
-                    <motion.div 
+                    <motion.div
                       className="bg-green-50 rounded-lg p-4"
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
@@ -1090,7 +1125,7 @@ const SalesReportPage = () => {
                       </div>
                     </motion.div>
 
-                    <motion.div 
+                    <motion.div
                       className="bg-yellow-50 rounded-lg p-4"
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
@@ -1126,20 +1161,20 @@ const SalesReportPage = () => {
           </motion.div>
 
           {/* Quick Actions */}
-          <motion.div 
+          <motion.div
             className="mt-8 grid md:grid-cols-3 gap-6"
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 1.4, duration: 0.6 }}
           >
-            <motion.div 
+            <motion.div
               className="bg-white rounded-xl p-6 shadow-lg border border-orange-100"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 1.5, duration: 0.5 }}
               whileHover={{ scale: 1.02, y: -5 }}
             >
-              <motion.h3 
+              <motion.h3
                 className="text-lg font-semibold text-gray-900 mb-3"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -1147,13 +1182,13 @@ const SalesReportPage = () => {
               >
                 Quick Actions
               </motion.h3>
-              <motion.div 
+              <motion.div
                 className="space-y-3"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 1.7, duration: 0.4 }}
               >
-                <motion.button 
+                <motion.button
                   className="w-full text-left p-3 rounded-lg bg-orange-50 hover:bg-orange-100 transition-colors"
                   whileHover={{ scale: 1.02, x: 5 }}
                   whileTap={{ scale: 0.98 }}
@@ -1165,7 +1200,7 @@ const SalesReportPage = () => {
                     </span>
                   </div>
                 </motion.button>
-                <motion.button 
+                <motion.button
                   className="w-full text-left p-3 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
                   whileHover={{ scale: 1.02, x: 5 }}
                   whileTap={{ scale: 0.98 }}
@@ -1177,7 +1212,7 @@ const SalesReportPage = () => {
                     </span>
                   </div>
                 </motion.button>
-                <motion.button 
+                <motion.button
                   className="w-full text-left p-3 rounded-lg bg-green-50 hover:bg-green-100 transition-colors"
                   whileHover={{ scale: 1.02, x: 5 }}
                   whileTap={{ scale: 0.98 }}
@@ -1192,14 +1227,14 @@ const SalesReportPage = () => {
               </motion.div>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               className="bg-white rounded-xl p-6 shadow-lg border border-orange-100"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 1.6, duration: 0.5 }}
               whileHover={{ scale: 1.02, y: -5 }}
             >
-              <motion.h3 
+              <motion.h3
                 className="text-lg font-semibold text-gray-900 mb-3"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -1207,13 +1242,13 @@ const SalesReportPage = () => {
               >
                 Key Insights
               </motion.h3>
-              <motion.div 
+              <motion.div
                 className="space-y-3 text-sm"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 1.8, duration: 0.4 }}
               >
-                <motion.div 
+                <motion.div
                   className="p-3 bg-green-50 rounded-lg"
                   whileHover={{ scale: 1.02, x: 5 }}
                 >
@@ -1224,7 +1259,7 @@ const SalesReportPage = () => {
                     June 1st with ₦34,500 in sales
                   </div>
                 </motion.div>
-                <motion.div 
+                <motion.div
                   className="p-3 bg-blue-50 rounded-lg"
                   whileHover={{ scale: 1.02, x: 5 }}
                 >
@@ -1233,7 +1268,7 @@ const SalesReportPage = () => {
                     Wholesale Drums (6 units sold)
                   </div>
                 </motion.div>
-                <motion.div 
+                <motion.div
                   className="p-3 bg-orange-50 rounded-lg"
                   whileHover={{ scale: 1.02, x: 5 }}
                 >
@@ -1247,14 +1282,14 @@ const SalesReportPage = () => {
               </motion.div>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               className="bg-white rounded-xl p-6 shadow-lg border border-orange-100"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 1.7, duration: 0.5 }}
               whileHover={{ scale: 1.02, y: -5 }}
             >
-              <motion.h3 
+              <motion.h3
                 className="text-lg font-semibold text-gray-900 mb-3"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -1262,13 +1297,13 @@ const SalesReportPage = () => {
               >
                 Recommendations
               </motion.h3>
-              <motion.div 
+              <motion.div
                 className="space-y-3 text-sm"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 1.9, duration: 0.4 }}
               >
-                <motion.div 
+                <motion.div
                   className="p-3 bg-yellow-50 rounded-lg"
                   whileHover={{ scale: 1.02, x: 5 }}
                 >
@@ -1279,7 +1314,7 @@ const SalesReportPage = () => {
                     3 customers have overdue payments
                   </div>
                 </motion.div>
-                <motion.div 
+                <motion.div
                   className="p-3 bg-purple-50 rounded-lg"
                   whileHover={{ scale: 1.02, x: 5 }}
                 >
@@ -1290,7 +1325,7 @@ const SalesReportPage = () => {
                     Retail stock running low this week
                   </div>
                 </motion.div>
-                <motion.div 
+                <motion.div
                   className="p-3 bg-indigo-50 rounded-lg"
                   whileHover={{ scale: 1.02, x: 5 }}
                 >

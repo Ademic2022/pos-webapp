@@ -1,5 +1,4 @@
 import { 
-  graphqlClient, 
   GET_CUSTOMERS, 
   GET_CUSTOMER, 
   GET_CUSTOMER_BY_PHONE, 
@@ -8,6 +7,7 @@ import {
   UPDATE_CUSTOMER,
   DELETE_CUSTOMER
 } from '@/lib/graphql';
+import { enhancedGraphqlClient } from '@/lib/enhancedGraphqlClient';
 import { Customer } from '@/interfaces/interface';
 
 export interface CustomerFilters {
@@ -18,7 +18,7 @@ export interface CustomerFilters {
   hasCreditLimit?: boolean;
 }
 
-interface GraphQLVariables {
+interface GraphQLVariables extends Record<string, unknown> {
   first: number;
   after?: string | null;
   name_Icontains?: string;
@@ -98,6 +98,28 @@ export interface CustomerStatsResponse {
 
 class CustomerService {
   
+  /**
+   * Decode Relay Global ID to extract the numeric database ID
+   * Relay Global IDs are base64 encoded strings in format: "Type:id"
+   */
+  private decodeRelayGlobalId(globalId: string): string {
+    try {
+      // First, decode URL encoding (e.g., %3D back to =)
+      const urlDecoded = decodeURIComponent(globalId);
+      
+      // Then decode base64 string
+      const decoded = atob(urlDecoded);
+      
+      // Extract the numeric ID after the colon (format: "CustomerType:123")
+      const parts = decoded.split(':');
+      return parts.length === 2 ? parts[1] : globalId;
+    } catch (error) {
+      // If decoding fails, assume it's already a numeric ID
+      console.warn('Failed to decode Relay Global ID, using as-is:', globalId);
+      return globalId;
+    }
+  }
+  
   async getCustomers(
     filters?: CustomerFilters, 
     limit: number = 50, 
@@ -127,7 +149,7 @@ class CustomerService {
         }
       }
 
-      const response = await graphqlClient.request(GET_CUSTOMERS, variables) as {
+      const response = await enhancedGraphqlClient.request(GET_CUSTOMERS, variables) as {
         customers: {
           edges: Array<{
             node: Customer;
@@ -156,7 +178,10 @@ class CustomerService {
 
   async getCustomer(id: string): Promise<CustomerResponse> {
     try {
-      const response = await graphqlClient.request(GET_CUSTOMER, { id }) as {
+      // Decode Relay Global ID to get numeric database ID
+      const numericId = this.decodeRelayGlobalId(id);
+      
+      const response = await enhancedGraphqlClient.request(GET_CUSTOMER, { id: numericId }) as {
         customer: Customer;
       };
 
@@ -182,7 +207,7 @@ class CustomerService {
 
   async getCustomerByPhone(phone: string): Promise<CustomerResponse> {
     try {
-      const response = await graphqlClient.request(GET_CUSTOMER_BY_PHONE, { phone }) as {
+      const response = await enhancedGraphqlClient.request(GET_CUSTOMER_BY_PHONE, { phone }) as {
         customerByPhone: Customer;
       };
 
@@ -208,7 +233,7 @@ class CustomerService {
 
   async getCustomerStats(): Promise<CustomerStatsResponse> {
     try {
-      const response = await graphqlClient.request(GET_CUSTOMER_STATS) as {
+      const response = await enhancedGraphqlClient.request(GET_CUSTOMER_STATS) as {
         customerStats: CustomerStats;
       };
 
@@ -239,7 +264,7 @@ class CustomerService {
         }
       };
 
-      const response = await graphqlClient.request(CREATE_CUSTOMER, variables) as {
+      const response = await enhancedGraphqlClient.request(CREATE_CUSTOMER, variables) as {
         createCustomer: {
           success: boolean;
           customer?: Customer;
@@ -270,9 +295,12 @@ class CustomerService {
 
   async updateCustomer(input: UpdateCustomerInput): Promise<CustomerResponse> {
     try {
+      // Decode Relay Global ID to get numeric database ID
+      const numericId = this.decodeRelayGlobalId(input.id);
+      
       const variables = {
         input: {
-          id: input.id,
+          id: numericId,
           name: input.name,
           email: input.email,
           phone: input.phone,
@@ -284,7 +312,7 @@ class CustomerService {
         }
       };
 
-      const response = await graphqlClient.request(UPDATE_CUSTOMER, variables) as {
+      const response = await enhancedGraphqlClient.request(UPDATE_CUSTOMER, variables) as {
         updateCustomer: {
           success: boolean;
           customer?: Customer;
@@ -315,7 +343,10 @@ class CustomerService {
 
   async deleteCustomer(id: string): Promise<{ success: boolean; errors?: string[] }> {
     try {
-      const response = await graphqlClient.request(DELETE_CUSTOMER, { id }) as {
+      // Decode Relay Global ID to get numeric database ID
+      const numericId = this.decodeRelayGlobalId(id);
+      
+      const response = await enhancedGraphqlClient.request(DELETE_CUSTOMER, { id: numericId }) as {
         deleteCustomer: {
           success: boolean;
           errors?: string[];
