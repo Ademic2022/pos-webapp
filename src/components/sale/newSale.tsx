@@ -19,7 +19,6 @@ import {
   AlertCircle,
   UserPlus,
 } from "lucide-react";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Customer, Product, CartItem } from "@/interfaces/interface";
 import { SaleType, PaymentMethod } from "@/types/types";

@@ -24,6 +24,22 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
+export interface TokenMetadata {
+  token: string;
+  refreshToken: string;
+  issuedAt: number; // timestamp when token was issued
+  expiresAt: number; // timestamp when token expires
+  storedAt: number; // timestamp when token was stored locally
+  tokenType: 'access' | 'refresh'; // type of token for better management
+}
+
+export interface SecureTokenConfig {
+  accessTokenExpiry: number; // 5-15 minutes for access tokens
+  refreshTokenExpiry: number; // 7-30 days for refresh tokens
+  useHttpOnlyCookies: boolean; // whether to use HttpOnly cookies for refresh tokens
+  proactiveRefreshBuffer: number; // time before expiry to refresh (2 minutes default)
+}
+
 export interface LoginResponse {
   success: boolean;
   user?: User;
@@ -83,6 +99,15 @@ class AuthService {
   private readonly TOKEN_KEY = 'pos_auth_token';
   private readonly REFRESH_TOKEN_KEY = 'pos_refresh_token';
   private readonly USER_KEY = 'pos_user_data';
+  private readonly TOKEN_METADATA_KEY = 'pos_token_metadata';
+  
+  // Security configuration for token management (on-demand refresh only)
+  private readonly tokenConfig: SecureTokenConfig = {
+    accessTokenExpiry: 15 * 60 * 1000, // 15 minutes
+    refreshTokenExpiry: 7 * 24 * 60 * 60 * 1000, // 7 days
+    useHttpOnlyCookies: false, // Will be enabled when backend supports it
+    proactiveRefreshBuffer: 0, // No proactive refresh - only on-demand
+  };
 
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
     try {
@@ -114,8 +139,8 @@ class AuthService {
           refreshToken: tokenAuth.refreshToken,
         };
 
-        // Store tokens and user data
-        this.storeTokens(tokens);
+        // Store tokens and user data with metadata
+        this.storeTokensWithMetadata(tokens);
         this.storeUser(user);
         
         // Set authorization header for future requests
@@ -176,8 +201,9 @@ class AuthService {
   }
 
   async refreshAuthToken(): Promise<{ success: boolean; token?: string }> {
-    const refreshToken = this.getRefreshToken();
+    const refreshToken = this.getRefreshTokenSecurely();
     if (!refreshToken) {
+      console.warn('No refresh token available for refresh');
       return { success: false };
     }
 
@@ -186,25 +212,196 @@ class AuthService {
       const { refreshToken: refreshResponse } = response;
 
       if (refreshResponse.success && refreshResponse.token) {
-        // Update stored token
-        localStorage.setItem(this.TOKEN_KEY, refreshResponse.token);
+        // Update stored access token with metadata
+        const newTokens: AuthTokens = {
+          token: refreshResponse.token,
+          refreshToken: refreshToken, // Keep the same refresh token
+        };
+        this.storeTokensWithMetadata(newTokens);
+        
         setAuthToken(refreshResponse.token);
 
+        console.log('Access token refreshed successfully');
         return { success: true, token: refreshResponse.token };
+      } else {
+        console.error('Token refresh failed:', refreshResponse.errors);
+        return { success: false };
       }
-
-      return { success: false };
     } catch (error) {
       console.error('Token refresh error:', error);
+      
+      // If refresh fails, it might be due to expired refresh token
+      // Clear all stored auth data and force re-login
+      if (error && typeof error === 'object' && 'response' in error) {
+        const graphqlError = error as { response?: { errors?: Array<{ message?: string }> } };
+        const errorMessage = graphqlError.response?.errors?.[0]?.message?.toLowerCase() || '';
+        
+        if (errorMessage.includes('refresh token') && 
+            (errorMessage.includes('expired') || errorMessage.includes('invalid'))) {
+          console.log('Refresh token expired, clearing all auth data');
+          this.logout();
+        }
+      }
+      
       return { success: false };
     }
+  }
+
+  /**
+   * Check if stored token is valid and not expired
+   */
+  isTokenValid(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const expirationTime = payload.exp * 1000;
+      const currentTime = Date.now();
+      
+      // Add 30 second buffer to account for network delays
+      return expirationTime > (currentTime + 30000);
+    } catch (error) {
+      console.warn('Error parsing token:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Extract token expiry timestamp from JWT
+   */
+  private getTokenExpiryTimestamp(token: string): number | null {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.exp * 1000; // Convert to milliseconds
+    } catch (error) {
+      console.warn('Error extracting token expiry:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Extract token issued at timestamp from JWT
+   */
+  private getTokenIssuedAtTimestamp(token: string): number | null {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.iat ? payload.iat * 1000 : null; // Convert to milliseconds
+    } catch (error) {
+      console.warn('Error extracting token issued at:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Store tokens with metadata timestamps
+   */
+  private storeTokensWithMetadata(tokens: AuthTokens): void {
+    if (typeof window === 'undefined') return;
+    
+    const now = Date.now();
+    const expiresAt = this.getTokenExpiryTimestamp(tokens.token);
+    const issuedAt = this.getTokenIssuedAtTimestamp(tokens.token);
+    
+    const metadata: TokenMetadata = {
+      token: tokens.token,
+      refreshToken: tokens.refreshToken,
+      issuedAt: issuedAt || now,
+      expiresAt: expiresAt || (now + 15 * 60 * 1000), // Default to 15 minutes for access tokens
+      storedAt: now,
+      tokenType: 'access', // Access tokens are stored in memory/localStorage
+    };
+    
+    // Store access token in memory/localStorage (short-lived)
+    localStorage.setItem(this.TOKEN_KEY, tokens.token);
+    
+    // Store refresh token securely (will be moved to HttpOnly cookies later)
+    this.storeRefreshTokenSecurely(tokens.refreshToken);
+    
+    // Store metadata
+    localStorage.setItem(this.TOKEN_METADATA_KEY, JSON.stringify(metadata));
+  }
+
+  /**
+   * Get stored token metadata
+   */
+  getTokenMetadata(): TokenMetadata | null {
+    if (typeof window === 'undefined') return null;
+    const metadataStr = localStorage.getItem(this.TOKEN_METADATA_KEY);
+    if (metadataStr) {
+      try {
+        return JSON.parse(metadataStr);
+      } catch (error) {
+        console.error('Error parsing token metadata:', error);
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Store refresh token securely
+   * For now using localStorage, but this should be moved to HttpOnly cookies
+   */
+  private storeRefreshTokenSecurely(refreshToken: string): void {
+    if (typeof window === 'undefined') return;
+    
+    if (this.tokenConfig.useHttpOnlyCookies) {
+      // TODO: Implement HttpOnly cookie storage when backend supports it
+      console.log('HttpOnly cookie storage not yet implemented, using localStorage');
+    }
+    
+    // For now, store in localStorage with additional security metadata
+    localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
+    localStorage.setItem(`${this.REFRESH_TOKEN_KEY}_stored_at`, Date.now().toString());
+  }
+
+  /**
+   * Get refresh token securely
+   */
+  private getRefreshTokenSecurely(): string | null {
+    if (typeof window === 'undefined') return null;
+    
+    if (this.tokenConfig.useHttpOnlyCookies) {
+      // TODO: Get from HttpOnly cookies when backend supports it
+      return null;
+    }
+    
+    const token = localStorage.getItem(this.REFRESH_TOKEN_KEY);
+    const storedAt = localStorage.getItem(`${this.REFRESH_TOKEN_KEY}_stored_at`);
+    
+    if (token && storedAt) {
+      const storedTimestamp = parseInt(storedAt);
+      const now = Date.now();
+      
+      // Check if refresh token has expired (7 days)
+      if (now - storedTimestamp > this.tokenConfig.refreshTokenExpiry) {
+        console.log('Refresh token has expired, clearing stored data');
+        this.clearRefreshToken();
+        return null;
+      }
+      
+      return token;
+    }
+    
+    return null;
+  }
+
+  /**
+   * Clear refresh token securely
+   */
+  private clearRefreshToken(): void {
+    if (typeof window === 'undefined') return;
+    
+    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+    localStorage.removeItem(`${this.REFRESH_TOKEN_KEY}_stored_at`);
   }
 
   logout(): void {
     // Clear stored data
     localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
+    localStorage.removeItem(this.TOKEN_METADATA_KEY);
+    
+    // Clear refresh token securely
+    this.clearRefreshToken();
     
     // Clear authorization header
     clearAuthToken();
@@ -216,8 +413,8 @@ class AuthService {
   }
 
   getRefreshToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
+    // Use the secure method instead
+    return this.getRefreshTokenSecurely();
   }
 
   getStoredUser(): User | null {
@@ -246,30 +443,54 @@ class AuthService {
   }
 
   async initializeAuth(): Promise<User | null> {
+    if (typeof window === 'undefined') return null;
+
     const token = this.getStoredToken();
     if (!token) {
+      console.log('No stored token found');
       return null;
     }
 
-    // Set the token for API requests
-    setAuthToken(token);
-
-    // Verify the token is still valid
-    const verification = await this.verifyToken(token);
-    if (verification.valid && verification.user) {
-      return verification.user;
-    }
-
-    // Try to refresh the token
-    const refreshResult = await this.refreshAuthToken();
-    if (refreshResult.success && refreshResult.token) {
-      const newVerification = await this.verifyToken(refreshResult.token);
-      if (newVerification.valid && newVerification.user) {
-        return newVerification.user;
+    // Check if token is still valid before using it
+    if (!this.isTokenValid(token)) {
+      console.log('Stored token is expired, attempting refresh...');
+      
+      // Try to refresh the token
+      const refreshResult = await this.refreshAuthToken();
+      if (!refreshResult.success) {
+        console.log('Token refresh failed, clearing stored data');
+        this.logout();
+        return null;
       }
+      
+      // Use the new token
+      const newToken = refreshResult.token;
+      if (newToken) {
+        setAuthToken(newToken);
+      }
+    } else {
+      // Set the valid token for API requests
+      setAuthToken(token);
     }
 
-    // If both verification and refresh failed, clear stored data
+    // Get stored user data
+    const storedUser = this.getStoredUser();
+    if (storedUser) {
+      console.log('User restored from stored data:', storedUser.username);
+      return storedUser;
+    }
+
+    // If no stored user but we have a valid token, try to verify and get user info
+    try {
+      const verification = await this.verifyToken(token);
+      if (verification.valid && verification.user) {
+        return verification.user;
+      }
+    } catch (error) {
+      console.warn('Token verification failed during initialization:', error);
+    }
+
+    // If everything fails, clear stored data
     this.logout();
     return null;
   }

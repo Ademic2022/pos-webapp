@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useMemo, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   User,
@@ -15,35 +15,19 @@ import {
   Filter,
   Search,
   Download,
-  Eye,
   Plus,
   Package,
-  CheckCircle,
   AlertCircle,
-  XCircle,
-  ChevronLeft,
-  ChevronRight,
   ChevronDown,
-  FileText,
-  Receipt,
   Edit3,
-  RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { CustomerTransaction, Customer } from "@/interfaces/interface";
-import { StatsCard } from "@/components/cards/statCard";
 import { usePageLoading } from "@/hooks/usePageLoading";
 import EditCustomerModal from "@/components/modals/editCustomerModal";
 import ProtectedElement from "@/components/auth/ProtectedElement";
 import { customerService } from "@/services/customerService";
-import { useJWT } from "@/context/JWTContext";
-
-interface TransactionFilters {
-  dateRange: "all" | "week" | "month" | "quarter" | "year";
-  type: "all" | "sale" | "payment" | "credit" | "return";
-  amountRange: "all" | "0-1000" | "1000-5000" | "5000-10000" | "10000+";
-}
 
 interface SortOptions {
   field: "date" | "amount" | "type";
@@ -51,7 +35,6 @@ interface SortOptions {
 }
 
 const CustomerDetailPage = () => {
-  const { request } = useJWT();
   const router = useRouter();
 
   usePageLoading({
@@ -70,20 +53,12 @@ const CustomerDetailPage = () => {
 
   // State for filters and pagination
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [filters, setFilters] = useState<TransactionFilters>({
-    dateRange: "all",
-    type: "all",
-    amountRange: "all",
-  });
   const [sortBy, setSortBy] = useState<SortOptions>({
     field: "date",
     direction: "desc",
   });
-  const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
   const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [selectedTransaction, setSelectedTransaction] =
-    useState<CustomerTransaction | null>(null);
 
   // Modal state management
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
@@ -194,49 +169,7 @@ const CustomerDetailPage = () => {
           .includes(searchTerm.toLowerCase()) ||
         transaction.id.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesType =
-        filters.type === "all" || transaction.type === filters.type;
-
-      const matchesAmountRange = (() => {
-        const amount = transaction.amount;
-        switch (filters.amountRange) {
-          case "0-1000":
-            return amount <= 1000;
-          case "1000-5000":
-            return amount > 1000 && amount <= 5000;
-          case "5000-10000":
-            return amount > 5000 && amount <= 10000;
-          case "10000+":
-            return amount > 10000;
-          default:
-            return true;
-        }
-      })();
-
-      const matchesDateRange = (() => {
-        const transactionDate = new Date(transaction.date);
-        const today = new Date();
-        const daysDiff = Math.floor(
-          (today.getTime() - transactionDate.getTime()) / (1000 * 60 * 60 * 24)
-        );
-
-        switch (filters.dateRange) {
-          case "week":
-            return daysDiff <= 7;
-          case "month":
-            return daysDiff <= 30;
-          case "quarter":
-            return daysDiff <= 90;
-          case "year":
-            return daysDiff <= 365;
-          default:
-            return true;
-        }
-      })();
-
-      return (
-        matchesSearch && matchesType && matchesAmountRange && matchesDateRange
-      );
+      return matchesSearch;
     });
 
     // Sort transactions
@@ -261,46 +194,7 @@ const CustomerDetailPage = () => {
     });
 
     return filtered;
-  }, [transactions, searchTerm, filters, sortBy]);
-
-  // Pagination calculations
-  const totalPages = Math.ceil(
-    filteredAndSortedTransactions.length / itemsPerPage
-  );
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedTransactions = filteredAndSortedTransactions.slice(
-    startIndex,
-    endIndex
-  );
-
-  // Reset pagination when filters change
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, filters, sortBy]);
-
-  // Customer statistics
-  const customerStats = useMemo(() => {
-    const salesTransactions = transactions.filter((t) => t.type === "sale");
-    const paymentTransactions = transactions.filter(
-      (t) => t.type === "payment"
-    );
-
-    return {
-      totalTransactions: transactions.length,
-      totalSales: salesTransactions.reduce((sum, t) => sum + t.amount, 0),
-      totalPayments: paymentTransactions.reduce((sum, t) => sum + t.amount, 0),
-      averageTransaction:
-        transactions.length > 0
-          ? transactions.reduce((sum, t) => sum + t.amount, 0) /
-            transactions.length
-          : 0,
-      lastTransaction:
-        transactions.length > 0
-          ? Math.max(...transactions.map((t) => new Date(t.date).getTime()))
-          : null,
-    };
-  }, [transactions]);
+  }, [transactions, searchTerm, sortBy]);
 
   // Show loading state
   if (loading) {
@@ -681,7 +575,7 @@ const CustomerDetailPage = () => {
                 No transactions yet
               </h3>
               <p className="text-gray-500">
-                This customer hasn't made any transactions yet.
+                This customer hasn&apos;t made any transactions yet.
               </p>
             </div>
           ) : (
