@@ -22,7 +22,6 @@ import {
   Package,
   ArrowLeft,
 } from "lucide-react";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePageLoading } from "@/hooks/usePageLoading";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";

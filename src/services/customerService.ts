@@ -113,7 +113,7 @@ class CustomerService {
       // Extract the numeric ID after the colon (format: "CustomerType:123")
       const parts = decoded.split(':');
       return parts.length === 2 ? parts[1] : globalId;
-    } catch (error) {
+    } catch {
       // If decoding fails, assume it's already a numeric ID
       console.warn('Failed to decode Relay Global ID, using as-is:', globalId);
       return globalId;

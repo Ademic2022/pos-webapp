@@ -1,5 +1,5 @@
 /**
- * JWT Authentication Context with Centralized Token Refresh
+ * JWT Authentication Context with Centralized Token Management
  *
  * This context provides centralized JWT token management with automatic refresh
  * for the entire application. It wraps the enhanced GraphQL client and provides
@@ -76,19 +76,35 @@ export function JWTProvider({ children }: JWTProviderProps) {
   });
 
   /**
-   * Initialize authentication state on mount
+   * Initialize authentication state and setup periodic token checks
    */
   useEffect(() => {
     const initializeAuth = async () => {
+      setAuthState((prev) => ({ ...prev, isLoading: true }));
+
       try {
-        const authenticated = await enhancedGraphqlClient.isAuthenticated();
-        setAuthState({
-          isLoading: false,
-          isAuthenticated: authenticated,
-          error: null,
-        });
+        const authService = await import("@/services/authService").then(
+          (m) => m.authService
+        );
+
+        // Try to restore user from stored tokens
+        const user = await authService.initializeAuth();
+
+        if (user) {
+          setAuthState({
+            isLoading: false,
+            isAuthenticated: true,
+            error: null,
+          });
+        } else {
+          setAuthState({
+            isLoading: false,
+            isAuthenticated: false,
+            error: null,
+          });
+        }
       } catch (error) {
-        console.warn("Error checking authentication state:", error);
+        console.error("Auth initialization error:", error);
         setAuthState({
           isLoading: false,
           isAuthenticated: false,
@@ -98,7 +114,7 @@ export function JWTProvider({ children }: JWTProviderProps) {
     };
 
     initializeAuth();
-  }, []);
+  }, [router]);
 
   /**
    * Enhanced request method with centralized error handling
@@ -126,12 +142,15 @@ export function JWTProvider({ children }: JWTProviderProps) {
       } catch (error) {
         console.error("JWT Context - Request error:", error);
 
-        // Check if this is an unrecoverable authentication error
+        // Handle authentication errors
         if (error instanceof Error) {
-          if (error.message?.includes("Unable to refresh token")) {
-            // Both access and refresh tokens are expired
+          if (
+            error.message?.includes("401") ||
+            error.message?.includes("Unauthorized") ||
+            error.message?.includes("signature has expired")
+          ) {
             console.log(
-              "JWT Context - Both tokens expired, redirecting to login"
+              "JWT Context - Authentication error, redirecting to login"
             );
 
             setAuthState({
@@ -149,19 +168,7 @@ export function JWTProvider({ children }: JWTProviderProps) {
 
             // Redirect to login
             router.push("/signin?error=session_expired");
-
             throw new Error("Session expired. Please sign in again.");
-          } else if (
-            error.message?.includes("signature has expired") ||
-            error.message?.includes("Error decoding signature")
-          ) {
-            // This should have been handled by enhanced client, but if we get here,
-            // it means the refresh failed silently
-            console.log("JWT Context - Token refresh may have failed silently");
-            setAuthState((prev) => ({
-              ...prev,
-              error: "Authentication error. Please try again.",
-            }));
           }
         }
 
@@ -226,8 +233,7 @@ export function JWTProvider({ children }: JWTProviderProps) {
    */
   const refreshToken = useCallback(async (): Promise<boolean> => {
     try {
-      // The enhanced client doesn't expose a direct refresh method,
-      // so we'll make a simple request that will trigger refresh if needed
+      // Simple check - try to make a basic request to test connectivity
       await enhancedGraphqlClient.request("{ __typename }");
 
       setAuthState((prev) => ({
@@ -239,21 +245,14 @@ export function JWTProvider({ children }: JWTProviderProps) {
       return true;
     } catch (error) {
       console.error("Manual token refresh failed:", error);
+      setAuthState({
+        isLoading: false,
+        isAuthenticated: false,
+        error: "Session expired. Please sign in again.",
+      });
 
-      if (
-        error instanceof Error &&
-        error.message?.includes("Unable to refresh token")
-      ) {
-        setAuthState({
-          isLoading: false,
-          isAuthenticated: false,
-          error: "Session expired. Please sign in again.",
-        });
-
-        // Redirect to login
-        router.push("/signin?error=session_expired");
-      }
-
+      // Redirect to login
+      router.push("/signin?error=session_expired");
       return false;
     }
   }, [router]);

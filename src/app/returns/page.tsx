@@ -19,7 +19,6 @@ import {
   RefreshCw,
   TrendingUp,
 } from "lucide-react";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePageLoading } from "@/hooks/usePageLoading";
 import { customers, customerTransactions } from "@/data/customers";

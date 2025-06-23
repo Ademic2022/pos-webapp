@@ -20,7 +20,6 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import Link from "next/link";
 import { CustomerFilter } from "@/types/types";
 import { Customer } from "@/interfaces/interface";
 import AddCustomerModal from "@/components/modals/addCustomerModal";
