@@ -265,3 +265,73 @@ export const DELETE_CUSTOMER = `
     }
   }
 `;
+
+
+export const PRODUCT_INVENTORY_QUERY = `
+  query ProductInventory {
+    products {
+      edges {
+        node {
+          id
+          name
+          price
+          saleType
+          stock
+          unit
+          updatedAt
+        }
+      }
+    }
+    latestStockDeliveries(limit: 1) {
+      id
+      deliveredQuantity
+      cumulativeStock
+      remainingStock
+      soldStock
+      price
+      stockUtilizationPercentage
+    }
+  }
+`;
+
+export const ADD_STOCK_DELIVERY_MUTATION = `
+  mutation AddStockDelivery($deliveredQuantity: Float!, $supplier: String!, $price: Decimal!) {
+    addStockDelivery(
+      deliveredQuantity: $deliveredQuantity
+      supplier: $supplier
+      price: $price
+    ) {
+      message
+      success
+      stockData {
+        id
+        createdAt
+        cumulativeStock
+        deliveredQuantity
+        previousRemainingStock
+        price
+        soldStock
+        remainingStock
+        stockUtilizationPercentage
+        supplier
+        updatedAt
+      }
+    }
+  }
+`;
+
+export const STOCK_DELIVERIES_QUERY = `
+  query StockDeliveries($limit: Int) {
+    latestStockDeliveries(limit: $limit) {
+      id
+      deliveredQuantity
+      cumulativeStock
+      remainingStock
+      soldStock
+      price
+      stockUtilizationPercentage
+      createdAt
+      supplier
+    }
+  }
+`;

@@ -8,50 +8,7 @@
  */
 
 import { enhancedGraphqlClient } from '@/lib/enhancedGraphqlClient';
-
-// GraphQL Queries
-const PRODUCT_INVENTORY_QUERY = `
-  query ProductInventory {
-    products {
-      edges {
-        node {
-          id
-          name
-          price
-          saleType
-          stock
-          unit
-          updatedAt
-        }
-      }
-    }
-    latestStockDeliveries(limit: 1) {
-      id
-      deliveredQuantity
-      cumulativeStock
-      remainingStock
-      soldStock
-      price
-      stockUtilizationPercentage
-    }
-  }
-`;
-
-const STOCK_DELIVERIES_QUERY = `
-  query StockDeliveries($limit: Int) {
-    latestStockDeliveries(limit: $limit) {
-      id
-      deliveredQuantity
-      cumulativeStock
-      remainingStock
-      soldStock
-      price
-      stockUtilizationPercentage
-      createdAt
-      supplier
-    }
-  }
-`;
+import { PRODUCT_INVENTORY_QUERY, ADD_STOCK_DELIVERY_MUTATION, STOCK_DELIVERIES_QUERY } from "@/lib/graphql"
 
 // TypeScript Interfaces
 export interface Product {
@@ -110,33 +67,6 @@ export interface AddStockDeliveryMutationResponse {
     stockData?: StockDelivery;
   };
 }
-
-// GraphQL Mutations
-const ADD_STOCK_DELIVERY_MUTATION = `
-  mutation AddStockDelivery($deliveredQuantity: Float!, $supplier: String!, $price: Decimal!) {
-    addStockDelivery(
-      deliveredQuantity: $deliveredQuantity
-      supplier: $supplier
-      price: $price
-    ) {
-      message
-      success
-      stockData {
-        id
-        createdAt
-        cumulativeStock
-        deliveredQuantity
-        previousRemainingStock
-        price
-        soldStock
-        remainingStock
-        stockUtilizationPercentage
-        supplier
-        updatedAt
-      }
-    }
-  }
-`;
 
 // Service Implementation
 export const inventoryService = {
