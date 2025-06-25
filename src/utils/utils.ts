@@ -60,7 +60,7 @@ export const getFillDetails = (stockDelivery?: {
   return {
     totalDrums,
     totalKegs,
-    remainingKegs: Math.floor(remainingAfterDrums / KEG_CAPACITY),
+    remainingKegs: Math.floor(remainingAfterDrums),
     remainingLitres,
     fillPercentage,
     totalAvailableStock,
