@@ -34,29 +34,41 @@ export const getTotalAvailableStock = (stockData: DeliveryHistory[]): number => 
 };
   
 
-export const getFillDetails = () => {
-    const stock = dashboardStat.stockData;
-    const totalAvailableStock = stock.totalAvailableStock;
-    const currentStock = stock?.availableStock ?? 0;
+export const getFillDetails = (stockDelivery?: {
+  cumulativeStock: number;
+  remainingStock: number;
+  soldStock: number;
+  stockUtilizationPercentage: number;
+} | null) => {
+  // Use real data if available, otherwise fallback to mock data
+  const totalAvailableStock = stockDelivery?.cumulativeStock ?? dashboardStat.stockData.totalAvailableStock;
+  const currentStock = stockDelivery?.remainingStock ?? dashboardStat.stockData.availableStock;
+  const soldStock = stockDelivery?.soldStock ?? dashboardStat.stockData.soldStock;
+  const utilizationPercentage = stockDelivery?.stockUtilizationPercentage ?? 0;
 
-    const totalDrums = Math.floor(totalAvailableStock / DRUM_CAPACITY);
-    const remainingKegs = totalAvailableStock % DRUM_CAPACITY;
+  const totalDrums = Math.floor(totalAvailableStock / DRUM_CAPACITY);
+  const remainingAfterDrums = totalAvailableStock % DRUM_CAPACITY;
   
-    const totalKegs = Math.floor(totalAvailableStock / KEG_CAPACITY);
-    const remainingLitres = remainingKegs % KEG_CAPACITY;    
+  const totalKegs = Math.floor(totalAvailableStock / KEG_CAPACITY);
+  const remainingLitres = totalAvailableStock % KEG_CAPACITY;
   
-    const remainingPercentage = (totalAvailableStock / currentStock) * 100;
-    const fillPercentage = parseFloat(remainingPercentage.toFixed(2));
-  
-    return {
-      totalDrums,
-      totalKegs,
-      remainingKegs,
-      remainingLitres,
-      fillPercentage,
-      totalAvailableStock,
-    };
+  // Calculate fill percentage based on remaining vs total capacity
+  const fillPercentage = totalAvailableStock > 0 
+    ? parseFloat(((currentStock / totalAvailableStock) * 100).toFixed(2))
+    : 0;
+
+  return {
+    totalDrums,
+    totalKegs,
+    remainingKegs: Math.floor(remainingAfterDrums / KEG_CAPACITY),
+    remainingLitres,
+    fillPercentage,
+    totalAvailableStock,
+    currentStock,
+    soldStock,
+    utilizationPercentage,
   };
+};
   
 export const getFillColor = (percentage: number) => {
     if (percentage >= 80) return 'bg-gradient-to-r from-green-500 to-green-600'; // Full – green
