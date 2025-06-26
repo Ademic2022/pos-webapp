@@ -265,3 +265,291 @@ export const DELETE_CUSTOMER = `
     }
   }
 `;
+
+
+export const PRODUCT_INVENTORY_QUERY = `
+  query ProductInventory {
+    products {
+      edges {
+        node {
+          id
+          name
+          price
+          saleType
+          stock
+          unit
+          updatedAt
+        }
+      }
+    }
+    latestStockDeliveries(limit: 1) {
+      id
+      deliveredQuantity
+      cumulativeStock
+      remainingStock
+      soldStock
+      price
+      stockUtilizationPercentage
+    }
+  }
+`;
+
+export const ADD_STOCK_DELIVERY_MUTATION = `
+  mutation AddStockDelivery($deliveredQuantity: Float!, $supplier: String!, $price: Decimal!) {
+    addStockDelivery(
+      deliveredQuantity: $deliveredQuantity
+      supplier: $supplier
+      price: $price
+    ) {
+      message
+      success
+      stockData {
+        id
+        createdAt
+        cumulativeStock
+        deliveredQuantity
+        previousRemainingStock
+        price
+        soldStock
+        remainingStock
+        stockUtilizationPercentage
+        supplier
+        updatedAt
+      }
+    }
+  }
+`;
+
+export const STOCK_DELIVERIES_QUERY = `
+  query StockDeliveries($limit: Int) {
+    latestStockDeliveries(limit: $limit) {
+      id
+      deliveredQuantity
+      cumulativeStock
+      remainingStock
+      soldStock
+      price
+      stockUtilizationPercentage
+      createdAt
+      supplier
+    }
+  }
+`;
+
+export const SALES_QUERY = `
+  query Sales(
+    $first: Int,
+    $after: String,
+    $saleType: String,
+    $customerName: String,
+    $totalMin: Float,
+    $totalMax: Float,
+    $dateFrom: Date,
+    $dateTo: Date
+  ) {
+    sales(
+      first: $first,
+      after: $after,
+      saleType: $saleType,
+      customerName: $customerName,
+      totalMin: $totalMin,
+      totalMax: $totalMax,
+      createdAt_Date_Gte: $dateFrom,
+      createdAt_Date_Lte: $dateTo
+    ) {
+      edges {
+        node {
+          id
+          transactionId
+          customer {
+            id
+            name
+            phone
+          }
+          saleType
+          subtotal
+          discount
+          total
+          creditApplied
+          amountDue
+          createdAt
+          updatedAt
+          items {
+            id
+            product {
+              id
+              name
+              unit
+            }
+            quantity
+            unitPrice
+            totalPrice
+          }
+          payments {
+            id
+            method
+            amount
+            createdAt
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+    }
+  }
+`;
+
+export const SALE_BY_ID_QUERY = `
+  query Sale($id: ID!) {
+    sale(id: $id) {
+      id
+      transactionId
+      customer {
+        id
+        name
+        phone
+        email
+      }
+      saleType
+      subtotal
+      discount
+      total
+      creditApplied
+      amountDue
+      createdAt
+      updatedAt
+      items {
+        id
+        product {
+          id
+          name
+          unit
+          price
+        }
+        quantity
+        unitPrice
+        totalPrice
+      }
+      payments {
+        id
+        method
+        amount
+        createdAt
+      }
+    }
+  }
+`;
+
+export const SALES_STATS_QUERY = `
+  query SalesStats($dateFrom: Date, $dateTo: Date) {
+    salesStats(dateFrom: $dateFrom, dateTo: $dateTo) {
+      totalSales
+      totalTransactions
+      averageSaleValue
+      retailSales
+      wholesaleSales
+      cashSales
+      creditSales
+      totalDiscounts
+    }
+  }
+`;
+
+export const RECENT_SALES_QUERY = `
+  query RecentSales($limit: Int = 10) {
+    recentSales(limit: $limit) {
+      id
+      transactionId
+      customer {
+        name
+      }
+      saleType
+      total
+      amountDue
+      createdAt
+    }
+  }
+`;
+
+export const CUSTOMER_CREDIT_BALANCE_QUERY = `
+  query CustomerCreditBalance($customerId: ID!) {
+    customerCreditBalance(customerId: $customerId)
+  }
+`;
+
+// GraphQL Mutations
+export const CREATE_SALE_MUTATION = `
+  mutation CreateSale($saleData: CreateSaleInput!, $payments: [PaymentInput!]) {
+    createSale(saleData: $saleData, payments: $payments) {
+      success
+      errors
+      sale {
+        id
+        transactionId
+        customer {
+          name
+        }
+        saleType
+        subtotal
+        discount
+        total
+        creditApplied
+        amountDue
+        createdAt
+        items {
+          id
+          product {
+            name
+          }
+          quantity
+          unitPrice
+          totalPrice
+        }
+        payments {
+          id
+          method
+          amount
+        }
+      }
+    }
+  }
+`;
+
+export const ADD_PAYMENT_MUTATION = `
+  mutation AddPayment($saleId: ID!, $method: PaymentMethodEnum!, $amount: Decimal!) {
+    addPayment(saleId: $saleId, method: $method, amount: $amount) {
+      success
+      errors
+      payment {
+        id
+        method
+        amount
+        createdAt
+      }
+      sale {
+        id
+        amountDue
+      }
+    }
+  }
+`;
+
+export const ADD_CUSTOMER_CREDIT_MUTATION = `
+  mutation AddCustomerCredit($customerId: ID!, $amount: Decimal!, $description: String) {
+    addCustomerCredit(customerId: $customerId, amount: $amount, description: $description) {
+      success
+      errors
+      creditTransaction {
+        id
+        amount
+        balanceAfter
+        description
+        createdAt
+      }
+    }
+  }
+`;
