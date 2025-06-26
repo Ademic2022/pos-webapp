@@ -41,7 +41,7 @@ export const getFillDetails = (stockDelivery?: {
   stockUtilizationPercentage: number;
 } | null) => {
   // Use real data if available, otherwise fallback to mock data
-  const totalAvailableStock = stockDelivery?.cumulativeStock ?? dashboardStat.stockData.totalAvailableStock;
+  const totalAvailableStock = stockDelivery?.remainingStock ?? dashboardStat.stockData.totalAvailableStock;
   const currentStock = stockDelivery?.remainingStock ?? dashboardStat.stockData.availableStock;
   const soldStock = stockDelivery?.soldStock ?? dashboardStat.stockData.soldStock;
   const utilizationPercentage = stockDelivery?.stockUtilizationPercentage ?? 0;
