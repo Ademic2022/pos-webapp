@@ -24,6 +24,7 @@ import { SaleType, PaymentMethod } from "@/types/types";
 import { useCustomers, useProducts, useSales } from "@/hooks/useSales";
 import { checkStockAvailability } from "@/utils/stockUtils";
 import { safeExtractId } from "@/utils/graphqlUtils";
+import { formatCurrency } from "@/utils/formatters";
 import { KEG_CAPACITY } from "@/data/constants";
 import TransactionId from "../TransactionId";
 import AddCustomerModal from "../modals/addCustomerModal";
@@ -770,10 +771,9 @@ const NewSalePage = () => {
                                 Outstanding Debt
                               </div>
                               <div className="text-lg font-bold text-red-700">
-                                ₦
-                                {Math.abs(
-                                  selectedCustomer.balance
-                                ).toLocaleString()}
+                                {formatCurrency(
+                                  Math.abs(selectedCustomer.balance)
+                                )}
                               </div>
                               <div className="text-sm text-red-600">
                                 This will be added to the current sale total
@@ -799,7 +799,7 @@ const NewSalePage = () => {
                                 Available Credit
                               </div>
                               <div className="text-lg font-bold text-green-700">
-                                ₦{selectedCustomer.balance.toLocaleString()}
+                                {formatCurrency(selectedCustomer.balance)}
                               </div>
                               <div className="text-sm text-green-600">
                                 This will be deducted from the current sale
@@ -909,7 +909,7 @@ const NewSalePage = () => {
                                 {product.name}
                               </h3>
                               <p className="text-sm text-gray-600">
-                                ₦{product.price.toLocaleString()} per{" "}
+                                {formatCurrency(product.price)} per{" "}
                                 {product.unit} keg{unitKegs !== 1 ? "s" : ""}
                               </p>
                             </div>
@@ -1078,8 +1078,7 @@ const NewSalePage = () => {
                                 {item.name}
                               </div>
                               <div className="text-xs text-gray-600">
-                                ₦{item.price.toLocaleString()} per {unitKegs}{" "}
-                                keg
+                                {formatCurrency(item.price)} per {unitKegs} keg
                                 {unitKegs !== 1 ? "s" : ""}
                               </div>
                             </div>
@@ -1124,7 +1123,7 @@ const NewSalePage = () => {
                                 animate={{ scale: 1 }}
                                 transition={{ duration: 0.2 }}
                               >
-                                ₦{(item.price * item.quantity).toLocaleString()}
+                                {formatCurrency(item.price * item.quantity)}
                               </motion.div>
                               <div className="text-xs text-gray-500">
                                 {unitKegs * item.quantity} keg
@@ -1241,8 +1240,8 @@ const NewSalePage = () => {
                             transition={{ duration: 0.2 }}
                           >
                             <div className="text-sm text-green-700">
-                              Discount Applied: ₦
-                              {calculateDiscount().toLocaleString()}
+                              Discount Applied:{" "}
+                              {formatCurrency(calculateDiscount())}
                             </div>
                           </motion.div>
                         )}
@@ -1414,17 +1413,17 @@ const NewSalePage = () => {
                                           No Payment Required
                                         </div>
                                         <div className="text-sm text-green-600">
-                                          Customer credit (₦
-                                          {customerCredit.toLocaleString()})
-                                          covers the full purchase amount (₦
-                                          {currentTotal.toLocaleString()})
+                                          Customer credit (
+                                          {formatCurrency(customerCredit)})
+                                          covers the full purchase amount (
+                                          {formatCurrency(currentTotal)})
                                         </div>
                                         {actualAmountOwed < 0 && (
                                           <div className="text-xs text-blue-600 mt-1">
-                                            Remaining credit after purchase: ₦
-                                            {Math.abs(
-                                              actualAmountOwed
-                                            ).toLocaleString()}
+                                            Remaining credit after purchase:{" "}
+                                            {formatCurrency(
+                                              Math.abs(actualAmountOwed)
+                                            )}
                                           </div>
                                         )}
                                       </div>
@@ -1485,33 +1484,31 @@ const NewSalePage = () => {
                                           <div className="flex justify-between">
                                             <span>Current Credit Balance:</span>
                                             <span className="font-medium">
-                                              ₦
-                                              {(
+                                              {formatCurrency(
                                                 customerCredit || 0
-                                              ).toLocaleString()}
+                                              )}
                                             </span>
                                           </div>
                                           <div className="flex justify-between">
                                             <span>Purchase Amount:</span>
                                             <span className="font-medium">
-                                              -₦{currentTotal.toLocaleString()}
+                                              -{formatCurrency(currentTotal)}
                                             </span>
                                           </div>
                                           <div className="flex justify-between">
                                             <span>Additional Payment:</span>
                                             <span className="font-medium text-green-700">
-                                              +₦{paymentAmount.toLocaleString()}
+                                              +{formatCurrency(paymentAmount)}
                                             </span>
                                           </div>
                                           <div className="border-t border-blue-300 pt-2 mt-2 flex justify-between font-semibold">
                                             <span>New Credit Balance:</span>
                                             <span className="text-blue-900">
-                                              ₦
-                                              {(
+                                              {formatCurrency(
                                                 customerCredit -
-                                                currentTotal +
-                                                paymentAmount
-                                              ).toLocaleString()}
+                                                  currentTotal +
+                                                  paymentAmount
+                                              )}
                                             </span>
                                           </div>
                                         </div>
@@ -1537,7 +1534,7 @@ const NewSalePage = () => {
                                     : "Paid"}
                                   {actualAmountOwed < currentTotal && (
                                     <span className="text-green-600 text-xs ml-2">
-                                      (Only ₦{actualAmountOwed.toLocaleString()}{" "}
+                                      (Only {formatCurrency(actualAmountOwed)}{" "}
                                       needed after credit)
                                     </span>
                                   )}
@@ -1593,7 +1590,7 @@ const NewSalePage = () => {
                                         : "text-yellow-900"
                                     }`}
                                   >
-                                    ₦{calculateTotal().toLocaleString()}
+                                    {formatCurrency(calculateTotal())}
                                   </span>
                                 </div>
                                 {selectedCustomer &&
@@ -1612,12 +1609,12 @@ const NewSalePage = () => {
                                             : "text-red-700"
                                         }`}
                                       >
-                                        {getCustomerCredit() > 0 ? "-" : "+"}₦
-                                        {(
+                                        {getCustomerCredit() > 0 ? "-" : "+"}
+                                        {formatCurrency(
                                           getCustomerCredit() ||
-                                          getCustomerDebt() ||
-                                          0
-                                        ).toLocaleString()}
+                                            getCustomerDebt() ||
+                                            0
+                                        )}
                                       </span>
                                     </div>
                                   )}
@@ -1627,10 +1624,9 @@ const NewSalePage = () => {
                                       Change to Give:
                                     </span>
                                     <span className="font-bold text-green-900">
-                                      ₦
-                                      {(
+                                      {formatCurrency(
                                         paymentAmount - calculateTotal()
-                                      ).toLocaleString()}
+                                      )}
                                     </span>
                                   </div>
                                 )}
@@ -1641,10 +1637,9 @@ const NewSalePage = () => {
                                       Customer Still Owes:
                                     </span>
                                     <span className="font-bold text-yellow-900">
-                                      ₦
-                                      {calculateActualAmountOwed(
-                                        paymentAmount
-                                      ).toLocaleString()}
+                                      {formatCurrency(
+                                        calculateActualAmountOwed(paymentAmount)
+                                      )}
                                     </span>
                                   </div>
                                 )}
@@ -1655,12 +1650,13 @@ const NewSalePage = () => {
                                         Customer Credit Balance:
                                       </span>
                                       <span className="font-bold text-green-900">
-                                        ₦
-                                        {Math.abs(
-                                          calculateActualAmountOwed(
-                                            paymentAmount
+                                        {formatCurrency(
+                                          Math.abs(
+                                            calculateActualAmountOwed(
+                                              paymentAmount
+                                            )
                                           )
-                                        ).toLocaleString()}
+                                        )}
                                       </span>
                                     </div>
                                   )}
@@ -1697,7 +1693,7 @@ const NewSalePage = () => {
                                           : "text-yellow-900"
                                       }`}
                                     >
-                                      ₦{calculateTotal().toLocaleString()}
+                                      {formatCurrency(calculateTotal())}
                                     </span>
                                   </div>
                                   <div className="flex justify-between items-center text-sm">
@@ -1717,7 +1713,7 @@ const NewSalePage = () => {
                                           : "text-yellow-900"
                                       }`}
                                     >
-                                      ₦{paymentAmount.toLocaleString()}
+                                      {formatCurrency(paymentAmount)}
                                     </span>
                                   </div>
                                   {selectedCustomer &&
@@ -1736,12 +1732,12 @@ const NewSalePage = () => {
                                               : "text-red-700"
                                           }`}
                                         >
-                                          {getCustomerCredit() > 0 ? "-" : "+"}₦
-                                          {(
+                                          {getCustomerCredit() > 0 ? "-" : "+"}
+                                          {formatCurrency(
                                             getCustomerCredit() ||
-                                            getCustomerDebt() ||
-                                            0
-                                          ).toLocaleString()}
+                                              getCustomerDebt() ||
+                                              0
+                                          )}
                                         </span>
                                       </div>
                                     )}
@@ -1752,10 +1748,11 @@ const NewSalePage = () => {
                                         Customer Still Owes:
                                       </span>
                                       <span className="font-bold text-yellow-900">
-                                        ₦
-                                        {calculateActualAmountOwed(
-                                          paymentAmount
-                                        ).toLocaleString()}
+                                        {formatCurrency(
+                                          calculateActualAmountOwed(
+                                            paymentAmount
+                                          )
+                                        )}
                                       </span>
                                     </div>
                                   )}
@@ -1765,10 +1762,9 @@ const NewSalePage = () => {
                                         Excess Transfer Amount:
                                       </span>
                                       <span className="font-bold text-blue-900">
-                                        ₦
-                                        {(
+                                        {formatCurrency(
                                           paymentAmount - calculateTotal()
-                                        ).toLocaleString()}
+                                        )}
                                       </span>
                                     </div>
                                   )}
@@ -1780,12 +1776,13 @@ const NewSalePage = () => {
                                           Customer Credit Balance:
                                         </span>
                                         <span className="font-bold text-blue-900">
-                                          ₦
-                                          {Math.abs(
-                                            calculateActualAmountOwed(
-                                              paymentAmount
+                                          {formatCurrency(
+                                            Math.abs(
+                                              calculateActualAmountOwed(
+                                                paymentAmount
+                                              )
                                             )
-                                          ).toLocaleString()}
+                                          )}
                                         </span>
                                       </div>
                                     )}
@@ -1957,7 +1954,7 @@ const NewSalePage = () => {
                                   Payment:
                                 </span>
                                 <span className="font-medium text-purple-900">
-                                  ₦{partPaymentAmount.toLocaleString()}
+                                  {formatCurrency(partPaymentAmount)}
                                 </span>
                               </div>
                               <div className="flex justify-between items-center text-sm">
@@ -1965,8 +1962,7 @@ const NewSalePage = () => {
                                   Customer Still Owes:
                                 </span>
                                 <span className="font-medium text-purple-900">
-                                  ₦
-                                  {calculateRemainingBalance().toLocaleString()}
+                                  {formatCurrency(calculateRemainingBalance())}
                                 </span>
                               </div>
                             </motion.div>
@@ -2014,7 +2010,7 @@ const NewSalePage = () => {
                         animate={{ scale: 1 }}
                         transition={{ duration: 0.2 }}
                       >
-                        ₦{calculateSubtotal().toLocaleString()}
+                        {formatCurrency(calculateSubtotal())}
                       </motion.span>
                     </motion.div>
 
@@ -2031,7 +2027,7 @@ const NewSalePage = () => {
                             Discount (
                             {discountType === "percentage"
                               ? `${discountAmount}%`
-                              : `₦${discountAmount.toLocaleString()}`}
+                              : formatCurrency(discountAmount)}
                             ):
                           </span>
                           <motion.span
@@ -2041,7 +2037,7 @@ const NewSalePage = () => {
                             animate={{ scale: 1 }}
                             transition={{ duration: 0.2 }}
                           >
-                            -₦{calculateDiscount().toLocaleString()}
+                            -{formatCurrency(calculateDiscount())}
                           </motion.span>
                         </motion.div>
                       )}
@@ -2069,7 +2065,7 @@ const NewSalePage = () => {
                           animate={{ scale: 1 }}
                           transition={{ duration: 0.3 }}
                         >
-                          ₦{calculateTotal().toLocaleString()}
+                          {formatCurrency(calculateTotal())}
                         </motion.span>
                       </motion.div>
                     </motion.div>
@@ -2088,7 +2084,7 @@ const NewSalePage = () => {
                               Customer Outstanding Debt:
                             </span>
                             <span className="font-medium text-red-700">
-                              ₦{(getCustomerDebt() || 0).toLocaleString()}
+                              {formatCurrency(getCustomerDebt() || 0)}
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-lg font-bold border-t border-red-200 pt-2 mt-2">
@@ -2102,7 +2098,7 @@ const NewSalePage = () => {
                               animate={{ scale: 1 }}
                               transition={{ duration: 0.2 }}
                             >
-                              ₦{calculateActualAmountOwed(0).toLocaleString()}
+                              {formatCurrency(calculateActualAmountOwed(0))}
                             </motion.span>
                           </div>
 
@@ -2118,10 +2114,9 @@ const NewSalePage = () => {
                                       After Payment - Still Owes:
                                     </span>
                                     <span className="font-medium text-red-700">
-                                      ₦
-                                      {calculateActualAmountOwed(
-                                        paymentAmount
-                                      ).toLocaleString()}
+                                      {formatCurrency(
+                                        calculateActualAmountOwed(paymentAmount)
+                                      )}
                                     </span>
                                   </div>
                                 ) : (
@@ -2130,10 +2125,13 @@ const NewSalePage = () => {
                                       After Payment - Credit Balance:
                                     </span>
                                     <span className="font-medium text-green-700">
-                                      ₦
-                                      {Math.abs(
-                                        calculateActualAmountOwed(paymentAmount)
-                                      ).toLocaleString()}
+                                      {formatCurrency(
+                                        Math.abs(
+                                          calculateActualAmountOwed(
+                                            paymentAmount
+                                          )
+                                        )
+                                      )}
                                     </span>
                                   </div>
                                 )}
@@ -2157,7 +2155,7 @@ const NewSalePage = () => {
                               Customer Available Credit:
                             </span>
                             <span className="font-medium text-green-700">
-                              ₦{(getCustomerCredit() || 0).toLocaleString()}
+                              {formatCurrency(getCustomerCredit() || 0)}
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-lg font-bold border-t border-green-200 pt-2 mt-2">
@@ -2171,11 +2169,9 @@ const NewSalePage = () => {
                               animate={{ scale: 1 }}
                               transition={{ duration: 0.2 }}
                             >
-                              ₦
-                              {Math.max(
-                                0,
-                                calculateActualAmountOwed(0)
-                              ).toLocaleString()}
+                              {formatCurrency(
+                                Math.max(0, calculateActualAmountOwed(0))
+                              )}
                             </motion.span>
                           </div>
 
@@ -2191,10 +2187,9 @@ const NewSalePage = () => {
                                       After Payment - Still Owes:
                                     </span>
                                     <span className="font-medium text-yellow-700">
-                                      ₦
-                                      {calculateActualAmountOwed(
-                                        paymentAmount
-                                      ).toLocaleString()}
+                                      {formatCurrency(
+                                        calculateActualAmountOwed(paymentAmount)
+                                      )}
                                     </span>
                                   </div>
                                 ) : (
@@ -2203,10 +2198,13 @@ const NewSalePage = () => {
                                       After Payment - Credit Balance:
                                     </span>
                                     <span className="font-medium text-green-700">
-                                      ₦
-                                      {Math.abs(
-                                        calculateActualAmountOwed(paymentAmount)
-                                      ).toLocaleString()}
+                                      {formatCurrency(
+                                        Math.abs(
+                                          calculateActualAmountOwed(
+                                            paymentAmount
+                                          )
+                                        )
+                                      )}
                                     </span>
                                   </div>
                                 )}
@@ -2231,8 +2229,7 @@ const NewSalePage = () => {
                                     Remaining Credit After Sale:
                                   </span>
                                   <span className="font-medium text-green-700">
-                                    ₦
-                                    {calculateRemainingCredit().toLocaleString()}
+                                    {formatCurrency(calculateRemainingCredit())}
                                   </span>
                                 </motion.div>
                               )}
@@ -2256,7 +2253,7 @@ const NewSalePage = () => {
                                 Paying Now:
                               </span>
                               <span className="font-medium text-purple-900">
-                                ₦{partPaymentAmount.toLocaleString()}
+                                {formatCurrency(partPaymentAmount)}
                               </span>
                             </div>
                             {selectedCustomer &&
@@ -2275,12 +2272,12 @@ const NewSalePage = () => {
                                         : "text-red-700"
                                     }`}
                                   >
-                                    {getCustomerCredit() > 0 ? "-" : "+"}₦
-                                    {(
+                                    {getCustomerCredit() > 0 ? "-" : "+"}
+                                    {formatCurrency(
                                       getCustomerCredit() ||
-                                      getCustomerDebt() ||
-                                      0
-                                    ).toLocaleString()}
+                                        getCustomerDebt() ||
+                                        0
+                                    )}
                                   </span>
                                 </div>
                               )}
@@ -2291,10 +2288,9 @@ const NewSalePage = () => {
                                   Customer Still Owes:
                                 </span>
                                 <span className="font-medium text-red-600">
-                                  ₦
-                                  {calculateActualAmountOwed(
-                                    partPaymentAmount
-                                  ).toLocaleString()}
+                                  {formatCurrency(
+                                    calculateActualAmountOwed(partPaymentAmount)
+                                  )}
                                 </span>
                               </div>
                             )}
@@ -2305,10 +2301,13 @@ const NewSalePage = () => {
                                   Customer Credit Balance:
                                 </span>
                                 <span className="font-medium text-green-600">
-                                  ₦
-                                  {Math.abs(
-                                    calculateActualAmountOwed(partPaymentAmount)
-                                  ).toLocaleString()}
+                                  {formatCurrency(
+                                    Math.abs(
+                                      calculateActualAmountOwed(
+                                        partPaymentAmount
+                                      )
+                                    )
+                                  )}
                                 </span>
                               </div>
                             )}
@@ -2499,8 +2498,10 @@ const NewSalePage = () => {
                         <span>
                           {paymentMethod === "part_payment" &&
                           partPaymentAmount > 0
-                            ? `Pay ₦${partPaymentAmount.toLocaleString()} Now`
-                            : `Complete Sale - ₦${calculateTotal().toLocaleString()}`}
+                            ? `Pay ${formatCurrency(partPaymentAmount)} Now`
+                            : `Complete Sale - ${formatCurrency(
+                                calculateTotal()
+                              )}`}
                         </span>
                       </motion.div>
                     </motion.button>
@@ -2611,13 +2612,12 @@ const NewSalePage = () => {
                           </div>
                           {customer.balance < 0 && (
                             <div className="text-sm text-red-600">
-                              Debt: ₦
-                              {Math.abs(customer.balance).toLocaleString()}
+                              Debt: {formatCurrency(Math.abs(customer.balance))}
                             </div>
                           )}
                           {customer.balance > 0 && (
                             <div className="text-sm text-green-600">
-                              Credit: ₦{customer.balance.toLocaleString()}
+                              Credit: {formatCurrency(customer.balance)}
                             </div>
                           )}
                           <div className="text-xs text-gray-500 capitalize">
@@ -2732,8 +2732,12 @@ const NewSalePage = () => {
                 transition={{ delay: 0.5 }}
               >
                 {paymentMethod === "part_payment" && partPaymentAmount > 0
-                  ? `Part payment of ₦${partPaymentAmount.toLocaleString()} via ${partPaymentMethod} processed successfully!`
-                  : `Transaction processed successfully for ₦${lastCompletedTransactionAmount.toLocaleString()}`}
+                  ? `Part payment of ${formatCurrency(
+                      partPaymentAmount
+                    )} via ${partPaymentMethod} processed successfully!`
+                  : `Transaction processed successfully for ${formatCurrency(
+                      lastCompletedTransactionAmount
+                    )}`}
               </motion.p>
 
               <AnimatePresence>
@@ -2746,8 +2750,8 @@ const NewSalePage = () => {
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ delay: 0.6 }}
                     >
-                      Remaining balance: ₦
-                      {calculateRemainingBalance().toLocaleString()}
+                      Remaining balance:{" "}
+                      {formatCurrency(calculateRemainingBalance())}
                     </motion.p>
                   )}
 

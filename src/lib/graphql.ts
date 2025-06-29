@@ -422,7 +422,7 @@ export const SALES_QUERY = `
 `;
 
 export const SALE_BY_ID_QUERY = `
-  query Sale($id: ID!) {
+  query Sale($id: $ID!) {
     sale(id: $id) {
       id
       transactionId
@@ -492,13 +492,33 @@ export const RECENT_SALES_QUERY = `
   }
 `;
 
-export const CUSTOMER_CREDIT_BALANCE_QUERY = `
-  query CustomerCreditBalance($customerId: ID!) {
-    customerCreditBalance(customerId: $customerId)
+// Customer Credit mutations
+export const ADD_CUSTOMER_CREDIT_MUTATION = `
+  mutation AddCustomerCredit($customerId: ID!, $amount: Float!) {
+    addCustomerCredit(customerId: $customerId, amount: $amount) {
+      success
+      errors
+      balance
+    }
   }
 `;
 
-// GraphQL Mutations
+export const CUSTOMER_CREDIT_BALANCE_QUERY = `
+  query CustomerCreditBalance($customerId: ID!) {
+    customerCreditBalance(customerId: $customerId) {
+      balance
+      creditLimit
+      transactions {
+        id
+        amount
+        transactionType
+        createdAt
+      }
+    }
+  }
+`;
+
+// Sales mutations
 export const CREATE_SALE_MUTATION = `
   mutation CreateSale($input: CreateSaleInput!) {
     createSale(input: $input) {
@@ -542,8 +562,8 @@ export const CREATE_SALE_MUTATION = `
 `;
 
 export const ADD_PAYMENT_MUTATION = `
-  mutation AddPayment($saleId: ID!, $method: PaymentMethodEnum!, $amount: Decimal!) {
-    addPayment(saleId: $saleId, method: $method, amount: $amount) {
+  mutation AddPayment($saleId: ID!, $input: PaymentInput!) {
+    addPayment(saleId: $saleId, input: $input) {
       success
       errors
       payment {
@@ -552,26 +572,37 @@ export const ADD_PAYMENT_MUTATION = `
         amount
         createdAt
       }
-      sale {
-        id
-        amountDue
-      }
     }
   }
 `;
 
-export const ADD_CUSTOMER_CREDIT_MUTATION = `
-  mutation AddCustomerCredit($customerId: ID!, $amount: Decimal!, $description: String) {
-    addCustomerCredit(customerId: $customerId, amount: $amount, description: $description) {
-      success
-      errors
-      creditTransaction {
-        id
-        amount
-        balanceAfter
-        description
-        createdAt
-      }
+// Fallback queries for individual metrics if dashboard query is not available
+export const QUICK_DASHBOARD_METRICS = `
+  query QuickDashboardMetrics($dateFrom: Date, $dateTo: Date) {
+    salesStats(dateFrom: $dateFrom, dateTo: $dateTo) {
+      totalSales
+      totalTransactions
+      retailSales
+      wholesaleSales
+      cashSales
+      creditSales
+    }
+    
+    customerStats {
+      totalCustomers
+      totalOutstandingBalance
+    }
+    
+    latestStockDeliveries(limit: 1) {
+      id
+      deliveredQuantity
+      cumulativeStock
+      remainingStock
+      soldStock
+      price
+      stockUtilizationPercentage
+      createdAt
+      supplier
     }
   }
 `;

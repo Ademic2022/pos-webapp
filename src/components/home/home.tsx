@@ -11,6 +11,8 @@ import {
   FileText,
   Bell,
   CheckCircle,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,22 +20,69 @@ import { cardsData } from "@/data/featureCardData";
 import StockDisplay from "@/utils/stock";
 import CalculatorModal from "@/utils/calculator";
 import { getFillDetails, getStockStatus } from "@/utils/utils";
+import { formatCurrency, formatNumber } from "@/utils/formatters";
 import { colorMap } from "@/data/constants";
-import { dashboardStat } from "@/data/stock";
+import { dashboardStat } from "@/data/stock"; // Fallback for loading state
 import ProfileDropdown from "@/components/ui/ProfileDropdown";
 import { StatsCard } from "../cards/statCard";
+import { useDashboardData } from "@/hooks/useDashboardData";
+import { useStockStatus } from "@/hooks/useStockStatus";
 
 const Home = () => {
   const [showCalculator, setShowCalculator] = React.useState(false);
+
+  // Live data hooks
+  const {
+    dashboardStats,
+    isLoading: isDashboardLoading,
+    error: dashboardError,
+    refetch: refetchDashboard,
+    lastUpdated,
+  } = useDashboardData();
+
+  const {
+    stockLevel: liveStockStatus,
+    totalAvailableStock: liveTotalStock,
+    isLoading: isStockLoading,
+    error: stockError,
+    refetch: refetchStock,
+  } = useStockStatus();
+
+  // Use live data or fallback to static data during loading
+  const currentStats = dashboardStats || dashboardStat;
+  const isLoading = isDashboardLoading || isStockLoading;
+
+  // Extract stock delivery data for getFillDetails - map live data to expected format
+  const stockDeliveryData = currentStats.stockData
+    ? {
+        cumulativeStock: currentStats.stockData.totalAvailableStock,
+        remainingStock: currentStats.stockData.availableStock,
+        soldStock: currentStats.stockData.soldStock,
+        stockUtilizationPercentage: Math.round(
+          (currentStats.stockData.soldStock /
+            (currentStats.stockData.totalAvailableStock || 1)) *
+            100
+        ),
+      }
+    : null;
+
   const {
     totalDrums,
     totalKegs,
     totalAvailableStock,
     remainingKegs,
     remainingLitres,
-  } = getFillDetails();
+  } = getFillDetails(stockDeliveryData);
 
-  const litresStatus = getStockStatus(totalAvailableStock, "litres");
+  // Use live stock status or calculate from available data
+  const litresStatus =
+    !isStockLoading && liveTotalStock > 0
+      ? liveStockStatus
+      : getStockStatus(totalAvailableStock, "litres");
+
+  const handleRefreshData = async () => {
+    await Promise.all([refetchDashboard(), refetchStock()]);
+  };
 
   return (
     <motion.div
@@ -60,8 +109,45 @@ const Home = () => {
             <nav className="hidden sm:flex items-center space-x-4 md:space-x-8">
               <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600">
                 <Clock className="w-4 h-4" />
-                <span>Last Login: Today 9:30 AM</span>
+                <span>
+                  Last Updated:{" "}
+                  {lastUpdated
+                    ? lastUpdated.toLocaleTimeString()
+                    : "Loading..."}
+                </span>
               </div>
+
+              {/* Refresh Button */}
+              <motion.button
+                onClick={handleRefreshData}
+                disabled={isLoading}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  isLoading
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-orange-100 text-orange-700 hover:bg-orange-200 hover:scale-105"
+                }`}
+                whileHover={!isLoading ? { scale: 1.05 } : {}}
+                whileTap={!isLoading ? { scale: 0.95 } : {}}
+              >
+                <RefreshCw
+                  className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+                />
+                <span>{isLoading ? "Refreshing..." : "Refresh Data"}</span>
+              </motion.button>
+
+              {/* Error indicator */}
+              {(dashboardError || stockError) && (
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="flex items-center space-x-1 px-2 py-1 bg-red-100 text-red-700 rounded-lg text-sm"
+                  title={dashboardError || stockError || "Error occurred"}
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  <span>Error</span>
+                </motion.div>
+              )}
+
               <div className="flex items-center space-x-2">
                 <motion.div
                   animate={{ rotate: [0, 15, -15, 0] }}
@@ -97,14 +183,18 @@ const Home = () => {
             </p>
           </div>
 
-          {/* Quick Stats - Optimized with CSS hover */}
+          {/* Quick Stats - Using Live Data */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
             <div className="transform transition-all duration-150 hover:-translate-y-1 hover:scale-105">
               <StatsCard
                 title="Today's Sales"
-                value={`₦${dashboardStat.totalSales.toLocaleString()}`}
+                value={
+                  isLoading
+                    ? "Loading..."
+                    : formatCurrency(currentStats.totalSales)
+                }
                 change={{
-                  value: "+12% from yesterday",
+                  value: isLoading ? "..." : "+12% from yesterday",
                   textColor: "text-green-600",
                   icon: TrendingUp,
                 }}
@@ -117,9 +207,21 @@ const Home = () => {
             <div className="transform transition-all duration-150 hover:-translate-y-1 hover:scale-105">
               <StatsCard
                 title="Transactions"
-                value={dashboardStat.transaction.totalTransactionCount.toLocaleString()}
+                value={
+                  isLoading
+                    ? "Loading..."
+                    : formatNumber(
+                        currentStats.transaction.totalTransactionCount
+                      )
+                }
                 change={{
-                  value: `${dashboardStat.transaction.wholeSales.toLocaleString()} wholesale, ${dashboardStat.transaction.retails.toLocaleString()} retail`,
+                  value: isLoading
+                    ? "..."
+                    : `${formatNumber(
+                        currentStats.transaction.wholeSales
+                      )} wholesale, ${formatNumber(
+                        currentStats.transaction.retails
+                      )} retail`,
                   textColor: "text-blue-600",
                 }}
                 icon={ShoppingCart}
@@ -131,9 +233,17 @@ const Home = () => {
             <div className="transform transition-all duration-150 hover:-translate-y-1 hover:scale-105">
               <StatsCard
                 title="Outstanding Debt"
-                value={`₦${dashboardStat.outstandingDebts.debtValue.toLocaleString()}`}
+                value={
+                  isLoading
+                    ? "Loading..."
+                    : formatCurrency(currentStats.outstandingDebts.debtValue)
+                }
                 change={{
-                  value: `${dashboardStat.outstandingDebts.customerCount.toLocaleString()} customers`,
+                  value: isLoading
+                    ? "..."
+                    : `${formatNumber(
+                        currentStats.outstandingDebts.customerCount
+                      )} customers`,
                   textColor: "text-orange-600",
                 }}
                 icon={FileText}
@@ -147,12 +257,16 @@ const Home = () => {
                 title="Stock Alert"
                 titleColor={colorMap[litresStatus].textColor}
                 cardBg={colorMap[litresStatus].bg}
-                value={`${totalAvailableStock} L`}
+                value={
+                  isLoading
+                    ? "Loading..."
+                    : `${formatNumber(totalAvailableStock)} L`
+                }
                 icon={Bell}
                 iconBg={colorMap[litresStatus].iconBg}
                 iconColor={colorMap[litresStatus].iconColor}
                 change={{
-                  value: colorMap[litresStatus].statusText,
+                  value: isLoading ? "..." : colorMap[litresStatus].statusText,
                   textColor: colorMap[litresStatus].textColor,
                 }}
               />
