@@ -2,7 +2,7 @@ import { STOCK_STATUSES } from "@/data/constants";
 import { DeliveryHistory } from "@/interfaces/interface";
 
 export type SaleType = "retail" | "wholesale";
-export type PaymentMethod = "cash" | "credit" | "transfer" | "part_payment";
+export type PaymentMethod = "cash" | "credit" | "transfer";
 export type CustomerFilter =
   | "all"
   | "wholesale"
@@ -62,7 +62,7 @@ export type Returns = {
 export type DashboardStats = {
   totalSales: number;
   transaction: Transactions;
-  outstandingDebts: Debt;
+  debt: Debt;
   returns: Returns;
   stockData: DeliveryHistory;
   totalLitres: number;

@@ -199,7 +199,10 @@ export const GET_CUSTOMER_STATS = `
       inactiveCustomers
       blockedCustomers
       totalCreditIssued
-      totalOutstandingBalance
+      debt {
+        value
+        count
+      }
     }
   }
 `;
@@ -294,6 +297,25 @@ export const PRODUCT_INVENTORY_QUERY = `
   }
 `;
 
+
+export const PRODUCT_INVENTORY = `
+  query ProductInventory {
+    products {
+      edges {
+        node {
+          id
+          name
+          price
+          saleType
+          stock
+          unit
+          updatedAt
+        }
+      }
+    }
+  }
+`;
+
 export const ADD_STOCK_DELIVERY_MUTATION = `
   mutation AddStockDelivery($deliveredQuantity: Float!, $supplier: String!, $price: Decimal!) {
     addStockDelivery(
@@ -342,10 +364,19 @@ export const SALES_QUERY = `
     $after: String,
     $saleType: String,
     $customerName: String,
-    $totalMin: Float,
-    $totalMax: Float,
+    $totalMin: Decimal,
+    $totalMax: Decimal,
     $dateFrom: Date,
-    $dateTo: Date
+    $dateTo: Date,
+    $hasAmountDue: Boolean,
+    $hasDiscount: Boolean,
+    $amountDue_Gte: Decimal,
+    $amountDue_Lte: Decimal,
+    $discount_Gte: Decimal,
+    $discount_Lte: Decimal,
+    $subtotal_Gte: Decimal,
+    $subtotal_Lte: Decimal,
+    $search: String
   ) {
     sales(
       first: $first,
@@ -354,8 +385,17 @@ export const SALES_QUERY = `
       customerName: $customerName,
       totalMin: $totalMin,
       totalMax: $totalMax,
-      createdAt_Date_Gte: $dateFrom,
-      createdAt_Date_Lte: $dateTo
+      createdAtDateGte: $dateFrom,
+      createdAtDateLte: $dateTo,
+      hasAmountDue: $hasAmountDue,
+      hasDiscount: $hasDiscount,
+      amountDue_Gte: $amountDue_Gte,
+      amountDue_Lte: $amountDue_Lte,
+      discount_Gte: $discount_Gte,
+      discount_Lte: $discount_Lte,
+      subtotal_Gte: $subtotal_Gte,
+      subtotal_Lte: $subtotal_Lte,
+      search: $search
     ) {
       edges {
         node {
@@ -370,7 +410,6 @@ export const SALES_QUERY = `
           subtotal
           discount
           total
-          creditApplied
           amountDue
           createdAt
           updatedAt
@@ -418,7 +457,6 @@ export const SALE_BY_ID_QUERY = `
       subtotal
       discount
       total
-      creditApplied
       amountDue
       createdAt
       updatedAt
@@ -475,35 +513,59 @@ export const RECENT_SALES_QUERY = `
   }
 `;
 
-export const CUSTOMER_CREDIT_BALANCE_QUERY = `
-  query CustomerCreditBalance($customerId: ID!) {
-    customerCreditBalance(customerId: $customerId)
+// Customer Credit mutations
+export const ADD_CUSTOMER_CREDIT_MUTATION = `
+  mutation AddCustomerCredit($customerId: ID!, $amount: Float!) {
+    addCustomerCredit(customerId: $customerId, amount: $amount) {
+      success
+      errors
+      balance
+    }
   }
 `;
 
-// GraphQL Mutations
+export const CUSTOMER_CREDIT_BALANCE_QUERY = `
+  query CustomerCreditBalance($customerId: ID!) {
+    customerCreditBalance(customerId: $customerId) {
+      balance
+      creditLimit
+      transactions {
+        id
+        amount
+        transactionType
+        createdAt
+      }
+    }
+  }
+`;
+
+// Sales mutations
 export const CREATE_SALE_MUTATION = `
-  mutation CreateSale($saleData: CreateSaleInput!, $payments: [PaymentInput!]) {
-    createSale(saleData: $saleData, payments: $payments) {
+  mutation CreateSale($input: CreateSaleInput!) {
+    createSale(input: $input) {
       success
+      message
       errors
       sale {
         id
         transactionId
         customer {
+          id
           name
+          phone
         }
         saleType
         subtotal
         discount
         total
-        creditApplied
         amountDue
         createdAt
         items {
           id
           product {
+            id
             name
+            unit
           }
           quantity
           unitPrice
@@ -513,6 +575,7 @@ export const CREATE_SALE_MUTATION = `
           id
           method
           amount
+          createdAt
         }
       }
     }
@@ -520,8 +583,8 @@ export const CREATE_SALE_MUTATION = `
 `;
 
 export const ADD_PAYMENT_MUTATION = `
-  mutation AddPayment($saleId: ID!, $method: PaymentMethodEnum!, $amount: Decimal!) {
-    addPayment(saleId: $saleId, method: $method, amount: $amount) {
+  mutation AddPayment($saleId: ID!, $input: PaymentInput!) {
+    addPayment(saleId: $saleId, input: $input) {
       success
       errors
       payment {
@@ -530,26 +593,37 @@ export const ADD_PAYMENT_MUTATION = `
         amount
         createdAt
       }
-      sale {
-        id
-        amountDue
-      }
     }
   }
 `;
 
-export const ADD_CUSTOMER_CREDIT_MUTATION = `
-  mutation AddCustomerCredit($customerId: ID!, $amount: Decimal!, $description: String) {
-    addCustomerCredit(customerId: $customerId, amount: $amount, description: $description) {
-      success
-      errors
-      creditTransaction {
-        id
-        amount
-        balanceAfter
-        description
-        createdAt
-      }
+// Fallback queries for individual metrics if dashboard query is not available
+export const QUICK_DASHBOARD_METRICS = `
+  query QuickDashboardMetrics($dateFrom: Date, $dateTo: Date) {
+    salesStats(dateFrom: $dateFrom, dateTo: $dateTo) {
+      totalSales
+      totalTransactions
+      retailSales
+      wholesaleSales
+      cashSales
+      creditSales
+    }
+    
+    customerStats {
+      totalCustomers
+      totalOutstandingBalance
+    }
+    
+    latestStockDeliveries(limit: 1) {
+      id
+      deliveredQuantity
+      cumulativeStock
+      remainingStock
+      soldStock
+      price
+      stockUtilizationPercentage
+      createdAt
+      supplier
     }
   }
 `;

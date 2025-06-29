@@ -1,11 +1,10 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   ShoppingCart,
   Package,
   Users,
-  Calculator,
   Plus,
   Minus,
   ArrowLeft,
@@ -20,19 +19,72 @@ import {
   UserPlus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Customer, Product, CartItem } from "@/interfaces/interface";
 import { SaleType, PaymentMethod } from "@/types/types";
-import { customers } from "@/data/customers";
-import { products } from "@/data/sales";
-import { checkStockAvailability } from "@/utils/stockManager";
+import { useCustomers, useProducts, useSales } from "@/hooks/useSales";
+import { checkStockAvailability } from "@/utils/stockUtils";
+import { safeExtractId } from "@/utils/graphqlUtils";
+import { formatCurrency } from "@/utils/formatters";
 import { KEG_CAPACITY } from "@/data/constants";
-import { dashboardStat } from "@/data/stock";
 import TransactionId from "../TransactionId";
 import AddCustomerModal from "../modals/addCustomerModal";
+
+// Import types from hooks instead of interfaces
+import type {
+  Customer,
+  Product,
+  CartItem,
+  CreateCustomerInput,
+} from "@/hooks/useSales";
+import { Customer as InterfaceCustomer } from "@/interfaces/interface";
+
+// Type converters for compatibility between frontend and backend types
+const convertCustomerInputToModal = (
+  input: CreateCustomerInput
+): Partial<InterfaceCustomer> => {
+  return {
+    name: input.name,
+    phone: input.phone,
+    email: input.email,
+    address: input.address,
+    type: input.type.toLowerCase() as "wholesale" | "retail",
+    creditLimit: input.creditLimit,
+    notes: input.notes,
+  };
+};
+
+const convertModalToCustomerInput = (
+  modal: Partial<InterfaceCustomer>
+): CreateCustomerInput => {
+  return {
+    name: modal.name || "",
+    phone: modal.phone || "",
+    email: modal.email,
+    address: modal.address,
+    type: (modal.type?.toUpperCase() || "RETAIL") as "RETAIL" | "WHOLESALE",
+    creditLimit: modal.creditLimit,
+    notes: modal.notes,
+  };
+};
 
 const NewSalePage = () => {
   const router = useRouter();
 
+  // Live data hooks
+  const {
+    customers,
+    isLoading: customersLoading,
+    createCustomer,
+    refetch: refetchCustomers,
+  } = useCustomers();
+  const {
+    products,
+    totalAvailableStock,
+    isLoading: productsLoading,
+    refetch: refetchProducts,
+  } = useProducts();
+  const { createSale, isLoading: salesLoading } = useSales();
+
+  // Component state
   const [saleType, setSaleType] = useState<SaleType>("retail");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null
@@ -46,40 +98,45 @@ const NewSalePage = () => {
   const [discountType, setDiscountType] = useState<"amount" | "percentage">(
     "amount"
   );
-  const [partPaymentAmount, setPartPaymentAmount] = useState<number>(0);
-  const [partPaymentMethod, setPartPaymentMethod] = useState<
-    "cash" | "transfer"
-  >("cash");
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [showDiscountInput, setShowDiscountInput] = useState<boolean>(false);
   const [showAddCustomerModal, setShowAddCustomerModal] =
     useState<boolean>(false);
-  const [newCustomer, setNewCustomer] = useState<Partial<Customer>>({
+  const [newCustomer, setNewCustomer] = useState<CreateCustomerInput>({
     name: "",
     phone: "",
     email: "",
     address: "",
-    type: "retail",
+    type: "RETAIL",
     creditLimit: 5000,
     notes: "",
   });
   const [customerValidationError, setCustomerValidationError] =
     useState<string>("");
+  const [isRefreshingData, setIsRefreshingData] = useState<boolean>(false);
+  const [dataRefreshComplete, setDataRefreshComplete] =
+    useState<boolean>(false);
+  const [lastCompletedTransactionAmount, setLastCompletedTransactionAmount] =
+    useState<number>(0);
 
+  // Filter customers based on search term
   const filteredCustomers = customers.filter(
     (customer) =>
       customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.phone.includes(searchTerm)
   );
 
-  const totalStockLiters = dashboardStat.stockData.totalAvailableStock;
+  // Get products based on sale type
+  const currentProducts =
+    saleType === "retail" ? products.retail : products.wholesale;
 
   const addToCart = (product: Product) => {
     const unitKegs = parseInt(product.unit);
 
-    // Check stock availability for this product
+    // Check stock availability for this product using live data
     const { isAvailable, remainingStock } = checkStockAvailability(
       unitKegs,
-      totalStockLiters,
+      totalAvailableStock,
       cartItems
     );
 
@@ -131,8 +188,8 @@ const NewSalePage = () => {
     const cartItem = cartItems.find((item) => item.id === productId);
     if (!cartItem) return;
 
-    // Find the original product data
-    const product = products[saleType].find((p) => p.id === productId);
+    // Find the original product data from live products
+    const product = currentProducts.find((p) => p.id === productId);
     if (!product) return;
 
     // If increasing quantity, check stock availability
@@ -141,7 +198,7 @@ const NewSalePage = () => {
 
       const { remainingStock } = checkStockAvailability(
         unitKegs,
-        totalStockLiters,
+        totalAvailableStock,
         cartItems
       );
 
@@ -176,48 +233,41 @@ const NewSalePage = () => {
     return Math.max(0, subtotal - discount);
   };
 
-  const calculateRemainingBalance = (): number => {
-    const totalToPay =
-      selectedCustomer && (getCustomerDebt() > 0 || getCustomerCredit() > 0)
-        ? calculateGrandTotal()
-        : calculateTotal();
-
-    if (paymentMethod === "part_payment") {
-      return Math.max(0, totalToPay - partPaymentAmount);
-    }
-    return 0;
-  };
-
   const getCustomerDebt = (): number => {
     if (!selectedCustomer || selectedCustomer.balance >= 0) {
       return 0;
     }
-    return Math.abs(selectedCustomer.balance);
+    // Ensure the balance is a valid number
+    const balance =
+      typeof selectedCustomer.balance === "number"
+        ? selectedCustomer.balance
+        : parseFloat(selectedCustomer.balance) || 0;
+    return balance < 0 ? Math.abs(balance) : 0;
   };
 
   const getCustomerCredit = (): number => {
     if (!selectedCustomer || selectedCustomer.balance <= 0) {
       return 0;
     }
-    return selectedCustomer.balance;
+    // Ensure the balance is a valid number
+    const balance =
+      typeof selectedCustomer.balance === "number"
+        ? selectedCustomer.balance
+        : parseFloat(selectedCustomer.balance) || 0;
+    return balance > 0 ? balance : 0;
   };
 
-  const calculateGrandTotal = (): number => {
-    const currentTotal = calculateTotal();
-    const customerDebt = getCustomerDebt();
-    const customerCredit = getCustomerCredit();
+  // Calculate what customer actually owes after considering their existing credit/debt
+  const calculateActualAmountOwed = (paymentReceived: number): number => {
+    const currentPurchase = calculateTotal(); // Just the current purchase amount
+    const customerCredit = getCustomerCredit(); // Money we owe customer
+    const customerDebt = getCustomerDebt(); // Money customer owes us
 
-    // If customer has debt, add it to current total
-    if (customerDebt > 0) {
-      return currentTotal + customerDebt;
-    }
+    // Total amount due = current purchase + existing debt - existing credit
+    const totalAmountDue = currentPurchase + customerDebt - customerCredit;
 
-    // If customer has credit, deduct it from current total
-    if (customerCredit > 0) {
-      return Math.max(0, currentTotal - customerCredit);
-    }
-
-    return currentTotal;
+    // Amount still owed = total due - payment received
+    return totalAmountDue - paymentReceived;
   };
 
   const calculateRemainingCredit = (): number => {
@@ -236,25 +286,194 @@ const NewSalePage = () => {
     return 0;
   };
 
-  const handleSaleComplete = () => {
-    setShowConfirmation(true);
-    // Here you would normally save the transaction to your database
-    setTimeout(() => {
-      setShowConfirmation(false);
-      // Reset form
-      setCartItems([]);
-      setSelectedCustomer(null);
-      setPaymentMethod("cash");
-      setDiscountAmount(0);
-      setDiscountType("amount");
-      setPartPaymentAmount(0);
-      setPartPaymentMethod("cash");
-      setShowDiscountInput(false);
-      setCustomerValidationError("");
-    }, 3000);
+  // Debug: Log data state changes
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      console.log("Products loaded:", {
+        retail: products.retail.length,
+        wholesale: products.wholesale.length,
+        currentSaleType: saleType,
+        totalAvailableStock,
+        loading: {
+          customersLoading,
+          productsLoading,
+          salesLoading,
+        },
+      });
+    }
+  }, [
+    products,
+    saleType,
+    totalAvailableStock,
+    customersLoading,
+    productsLoading,
+    salesLoading,
+  ]);
+
+  // Sale completion function
+  const handleSaleComplete = async () => {
+    if (!selectedCustomer) {
+      setCustomerValidationError(
+        "Please select a customer to complete the sale"
+      );
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      setCustomerValidationError("Please add items to the cart");
+      return;
+    }
+
+    // Validate payment amounts based on payment method
+    // Check if customer has enough credit to cover the purchase
+    const currentTotal = calculateTotal();
+    const customerCredit = getCustomerCredit();
+    const customerDebt = getCustomerDebt();
+    const actualAmountOwed = currentTotal + customerDebt - customerCredit;
+
+    // Only require payment input if customer doesn't have enough credit to cover the purchase
+    const needsPayment = actualAmountOwed > 0;
+
+    if (
+      (paymentMethod === "cash" || paymentMethod === "transfer") &&
+      needsPayment &&
+      paymentAmount <= 0
+    ) {
+      setCustomerValidationError(
+        `Please enter the amount ${
+          paymentMethod === "cash" ? "received" : "paid"
+        }`
+      );
+      return;
+    }
+
+    try {
+      const subtotal = calculateSubtotal();
+      const discount = calculateDiscount();
+      const total = subtotal - discount;
+
+      // Determine the actual payment amount based on method and customer credit
+      let actualPaymentAmount = total;
+      if (paymentMethod === "cash" || paymentMethod === "transfer") {
+        // Always send the payment amount entered by user, even if customer has enough credit
+        // This allows for additional payments to be added to customer credit balance
+        actualPaymentAmount = paymentAmount;
+      } else if (paymentMethod === "credit") {
+        actualPaymentAmount = 0; // Credit means no immediate payment
+      }
+
+      // Prepare sale data - decode GraphQL IDs to get numeric database IDs
+      const decodedCustomerId = safeExtractId(selectedCustomer.id);
+
+      const saleData = {
+        customerId: decodedCustomerId,
+        saleType: saleType.toUpperCase() as "RETAIL" | "WHOLESALE",
+        items: cartItems.map((item) => ({
+          productId: safeExtractId(item.id),
+          quantity: item.quantity,
+          unitPrice: item.price,
+        })),
+        payments: [
+          {
+            method: paymentMethod.toUpperCase() as
+              | "CASH"
+              | "TRANSFER"
+              | "CREDIT",
+            amount: actualPaymentAmount,
+          },
+        ],
+        discount: discount,
+      };
+
+      console.log("Creating sale with data:", saleData);
+      console.log("Payment details:", {
+        method: paymentMethod,
+        total: total,
+        actualPaymentAmount: actualPaymentAmount,
+        paymentAmount: paymentAmount,
+        customerCredit: customerCredit,
+        customerDebt: customerDebt,
+        actualAmountOwed: actualAmountOwed,
+        needsPayment: needsPayment,
+        isAdditionalPayment: !needsPayment && actualPaymentAmount > 0,
+      });
+      console.log("Original customer ID:", selectedCustomer.id);
+      console.log("Decoded customer ID:", decodedCustomerId);
+      console.log(
+        "Cart items with IDs:",
+        cartItems.map((item) => ({
+          originalId: item.id,
+          decodedId: safeExtractId(item.id),
+          name: item.name,
+        }))
+      );
+
+      // Create the sale
+      const result = await createSale(saleData);
+
+      if (result.success) {
+        console.log("Sale completed successfully!");
+
+        // Store the transaction amount before clearing the cart
+        const completedTransactionAmount = calculateTotal();
+        setLastCompletedTransactionAmount(completedTransactionAmount);
+
+        // Refresh all data to get updated information for next transaction
+        console.log("Refreshing data after successful sale...");
+        setIsRefreshingData(true);
+        setDataRefreshComplete(false);
+        try {
+          await Promise.all([
+            refetchCustomers(), // Refresh customer data (updated balances)
+            refetchProducts(), // Refresh product data (updated stock levels)
+          ]);
+          console.log("Data refresh completed successfully");
+          setDataRefreshComplete(true);
+
+          // Brief delay to show the completion status
+          setTimeout(() => {
+            setDataRefreshComplete(false);
+          }, 2000);
+        } catch (refreshError) {
+          console.error(
+            "Warning: Failed to refresh data after sale:",
+            refreshError
+          );
+          // Don't fail the sale completion if refresh fails
+        } finally {
+          setIsRefreshingData(false);
+        }
+
+        // Reset the form
+        setCartItems([]);
+        setSelectedCustomer(null);
+        setDiscountAmount(0);
+        setPaymentAmount(0);
+        setShowDiscountInput(false);
+        setCustomerValidationError("");
+        setIsRefreshingData(false);
+        setDataRefreshComplete(false);
+        setShowConfirmation(true);
+
+        // Auto-hide confirmation after 5 seconds to account for data refresh time
+        setTimeout(() => {
+          setShowConfirmation(false);
+          // Reset the stored amount when hiding confirmation
+          setLastCompletedTransactionAmount(0);
+        }, 5000);
+      } else {
+        console.error("Sale failed:", result.errors);
+        setCustomerValidationError(
+          result.errors?.[0] || "Failed to create sale"
+        );
+      }
+    } catch (error) {
+      console.error("Error completing sale:", error);
+      setCustomerValidationError("An error occurred while processing the sale");
+    }
   };
 
-  const handleAddNewCustomer = () => {
+  const handleAddNewCustomer = async () => {
     // Clear previous validation errors
     setCustomerValidationError("");
 
@@ -274,50 +493,43 @@ const NewSalePage = () => {
       return;
     }
 
-    // Generate a new customer ID (in a real app, this would come from the backend)
-    const newId = `CUST_${Date.now()}_${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
+    try {
+      // Create customer using backend hook
+      const result = await createCustomer(newCustomer);
 
-    const customerToAdd: Customer = {
-      id: newId,
-      name: newCustomer.name,
-      phone: newCustomer.phone,
-      email: newCustomer.email || "",
-      address: newCustomer.address || "",
-      type: (newCustomer.type as "wholesale" | "retail") || "retail",
-      balance: 0,
-      creditLimit: newCustomer.creditLimit || 5000,
-      totalPurchases: 0,
-      lastPurchase: new Date().toISOString().split("T")[0],
-      joinDate: new Date().toISOString().split("T")[0],
-      status: "active" as const,
-      notes: newCustomer.notes || "",
-    };
+      if (result.success && result.customer) {
+        // Select the new customer and close modals
+        setSelectedCustomer(result.customer);
+        setShowAddCustomerModal(false);
+        setShowCustomerModal(false);
 
-    // In a real app, you would add this to your database
-    // For now, we'll just add it to the local customers array
-    customers.push(customerToAdd);
+        // Auto-set sale type based on customer type
+        setSaleType(
+          result.customer.type === "WHOLESALE" ? "wholesale" : "retail"
+        );
 
-    // Select the new customer and close modals
-    setSelectedCustomer(customerToAdd);
-    setShowAddCustomerModal(false);
-    setShowCustomerModal(false);
-
-    // Auto-set sale type based on customer type
-    setSaleType(customerToAdd.type === "wholesale" ? "wholesale" : "retail");
-
-    // Reset the form
-    setNewCustomer({
-      name: "",
-      phone: "",
-      email: "",
-      address: "",
-      type: "retail",
-      creditLimit: 5000,
-      notes: "",
-    });
-    setCustomerValidationError("");
+        // Reset the form
+        setNewCustomer({
+          name: "",
+          phone: "",
+          email: "",
+          address: "",
+          type: "RETAIL",
+          creditLimit: 5000,
+          notes: "",
+        });
+        setCustomerValidationError("");
+      } else {
+        setCustomerValidationError(
+          result.errors?.[0] || "Failed to create customer"
+        );
+      }
+    } catch (error) {
+      console.error("Error creating customer:", error);
+      setCustomerValidationError(
+        "An error occurred while creating the customer"
+      );
+    }
   };
 
   // Calculate remaining stock for display
@@ -327,7 +539,7 @@ const NewSalePage = () => {
       return total + itemLiters;
     }, 0);
 
-    return totalStockLiters - usedLiters;
+    return totalAvailableStock - usedLiters;
   };
 
   const remainingStock = calculateRemainingStock();
@@ -518,10 +730,9 @@ const NewSalePage = () => {
                                 Outstanding Debt
                               </div>
                               <div className="text-lg font-bold text-red-700">
-                                ₦
-                                {Math.abs(
-                                  selectedCustomer.balance
-                                ).toLocaleString()}
+                                {formatCurrency(
+                                  Math.abs(selectedCustomer.balance)
+                                )}
                               </div>
                               <div className="text-sm text-red-600">
                                 This will be added to the current sale total
@@ -547,7 +758,7 @@ const NewSalePage = () => {
                                 Available Credit
                               </div>
                               <div className="text-lg font-bold text-green-700">
-                                ₦{selectedCustomer.balance.toLocaleString()}
+                                {formatCurrency(selectedCustomer.balance)}
                               </div>
                               <div className="text-sm text-green-600">
                                 This will be deducted from the current sale
@@ -605,7 +816,7 @@ const NewSalePage = () => {
               </motion.h2>
 
               <AnimatePresence mode="wait">
-                {products[saleType] && products[saleType].length > 0 ? (
+                {currentProducts && currentProducts.length > 0 ? (
                   <motion.div
                     key={`products-${saleType}`}
                     className="grid md:grid-cols-2 gap-4"
@@ -614,14 +825,14 @@ const NewSalePage = () => {
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.4 }}
                   >
-                    {products[saleType].map((product, index) => {
+                    {currentProducts.map((product, index) => {
                       const unitKegs = parseInt(product.unit);
 
                       // Check stock availability for this product
                       const { isAvailable, remainingStock } =
                         checkStockAvailability(
                           unitKegs,
-                          totalStockLiters,
+                          totalAvailableStock,
                           cartItems
                         );
 
@@ -657,7 +868,7 @@ const NewSalePage = () => {
                                 {product.name}
                               </h3>
                               <p className="text-sm text-gray-600">
-                                ₦{product.price.toLocaleString()} per{" "}
+                                {formatCurrency(product.price)} per{" "}
                                 {product.unit} keg{unitKegs !== 1 ? "s" : ""}
                               </p>
                             </div>
@@ -720,8 +931,21 @@ const NewSalePage = () => {
                     transition={{ duration: 0.3 }}
                   >
                     <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p>No products available</p>
-                    <p className="text-sm">Check back later</p>
+                    <p>
+                      {productsLoading
+                        ? "Loading products..."
+                        : "No products available"}
+                    </p>
+                    <p className="text-sm">
+                      {productsLoading
+                        ? "Please wait while we fetch products from the backend"
+                        : products.retail.length > 0 ||
+                          products.wholesale.length > 0
+                        ? `Try switching to ${
+                            saleType === "retail" ? "wholesale" : "retail"
+                          } products`
+                        : "Products are being loaded from the backend..."}
+                    </p>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -813,8 +1037,7 @@ const NewSalePage = () => {
                                 {item.name}
                               </div>
                               <div className="text-xs text-gray-600">
-                                ₦{item.price.toLocaleString()} per {unitKegs}{" "}
-                                keg
+                                {formatCurrency(item.price)} per {unitKegs} keg
                                 {unitKegs !== 1 ? "s" : ""}
                               </div>
                             </div>
@@ -859,7 +1082,7 @@ const NewSalePage = () => {
                                 animate={{ scale: 1 }}
                                 transition={{ duration: 0.2 }}
                               >
-                                ₦{(item.price * item.quantity).toLocaleString()}
+                                {formatCurrency(item.price * item.quantity)}
                               </motion.div>
                               <div className="text-xs text-gray-500">
                                 {unitKegs * item.quantity} keg
@@ -944,7 +1167,6 @@ const NewSalePage = () => {
 
                       <motion.div className="relative">
                         <input
-                          type="number"
                           value={discountAmount || ""}
                           onChange={(e) => {
                             const value = e.target.value;
@@ -960,7 +1182,7 @@ const NewSalePage = () => {
                           placeholder={`Enter ${
                             discountType === "amount" ? "amount" : "percentage"
                           }`}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          className="w-full px-4 py-3 pr-10 border border-orange-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                         />
                         <span className="absolute right-3 top-3 text-gray-500">
                           {discountType === "amount" ? "₦" : "%"}
@@ -977,8 +1199,8 @@ const NewSalePage = () => {
                             transition={{ duration: 0.2 }}
                           >
                             <div className="text-sm text-green-700">
-                              Discount Applied: ₦
-                              {calculateDiscount().toLocaleString()}
+                              Discount Applied:{" "}
+                              {formatCurrency(calculateDiscount())}
                             </div>
                           </motion.div>
                         )}
@@ -1064,11 +1286,11 @@ const NewSalePage = () => {
                     </motion.button>
 
                     <motion.button
-                      onClick={() => setPaymentMethod("part_payment")}
+                      onClick={() => setPaymentMethod("credit")}
                       className={`w-full p-3 rounded-lg border-2 transition-all ${
-                        paymentMethod === "part_payment"
-                          ? "border-purple-500 bg-purple-50 text-purple-700"
-                          : "border-gray-200 hover:border-purple-300"
+                        paymentMethod === "credit"
+                          ? "border-orange-500 bg-orange-50 text-orange-700"
+                          : "border-gray-200 hover:border-orange-300"
                       }`}
                       whileHover={{ scale: 1.02, y: -2 }}
                       whileTap={{ scale: 0.98 }}
@@ -1080,37 +1302,15 @@ const NewSalePage = () => {
                         className="flex items-center space-x-3"
                         whileHover={{ x: 5 }}
                       >
-                        <Calculator className="w-5 h-5" />
-                        <span className="font-medium">Part Payment</span>
-                      </motion.div>
-                    </motion.button>
-
-                    <motion.button
-                      onClick={() => setPaymentMethod("credit")}
-                      className={`w-full p-3 rounded-lg border-2 transition-all ${
-                        paymentMethod === "credit"
-                          ? "border-orange-500 bg-orange-50 text-orange-700"
-                          : "border-gray-200 hover:border-orange-300"
-                      }`}
-                      whileHover={{ scale: 1.02, y: -2 }}
-                      whileTap={{ scale: 0.98 }}
-                      initial={{ x: -20, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: 0.6 }}
-                    >
-                      <motion.div
-                        className="flex items-center space-x-3"
-                        whileHover={{ x: 5 }}
-                      >
                         <AlertCircle className="w-5 h-5" />
                         <span className="font-medium">Credit (Pay Later)</span>
                       </motion.div>
                     </motion.button>
                   </motion.div>
 
-                  {/* Part Payment Input */}
+                  {/* Payment Amount Input for Non-Credit Methods */}
                   <AnimatePresence>
-                    {paymentMethod === "part_payment" && (
+                    {paymentMethod !== "credit" && (
                       <motion.div
                         className="mt-4 space-y-3"
                         initial={{ height: 0, opacity: 0 }}
@@ -1118,114 +1318,614 @@ const NewSalePage = () => {
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.3 }}
                       >
-                        {/* Part Payment Method Selection */}
-                        <motion.div
-                          className="space-y-2"
-                          initial={{ y: 20, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          transition={{ delay: 0.1 }}
-                        >
-                          <label className="text-sm font-medium text-gray-700">
-                            Part Payment Method
-                          </label>
-                          <div className="flex space-x-2">
-                            <motion.button
-                              onClick={() => setPartPaymentMethod("cash")}
-                              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                                partPaymentMethod === "cash"
-                                  ? "bg-green-500 text-white"
-                                  : "bg-gray-100 text-gray-600 hover:bg-green-100"
-                              }`}
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                            >
-                              <div className="flex items-center justify-center space-x-2">
-                                <Banknote className="w-4 h-4" />
-                                <span>Cash</span>
-                              </div>
-                            </motion.button>
-                            <motion.button
-                              onClick={() => setPartPaymentMethod("transfer")}
-                              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                                partPaymentMethod === "transfer"
-                                  ? "bg-blue-500 text-white"
-                                  : "bg-gray-100 text-gray-600 hover:bg-blue-100"
-                              }`}
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                            >
-                              <div className="flex items-center justify-center space-x-2">
-                                <CreditCard className="w-4 h-4" />
-                                <span>Transfer</span>
-                              </div>
-                            </motion.button>
-                          </div>
-                        </motion.div>
+                        {(() => {
+                          // Calculate if payment is needed
+                          const currentTotal = calculateTotal();
+                          const customerCredit = getCustomerCredit();
+                          const customerDebt = getCustomerDebt();
+                          const actualAmountOwed =
+                            currentTotal + customerDebt - customerCredit;
+                          const needsPayment = actualAmountOwed > 0;
 
-                        <motion.div
-                          className="relative"
-                          initial={{ y: 20, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          transition={{ delay: 0.2 }}
-                        >
-                          <input
-                            type="number"
-                            value={partPaymentAmount}
-                            onChange={(e) =>
-                              setPartPaymentAmount(
-                                Math.max(0, parseFloat(e.target.value) || 0)
-                              )
-                            }
-                            placeholder="Enter part payment amount"
-                            max={
-                              selectedCustomer &&
-                              (getCustomerDebt() > 0 || getCustomerCredit() > 0)
-                                ? calculateGrandTotal()
-                                : calculateTotal()
-                            }
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          />
-                          <span className="absolute right-3 top-3 text-gray-500">
-                            ₦
-                          </span>
-                        </motion.div>
+                          if (!needsPayment) {
+                            // Customer has enough credit - no payment needed, but allow optional additional payment
+                            return (
+                              <motion.div
+                                className="space-y-3"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.3 }}
+                              >
+                                <motion.div
+                                  className="bg-green-50 border border-green-200 rounded-lg p-4"
+                                  initial={{ opacity: 0, scale: 0.95 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  transition={{ duration: 0.3 }}
+                                >
+                                  <div className="flex items-center space-x-2">
+                                    <Check className="w-5 h-5 text-green-600" />
+                                    <div>
+                                      <div className="font-medium text-green-800">
+                                        No Payment Required
+                                      </div>
+                                      <div className="text-sm text-green-600">
+                                        Customer credit (
+                                        {formatCurrency(customerCredit)}) covers
+                                        the full purchase amount (
+                                        {formatCurrency(currentTotal)})
+                                      </div>
+                                      {actualAmountOwed < 0 && (
+                                        <div className="text-xs text-blue-600 mt-1">
+                                          Remaining credit after purchase:{" "}
+                                          {formatCurrency(
+                                            Math.abs(actualAmountOwed)
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </motion.div>
+
+                                {/* Optional Additional Payment */}
+                                <motion.div
+                                  className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: 0.2 }}
+                                >
+                                  <div className="mb-3">
+                                    <h4 className="font-medium text-blue-800 mb-1">
+                                      Optional Additional Payment
+                                    </h4>
+                                    <p className="text-sm text-blue-600">
+                                      Customer can make an additional payment to
+                                      further increase their credit balance
+                                    </p>
+                                  </div>
+
+                                  <div className="relative">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                      Additional Amount{" "}
+                                      {paymentMethod === "cash"
+                                        ? "Received"
+                                        : "Paid"}{" "}
+                                      (Optional)
+                                    </label>
+                                    <input
+                                      value={paymentAmount || ""}
+                                      onChange={(e) => {
+                                        const value =
+                                          parseFloat(e.target.value) || 0;
+                                        setPaymentAmount(Math.max(0, value));
+                                      }}
+                                      placeholder={`Enter additional amount ${
+                                        paymentMethod === "cash"
+                                          ? "received from customer"
+                                          : "paid"
+                                      }`}
+                                      className="w-full px-4 py-3 pr-10 border border-blue-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                    <span className="absolute right-3 top-10 text-gray-500">
+                                      ₦
+                                    </span>
+                                  </div>
+
+                                  {paymentAmount > 0 && (
+                                    <motion.div
+                                      className="mt-3 p-3 bg-blue-100 rounded-lg"
+                                      initial={{ opacity: 0, scale: 0.95 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                    >
+                                      <div className="text-sm text-blue-800">
+                                        <div className="flex justify-between">
+                                          <span>Current Credit Balance:</span>
+                                          <span className="font-medium">
+                                            {formatCurrency(
+                                              customerCredit || 0
+                                            )}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span>Purchase Amount:</span>
+                                          <span className="font-medium">
+                                            -{formatCurrency(currentTotal)}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span>Additional Payment:</span>
+                                          <span className="font-medium text-green-700">
+                                            +{formatCurrency(paymentAmount)}
+                                          </span>
+                                        </div>
+                                        <div className="border-t border-blue-300 pt-2 mt-2 flex justify-between font-semibold">
+                                          <span>New Credit Balance:</span>
+                                          <span className="text-blue-900">
+                                            {formatCurrency(
+                                              customerCredit -
+                                                currentTotal +
+                                                paymentAmount
+                                            )}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </motion.div>
+                              </motion.div>
+                            );
+                          }
+
+                          // Payment is needed - show input
+                          return (
+                            <motion.div
+                              className="relative"
+                              initial={{ y: 20, opacity: 0 }}
+                              animate={{ y: 0, opacity: 1 }}
+                              transition={{ delay: 0.1 }}
+                            >
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Amount{" "}
+                                {paymentMethod === "cash" ? "Received" : "Paid"}
+                                {actualAmountOwed < currentTotal && (
+                                  <span className="text-green-600 text-xs ml-2">
+                                    (Only {formatCurrency(actualAmountOwed)}{" "}
+                                    needed after credit)
+                                  </span>
+                                )}
+                              </label>
+                              <input
+                                value={paymentAmount || ""}
+                                onChange={(e) => {
+                                  const value = parseFloat(e.target.value) || 0;
+                                  setPaymentAmount(Math.max(0, value));
+                                }}
+                                placeholder={`Enter amount ${
+                                  paymentMethod === "cash"
+                                    ? "received from customer"
+                                    : "paid"
+                                }`}
+                                className="w-full px-4 py-3 pr-10 border border-orange-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                              />
+                              <span className="absolute right-3 top-10 text-gray-500">
+                                ₦
+                              </span>
+                            </motion.div>
+                          );
+                        })()}
 
                         <AnimatePresence>
-                          {partPaymentAmount > 0 && (
+                          {paymentMethod === "cash" && paymentAmount > 0 && (
                             <motion.div
-                              className="bg-purple-50 border border-purple-200 rounded-lg p-3"
+                              className={`border rounded-lg p-4 ${(() => {
+                                const currentTotal = calculateTotal();
+                                const customerCredit = getCustomerCredit();
+                                const customerDebt = getCustomerDebt();
+                                const actualAmountOwed =
+                                  currentTotal + customerDebt - customerCredit;
+
+                                if (paymentAmount >= actualAmountOwed) {
+                                  return "bg-green-50 border-green-200";
+                                } else {
+                                  return "bg-red-50 border-red-200";
+                                }
+                              })()}`}
                               initial={{ opacity: 0, scale: 0.95, y: 10 }}
                               animate={{ opacity: 1, scale: 1, y: 0 }}
                               exit={{ opacity: 0, scale: 0.95, y: -10 }}
                               transition={{ duration: 0.3 }}
                             >
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-purple-700">
-                                  Payment Method:
-                                </span>
-                                <span className="font-medium text-purple-900 capitalize">
-                                  {partPaymentMethod}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-purple-700">
-                                  Payment:
-                                </span>
-                                <span className="font-medium text-purple-900">
-                                  ₦{partPaymentAmount.toLocaleString()}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-purple-700">
-                                  Remaining:
-                                </span>
-                                <span className="font-medium text-purple-900">
-                                  ₦
-                                  {calculateRemainingBalance().toLocaleString()}
-                                </span>
-                              </div>
+                              {(() => {
+                                const currentTotal = calculateTotal();
+                                const customerCredit = getCustomerCredit();
+                                const customerDebt = getCustomerDebt();
+                                const actualAmountOwed =
+                                  currentTotal + customerDebt - customerCredit;
+                                const remainingOwed =
+                                  calculateActualAmountOwed(paymentAmount);
+                                const isFullyPaid =
+                                  paymentAmount >= actualAmountOwed;
+                                const isOverpaid =
+                                  paymentAmount > actualAmountOwed;
+
+                                return (
+                                  <div className="space-y-3">
+                                    {/* Header Status */}
+                                    <div
+                                      className={`flex items-center space-x-2 ${
+                                        isFullyPaid
+                                          ? "text-green-700"
+                                          : "text-red-700"
+                                      }`}
+                                    >
+                                      {isFullyPaid ? (
+                                        <>
+                                          <motion.div
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            transition={{
+                                              duration: 0.3,
+                                              delay: 0.1,
+                                            }}
+                                          >
+                                            <Check className="w-5 h-5" />
+                                          </motion.div>
+                                          <span className="font-semibold">
+                                            {isOverpaid
+                                              ? "Overpaid - Change Required"
+                                              : "Payment Complete"}
+                                          </span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <motion.div
+                                            animate={{ x: [0, 2, -2, 0] }}
+                                            transition={{
+                                              duration: 0.5,
+                                              repeat: Infinity,
+                                              repeatDelay: 1,
+                                            }}
+                                          >
+                                            <AlertCircle className="w-5 h-5" />
+                                          </motion.div>
+                                          <span className="font-semibold">
+                                            Partial Payment - Balance Remaining
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+
+                                    {/* Payment Breakdown */}
+                                    <div className="space-y-2">
+                                      <div className="flex justify-between items-center text-sm">
+                                        <span className="text-gray-700">
+                                          Sale Amount:
+                                        </span>
+                                        <span className="font-medium text-gray-900">
+                                          {formatCurrency(currentTotal)}
+                                        </span>
+                                      </div>
+
+                                      {customerDebt > 0 && (
+                                        <div className="flex justify-between items-center text-sm">
+                                          <span className="text-red-700">
+                                            Previous Debt:
+                                          </span>
+                                          <span className="font-medium text-red-700">
+                                            +{formatCurrency(customerDebt)}
+                                          </span>
+                                        </div>
+                                      )}
+
+                                      {customerCredit > 0 && (
+                                        <div className="flex justify-between items-center text-sm">
+                                          <span className="text-green-700">
+                                            Customer Credit:
+                                          </span>
+                                          <span className="font-medium text-green-700">
+                                            -{formatCurrency(customerCredit)}
+                                          </span>
+                                        </div>
+                                      )}
+
+                                      <div
+                                        className={`flex justify-between items-center text-sm border-t pt-2 ${
+                                          isFullyPaid
+                                            ? "border-green-200"
+                                            : "border-red-200"
+                                        }`}
+                                      >
+                                        <span
+                                          className={`font-medium ${
+                                            isFullyPaid
+                                              ? "text-green-700"
+                                              : "text-red-700"
+                                          }`}
+                                        >
+                                          Total Due:
+                                        </span>
+                                        <span
+                                          className={`font-bold ${
+                                            isFullyPaid
+                                              ? "text-green-900"
+                                              : "text-red-900"
+                                          }`}
+                                        >
+                                          {formatCurrency(actualAmountOwed)}
+                                        </span>
+                                      </div>
+
+                                      <div className="flex justify-between items-center text-sm">
+                                        <span className="text-blue-700">
+                                          Cash Received:
+                                        </span>
+                                        <span className="font-medium text-blue-900">
+                                          {formatCurrency(paymentAmount)}
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    {/* Result */}
+                                    {isOverpaid ? (
+                                      <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="bg-green-100 border border-green-300 rounded-lg p-3"
+                                      >
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-green-700 font-medium">
+                                            Change to Give:
+                                          </span>
+                                          <span className="font-bold text-green-900 text-lg">
+                                            {formatCurrency(
+                                              paymentAmount - actualAmountOwed
+                                            )}
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-green-600 mt-1">
+                                          ✓ Payment complete with change due
+                                        </div>
+                                      </motion.div>
+                                    ) : remainingOwed > 0 ? (
+                                      <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="bg-red-100 border border-red-300 rounded-lg p-3"
+                                      >
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-red-700 font-medium">
+                                            Still Owes:
+                                          </span>
+                                          <span className="font-bold text-red-900 text-lg">
+                                            {formatCurrency(remainingOwed)}
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-red-600 mt-1">
+                                          ⚠ Partial payment - balance will be
+                                          added to customer debt
+                                        </div>
+                                      </motion.div>
+                                    ) : (
+                                      <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="bg-green-100 border border-green-300 rounded-lg p-3"
+                                      >
+                                        <div className="flex items-center justify-center space-x-2">
+                                          <Check className="w-4 h-4 text-green-600" />
+                                          <span className="text-green-700 font-medium">
+                                            Payment Complete
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-green-600 text-center mt-1">
+                                          ✓ Full payment received
+                                        </div>
+                                      </motion.div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                             </motion.div>
                           )}
+
+                          {paymentMethod === "transfer" &&
+                            paymentAmount > 0 && (
+                              <motion.div
+                                className={`border rounded-lg p-4 ${(() => {
+                                  const currentTotal = calculateTotal();
+                                  const customerCredit = getCustomerCredit();
+                                  const customerDebt = getCustomerDebt();
+                                  const actualAmountOwed =
+                                    currentTotal +
+                                    customerDebt -
+                                    customerCredit;
+
+                                  if (paymentAmount >= actualAmountOwed) {
+                                    return "bg-blue-50 border-blue-200";
+                                  } else {
+                                    return "bg-orange-50 border-orange-200";
+                                  }
+                                })()}`}
+                                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                transition={{ duration: 0.3 }}
+                              >
+                                {(() => {
+                                  const currentTotal = calculateTotal();
+                                  const customerCredit = getCustomerCredit();
+                                  const customerDebt = getCustomerDebt();
+                                  const actualAmountOwed =
+                                    currentTotal +
+                                    customerDebt -
+                                    customerCredit;
+                                  const remainingOwed =
+                                    calculateActualAmountOwed(paymentAmount);
+                                  const isFullyPaid =
+                                    paymentAmount >= actualAmountOwed;
+                                  const isOverpaid =
+                                    paymentAmount > actualAmountOwed;
+
+                                  return (
+                                    <div className="space-y-3">
+                                      {/* Header Status */}
+                                      <div
+                                        className={`flex items-center space-x-2 ${
+                                          isFullyPaid
+                                            ? "text-blue-700"
+                                            : "text-orange-700"
+                                        }`}
+                                      >
+                                        {isFullyPaid ? (
+                                          <>
+                                            <motion.div
+                                              initial={{ scale: 0 }}
+                                              animate={{ scale: 1 }}
+                                              transition={{
+                                                duration: 0.3,
+                                                delay: 0.1,
+                                              }}
+                                            >
+                                              <Check className="w-5 h-5" />
+                                            </motion.div>
+                                            <span className="font-semibold">
+                                              {isOverpaid
+                                                ? "Overpaid - Excess Transfer"
+                                                : "Transfer Complete"}
+                                            </span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <motion.div
+                                              animate={{ x: [0, 2, -2, 0] }}
+                                              transition={{
+                                                duration: 0.5,
+                                                repeat: Infinity,
+                                                repeatDelay: 1,
+                                              }}
+                                            >
+                                              <AlertCircle className="w-5 h-5" />
+                                            </motion.div>
+                                            <span className="font-semibold">
+                                              Partial Transfer - Balance
+                                              Remaining
+                                            </span>
+                                          </>
+                                        )}
+                                      </div>
+
+                                      {/* Payment Breakdown */}
+                                      <div className="space-y-2">
+                                        <div className="flex justify-between items-center text-sm">
+                                          <span className="text-gray-700">
+                                            Sale Amount:
+                                          </span>
+                                          <span className="font-medium text-gray-900">
+                                            {formatCurrency(currentTotal)}
+                                          </span>
+                                        </div>
+
+                                        {customerDebt > 0 && (
+                                          <div className="flex justify-between items-center text-sm">
+                                            <span className="text-red-700">
+                                              Previous Debt:
+                                            </span>
+                                            <span className="font-medium text-red-700">
+                                              +{formatCurrency(customerDebt)}
+                                            </span>
+                                          </div>
+                                        )}
+
+                                        {customerCredit > 0 && (
+                                          <div className="flex justify-between items-center text-sm">
+                                            <span className="text-green-700">
+                                              Customer Credit:
+                                            </span>
+                                            <span className="font-medium text-green-700">
+                                              -{formatCurrency(customerCredit)}
+                                            </span>
+                                          </div>
+                                        )}
+
+                                        <div
+                                          className={`flex justify-between items-center text-sm border-t pt-2 ${
+                                            isFullyPaid
+                                              ? "border-blue-200"
+                                              : "border-orange-200"
+                                          }`}
+                                        >
+                                          <span
+                                            className={`font-medium ${
+                                              isFullyPaid
+                                                ? "text-blue-700"
+                                                : "text-orange-700"
+                                            }`}
+                                          >
+                                            Total Due:
+                                          </span>
+                                          <span
+                                            className={`font-bold ${
+                                              isFullyPaid
+                                                ? "text-blue-900"
+                                                : "text-orange-900"
+                                            }`}
+                                          >
+                                            {formatCurrency(actualAmountOwed)}
+                                          </span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center text-sm">
+                                          <span className="text-blue-700">
+                                            Transfer Amount:
+                                          </span>
+                                          <span className="font-medium text-blue-900">
+                                            {formatCurrency(paymentAmount)}
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      {/* Result */}
+                                      {isOverpaid ? (
+                                        <motion.div
+                                          initial={{ opacity: 0, y: 10 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          className="bg-blue-100 border border-blue-300 rounded-lg p-3"
+                                        >
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-blue-700 font-medium">
+                                              Excess Amount:
+                                            </span>
+                                            <span className="font-bold text-blue-900 text-lg">
+                                              {formatCurrency(
+                                                paymentAmount - actualAmountOwed
+                                              )}
+                                            </span>
+                                          </div>
+                                          <div className="text-xs text-blue-600 mt-1">
+                                            ✓ Transfer complete - excess added
+                                            to customer credit
+                                          </div>
+                                        </motion.div>
+                                      ) : remainingOwed > 0 ? (
+                                        <motion.div
+                                          initial={{ opacity: 0, y: 10 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          className="bg-orange-100 border border-orange-300 rounded-lg p-3"
+                                        >
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-orange-700 font-medium">
+                                              Still Owes:
+                                            </span>
+                                            <span className="font-bold text-orange-900 text-lg">
+                                              {formatCurrency(remainingOwed)}
+                                            </span>
+                                          </div>
+                                          <div className="text-xs text-orange-600 mt-1">
+                                            ⚠ Partial transfer - balance will be
+                                            added to customer debt
+                                          </div>
+                                        </motion.div>
+                                      ) : (
+                                        <motion.div
+                                          initial={{ opacity: 0, y: 10 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          className="bg-blue-100 border border-blue-300 rounded-lg p-3"
+                                        >
+                                          <div className="flex items-center justify-center space-x-2">
+                                            <Check className="w-4 h-4 text-blue-600" />
+                                            <span className="text-blue-700 font-medium">
+                                              Transfer Complete
+                                            </span>
+                                          </div>
+                                          <div className="text-xs text-blue-600 text-center mt-1">
+                                            ✓ Full transfer amount received
+                                          </div>
+                                        </motion.div>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
+                              </motion.div>
+                            )}
                         </AnimatePresence>
                       </motion.div>
                     )}
@@ -1269,7 +1969,7 @@ const NewSalePage = () => {
                         animate={{ scale: 1 }}
                         transition={{ duration: 0.2 }}
                       >
-                        ₦{calculateSubtotal().toLocaleString()}
+                        {formatCurrency(calculateSubtotal())}
                       </motion.span>
                     </motion.div>
 
@@ -1286,7 +1986,7 @@ const NewSalePage = () => {
                             Discount (
                             {discountType === "percentage"
                               ? `${discountAmount}%`
-                              : `₦${discountAmount.toLocaleString()}`}
+                              : formatCurrency(discountAmount)}
                             ):
                           </span>
                           <motion.span
@@ -1296,7 +1996,7 @@ const NewSalePage = () => {
                             animate={{ scale: 1 }}
                             transition={{ duration: 0.2 }}
                           >
-                            -₦{calculateDiscount().toLocaleString()}
+                            -{formatCurrency(calculateDiscount())}
                           </motion.span>
                         </motion.div>
                       )}
@@ -1324,7 +2024,7 @@ const NewSalePage = () => {
                           animate={{ scale: 1 }}
                           transition={{ duration: 0.3 }}
                         >
-                          ₦{calculateTotal().toLocaleString()}
+                          {formatCurrency(calculateTotal())}
                         </motion.span>
                       </motion.div>
                     </motion.div>
@@ -1343,7 +2043,7 @@ const NewSalePage = () => {
                               Customer Outstanding Debt:
                             </span>
                             <span className="font-medium text-red-700">
-                              ₦{getCustomerDebt().toLocaleString()}
+                              {formatCurrency(getCustomerDebt() || 0)}
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-lg font-bold border-t border-red-200 pt-2 mt-2">
@@ -1352,14 +2052,50 @@ const NewSalePage = () => {
                             </span>
                             <motion.span
                               className="text-red-800"
-                              key={calculateGrandTotal()}
+                              key={calculateActualAmountOwed(0)}
                               initial={{ scale: 1.1 }}
                               animate={{ scale: 1 }}
                               transition={{ duration: 0.2 }}
                             >
-                              ₦{calculateGrandTotal().toLocaleString()}
+                              {formatCurrency(calculateActualAmountOwed(0))}
                             </motion.span>
                           </div>
+
+                          {/* Show payment impact if payment amounts are entered */}
+                          {(paymentMethod === "cash" ||
+                            paymentMethod === "transfer") &&
+                            paymentAmount > 0 && (
+                              <div className="border-t border-red-200 pt-2 mt-2">
+                                {calculateActualAmountOwed(paymentAmount) >
+                                0 ? (
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-red-700">
+                                      After Payment - Still Owes:
+                                    </span>
+                                    <span className="font-medium text-red-700">
+                                      {formatCurrency(
+                                        calculateActualAmountOwed(paymentAmount)
+                                      )}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-green-700">
+                                      After Payment - Credit Balance:
+                                    </span>
+                                    <span className="font-medium text-green-700">
+                                      {formatCurrency(
+                                        Math.abs(
+                                          calculateActualAmountOwed(
+                                            paymentAmount
+                                          )
+                                        )
+                                      )}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -1378,7 +2114,7 @@ const NewSalePage = () => {
                               Customer Available Credit:
                             </span>
                             <span className="font-medium text-green-700">
-                              ₦{getCustomerCredit().toLocaleString()}
+                              {formatCurrency(getCustomerCredit() || 0)}
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-lg font-bold border-t border-green-200 pt-2 mt-2">
@@ -1387,64 +2123,78 @@ const NewSalePage = () => {
                             </span>
                             <motion.span
                               className="text-green-800"
-                              key={calculateGrandTotal()}
+                              key={calculateActualAmountOwed(0)}
                               initial={{ scale: 1.1 }}
                               animate={{ scale: 1 }}
                               transition={{ duration: 0.2 }}
                             >
-                              ₦{calculateGrandTotal().toLocaleString()}
+                              {formatCurrency(
+                                Math.max(0, calculateActualAmountOwed(0))
+                              )}
                             </motion.span>
                           </div>
-                          <AnimatePresence>
-                            {calculateRemainingCredit() > 0 && (
-                              <motion.div
-                                className="flex justify-between items-center text-sm border-t border-green-200 pt-2 mt-2"
-                                initial={{ opacity: 0, y: 5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -5 }}
-                                transition={{ duration: 0.2 }}
-                              >
-                                <span className="text-green-700">
-                                  Remaining Credit After Sale:
-                                </span>
-                                <span className="font-medium text-green-700">
-                                  ₦{calculateRemainingCredit().toLocaleString()}
-                                </span>
-                              </motion.div>
+
+                          {/* Show payment impact if payment amounts are entered */}
+                          {(paymentMethod === "cash" ||
+                            paymentMethod === "transfer") &&
+                            paymentAmount > 0 && (
+                              <div className="border-t border-green-200 pt-2 mt-2">
+                                {calculateActualAmountOwed(paymentAmount) >
+                                0 ? (
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-yellow-700">
+                                      After Payment - Still Owes:
+                                    </span>
+                                    <span className="font-medium text-yellow-700">
+                                      {formatCurrency(
+                                        calculateActualAmountOwed(paymentAmount)
+                                      )}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-green-700">
+                                      After Payment - Credit Balance:
+                                    </span>
+                                    <span className="font-medium text-green-700">
+                                      {formatCurrency(
+                                        Math.abs(
+                                          calculateActualAmountOwed(
+                                            paymentAmount
+                                          )
+                                        )
+                                      )}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             )}
+
+                          <AnimatePresence>
+                            {calculateRemainingCredit() > 0 &&
+                              !(
+                                (paymentMethod === "cash" ||
+                                  paymentMethod === "transfer") &&
+                                paymentAmount > 0
+                              ) && (
+                                <motion.div
+                                  className="flex justify-between items-center text-sm border-t border-green-200 pt-2 mt-2"
+                                  initial={{ opacity: 0, y: 5 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: -5 }}
+                                  transition={{ duration: 0.2 }}
+                                >
+                                  <span className="text-green-700">
+                                    Remaining Credit After Sale:
+                                  </span>
+                                  <span className="font-medium text-green-700">
+                                    {formatCurrency(calculateRemainingCredit())}
+                                  </span>
+                                </motion.div>
+                              )}
                           </AnimatePresence>
                         </motion.div>
                       )}
-                    </AnimatePresence>
-
-                    <AnimatePresence>
-                      {paymentMethod === "part_payment" &&
-                        partPaymentAmount > 0 && (
-                          <motion.div
-                            className="bg-purple-50 border border-purple-200 rounded-lg p-3"
-                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <div className="flex justify-between items-center text-sm">
-                              <span className="text-purple-700">
-                                Paying Now:
-                              </span>
-                              <span className="font-medium text-purple-900">
-                                ₦{partPaymentAmount.toLocaleString()}
-                              </span>
-                            </div>
-                            <div className="flex justify-between items-center text-sm">
-                              <span className="text-purple-700">
-                                Remaining Balance:
-                              </span>
-                              <span className="font-medium text-red-600">
-                                ₦{calculateRemainingBalance().toLocaleString()}
-                              </span>
-                            </div>
-                          </motion.div>
-                        )}
                     </AnimatePresence>
 
                     <AnimatePresence>
@@ -1474,66 +2224,196 @@ const NewSalePage = () => {
                       )}
                     </AnimatePresence>
 
+                    {/* Payment Status Summary */}
                     <AnimatePresence>
-                      {paymentMethod === "part_payment" &&
-                        selectedCustomer &&
-                        partPaymentAmount === 0 && (
+                      {selectedCustomer &&
+                        (paymentMethod === "cash" ||
+                          paymentMethod === "transfer") &&
+                        paymentAmount > 0 && (
                           <motion.div
-                            className="bg-red-50 border border-red-200 rounded-lg p-3"
+                            className={`rounded-lg p-4 border ${(() => {
+                              const currentTotal = calculateTotal();
+                              const customerCredit = getCustomerCredit();
+                              const customerDebt = getCustomerDebt();
+                              const actualAmountOwed =
+                                currentTotal + customerDebt - customerCredit;
+
+                              if (paymentAmount >= actualAmountOwed) {
+                                return "bg-green-50 border-green-200";
+                              } else {
+                                return "bg-orange-50 border-orange-200";
+                              }
+                            })()}`}
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: -10 }}
                             transition={{ duration: 0.3 }}
                           >
-                            <motion.div
-                              className="flex items-center space-x-2 text-red-700"
-                              animate={{ x: [0, 2, -2, 0] }}
-                              transition={{
-                                duration: 0.5,
-                                repeat: Infinity,
-                                repeatDelay: 2,
-                              }}
-                            >
-                              <AlertCircle className="w-4 h-4" />
-                              <span className="text-sm">
-                                Enter part payment amount
-                              </span>
-                            </motion.div>
+                            {(() => {
+                              const currentTotal = calculateTotal();
+                              const customerCredit = getCustomerCredit();
+                              const customerDebt = getCustomerDebt();
+                              const actualAmountOwed =
+                                currentTotal + customerDebt - customerCredit;
+                              const remainingOwed =
+                                calculateActualAmountOwed(paymentAmount);
+                              const isFullyPaid =
+                                paymentAmount >= actualAmountOwed;
+                              const isOverpaid =
+                                paymentAmount > actualAmountOwed;
+
+                              return (
+                                <div className="text-center">
+                                  <div
+                                    className={`flex items-center justify-center space-x-2 mb-2 ${
+                                      isFullyPaid
+                                        ? "text-green-700"
+                                        : "text-orange-700"
+                                    }`}
+                                  >
+                                    {isFullyPaid ? (
+                                      <motion.div
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        transition={{ duration: 0.3 }}
+                                      >
+                                        <Check className="w-5 h-5" />
+                                      </motion.div>
+                                    ) : (
+                                      <motion.div
+                                        animate={{ rotate: [0, 10, -10, 0] }}
+                                        transition={{
+                                          duration: 0.5,
+                                          repeat: Infinity,
+                                          repeatDelay: 1,
+                                        }}
+                                      >
+                                        <AlertCircle className="w-5 h-5" />
+                                      </motion.div>
+                                    )}
+                                    <span className="font-semibold">
+                                      {isFullyPaid
+                                        ? isOverpaid
+                                          ? "Ready: Overpaid"
+                                          : "Ready: Fully Paid"
+                                        : "Partial Payment"}
+                                    </span>
+                                  </div>
+
+                                  <div
+                                    className={`text-sm ${
+                                      isFullyPaid
+                                        ? "text-green-600"
+                                        : "text-orange-600"
+                                    }`}
+                                  >
+                                    {isFullyPaid
+                                      ? isOverpaid
+                                        ? `Change: ${formatCurrency(
+                                            paymentAmount - actualAmountOwed
+                                          )}`
+                                        : "Payment complete - ready to process"
+                                      : `Balance remaining: ${formatCurrency(
+                                          remainingOwed
+                                        )}`}
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </motion.div>
                         )}
                     </AnimatePresence>
 
                     <motion.button
                       onClick={handleSaleComplete}
-                      disabled={
-                        !selectedCustomer ||
-                        (paymentMethod === "part_payment" &&
-                          partPaymentAmount === 0)
-                      }
-                      className={`w-full py-4 px-6 rounded-lg font-semibold transition-all ${
-                        !selectedCustomer ||
-                        (paymentMethod === "part_payment" &&
-                          partPaymentAmount === 0)
-                          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                          : "bg-gradient-to-r from-orange-500 to-amber-600 text-white hover:from-orange-600 hover:to-amber-700 transform hover:scale-105"
-                      }`}
+                      disabled={(() => {
+                        if (!selectedCustomer) return true;
+
+                        if (
+                          paymentMethod === "cash" ||
+                          paymentMethod === "transfer"
+                        ) {
+                          // Check if customer has enough credit to cover the purchase
+                          const currentTotal = calculateTotal();
+                          const customerCredit = getCustomerCredit();
+                          const customerDebt = getCustomerDebt();
+                          const actualAmountOwed =
+                            currentTotal + customerDebt - customerCredit;
+                          const needsPayment = actualAmountOwed > 0;
+
+                          // Only require payment amount if customer doesn't have enough credit
+                          return needsPayment && paymentAmount === 0;
+                        }
+
+                        return false;
+                      })()}
+                      className={`w-full py-4 px-6 rounded-lg font-semibold transition-all ${(() => {
+                        if (!selectedCustomer)
+                          return "bg-gray-300 text-gray-500 cursor-not-allowed";
+
+                        if (
+                          paymentMethod === "cash" ||
+                          paymentMethod === "transfer"
+                        ) {
+                          const currentTotal = calculateTotal();
+                          const customerCredit = getCustomerCredit();
+                          const customerDebt = getCustomerDebt();
+                          const actualAmountOwed =
+                            currentTotal + customerDebt - customerCredit;
+                          const needsPayment = actualAmountOwed > 0;
+
+                          if (needsPayment && paymentAmount === 0) {
+                            return "bg-gray-300 text-gray-500 cursor-not-allowed";
+                          }
+                        }
+
+                        return "bg-gradient-to-r from-orange-500 to-amber-600 text-white hover:from-orange-600 hover:to-amber-700 transform hover:scale-105";
+                      })()}`}
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 0.6 }}
-                      whileHover={
-                        !selectedCustomer ||
-                        (paymentMethod === "part_payment" &&
-                          partPaymentAmount === 0)
-                          ? {}
-                          : { scale: 1.05, y: -3 }
-                      }
-                      whileTap={
-                        !selectedCustomer ||
-                        (paymentMethod === "part_payment" &&
-                          partPaymentAmount === 0)
-                          ? {}
-                          : { scale: 0.98 }
-                      }
+                      whileHover={(() => {
+                        if (!selectedCustomer) return {};
+
+                        if (
+                          paymentMethod === "cash" ||
+                          paymentMethod === "transfer"
+                        ) {
+                          const currentTotal = calculateTotal();
+                          const customerCredit = getCustomerCredit();
+                          const customerDebt = getCustomerDebt();
+                          const actualAmountOwed =
+                            currentTotal + customerDebt - customerCredit;
+                          const needsPayment = actualAmountOwed > 0;
+
+                          if (needsPayment && paymentAmount === 0) {
+                            return {};
+                          }
+                        }
+
+                        return { scale: 1.05, y: -3 };
+                      })()}
+                      whileTap={(() => {
+                        if (!selectedCustomer) return {};
+
+                        if (
+                          paymentMethod === "cash" ||
+                          paymentMethod === "transfer"
+                        ) {
+                          const currentTotal = calculateTotal();
+                          const customerCredit = getCustomerCredit();
+                          const customerDebt = getCustomerDebt();
+                          const actualAmountOwed =
+                            currentTotal + customerDebt - customerCredit;
+                          const needsPayment = actualAmountOwed > 0;
+
+                          if (needsPayment && paymentAmount === 0) {
+                            return {};
+                          }
+                        }
+
+                        return { scale: 0.98 };
+                      })()}
                     >
                       <motion.div
                         className="flex items-center justify-center space-x-2"
@@ -1541,10 +2421,9 @@ const NewSalePage = () => {
                       >
                         <Receipt className="w-5 h-5" />
                         <span>
-                          {paymentMethod === "part_payment" &&
-                          partPaymentAmount > 0
-                            ? `Pay ₦${partPaymentAmount.toLocaleString()} Now`
-                            : `Complete Sale - ₦${calculateTotal().toLocaleString()}`}
+                          {`Complete Sale - ${formatCurrency(
+                            calculateTotal()
+                          )}`}
                         </span>
                       </motion.div>
                     </motion.button>
@@ -1568,7 +2447,7 @@ const NewSalePage = () => {
             onClick={() => setShowCustomerModal(false)}
           >
             <motion.div
-              className="bg-white rounded-xl p-6 w-full max-w-md mx-4"
+              className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] mx-4"
               initial={{ scale: 0.9, y: 50, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.9, y: 50, opacity: 0 }}
@@ -1581,12 +2460,12 @@ const NewSalePage = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-gray-900 m-4">
                   Select Customer
                 </h3>
                 <motion.button
                   onClick={() => setShowCustomerModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 m-4"
                   whileHover={{ scale: 1.1, rotate: 90 }}
                   whileTap={{ scale: 0.9 }}
                 >
@@ -1595,7 +2474,7 @@ const NewSalePage = () => {
               </motion.div>
 
               <motion.div
-                className="relative mb-4"
+                className="relative m-4"
                 initial={{ y: 10, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3 }}
@@ -1620,6 +2499,7 @@ const NewSalePage = () => {
                   {filteredCustomers.length > 0 ? (
                     <motion.div
                       key="customer-list"
+                      className="space-y-2 m-4"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
@@ -1634,7 +2514,7 @@ const NewSalePage = () => {
                             setSearchTerm("");
                             // Auto-set sale type based on customer type
                             setSaleType(
-                              customer.type === "wholesale"
+                              customer.type === "WHOLESALE"
                                 ? "wholesale"
                                 : "retail"
                             );
@@ -1654,13 +2534,12 @@ const NewSalePage = () => {
                           </div>
                           {customer.balance < 0 && (
                             <div className="text-sm text-red-600">
-                              Debt: ₦
-                              {Math.abs(customer.balance).toLocaleString()}
+                              Debt: {formatCurrency(Math.abs(customer.balance))}
                             </div>
                           )}
                           {customer.balance > 0 && (
                             <div className="text-sm text-green-600">
-                              Credit: ₦{customer.balance.toLocaleString()}
+                              Credit: {formatCurrency(customer.balance)}
                             </div>
                           )}
                           <div className="text-xs text-gray-500 capitalize">
@@ -1713,8 +2592,10 @@ const NewSalePage = () => {
       {/* Add New Customer Modal */}
       <AddCustomerModal
         show={showAddCustomerModal}
-        newCustomer={newCustomer}
-        setNewCustomer={setNewCustomer}
+        newCustomer={convertCustomerInputToModal(newCustomer)}
+        setNewCustomer={(customer: Partial<InterfaceCustomer>) =>
+          setNewCustomer(convertModalToCustomerInput(customer))
+        }
         onClose={() => setShowAddCustomerModal(false)}
         onSubmit={handleAddNewCustomer}
         validationError={customerValidationError}
@@ -1772,25 +2653,57 @@ const NewSalePage = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.5 }}
               >
-                {paymentMethod === "part_payment" && partPaymentAmount > 0
-                  ? `Part payment of ₦${partPaymentAmount.toLocaleString()} via ${partPaymentMethod} processed successfully!`
-                  : `Transaction processed successfully for ₦${calculateTotal().toLocaleString()}`}
+                {`Transaction processed successfully for ${formatCurrency(
+                  lastCompletedTransactionAmount
+                )}`}
               </motion.p>
 
               <AnimatePresence>
-                {paymentMethod === "part_payment" &&
-                  calculateRemainingBalance() > 0 && (
-                    <motion.p
-                      className="text-sm text-red-600 mb-4"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ delay: 0.6 }}
-                    >
-                      Remaining balance: ₦
-                      {calculateRemainingBalance().toLocaleString()}
-                    </motion.p>
-                  )}
+                {/* Data Refresh Status */}
+                {(isRefreshingData || dataRefreshComplete) && (
+                  <motion.div
+                    className={`flex items-center justify-center space-x-2 mb-4 p-3 rounded-lg ${
+                      dataRefreshComplete
+                        ? "bg-green-50 border border-green-200"
+                        : "bg-blue-50 border border-blue-200"
+                    }`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {isRefreshingData && (
+                      <>
+                        <motion.div
+                          className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full"
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            duration: 1,
+                            repeat: Infinity,
+                            ease: "linear",
+                          }}
+                        />
+                        <span className="text-sm text-blue-700 font-medium">
+                          Refreshing data for next transaction...
+                        </span>
+                      </>
+                    )}
+                    {dataRefreshComplete && (
+                      <>
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <Check className="w-4 h-4 text-green-600" />
+                        </motion.div>
+                        <span className="text-sm text-green-700 font-medium">
+                          Data refreshed successfully!
+                        </span>
+                      </>
+                    )}
+                  </motion.div>
+                )}
               </AnimatePresence>
 
               <motion.div

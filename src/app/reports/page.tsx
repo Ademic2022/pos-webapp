@@ -1,5 +1,5 @@
 "use client";
-import React, { JSX, useState } from "react";
+import React, { JSX, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   BarChart3,
@@ -17,14 +17,17 @@ import {
   CreditCard,
   AlertCircle,
   CheckCircle,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ReportFilters } from "@/interfaces/interface";
-import { salesData } from "@/data/sales";
 import { StatsCard } from "@/components/cards/statCard";
 import { usePageLoading } from "@/hooks/usePageLoading";
+import { useReportsData } from "@/hooks/useReportsData";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ProtectedElement from "@/components/auth/ProtectedElement";
+import { formatCurrency, safeNumber } from "@/utils/formatters";
 
 const SalesReportPage = () => {
   const router = useRouter();
@@ -34,6 +37,18 @@ const SalesReportPage = () => {
     minDuration: 750,
   });
 
+  // Live data hook
+  const {
+    sales: salesData,
+    summary,
+    isLoading: isDataLoading,
+    error: dataError,
+    hasNextPage,
+    loadMore,
+    refetch,
+    applyFilters,
+  } = useReportsData();
+
   const [activeTab, setActiveTab] = useState<
     "overview" | "transactions" | "customers"
   >("overview");
@@ -41,6 +56,7 @@ const SalesReportPage = () => {
   const [selectedTransaction, setSelectedTransaction] = useState<string | null>(
     null
   );
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [filters, setFilters] = useState<ReportFilters>({
     dateRange: "month",
@@ -51,53 +67,16 @@ const SalesReportPage = () => {
     endDate: "",
   });
 
-  // Calculate summary statistics
-  const calculateSummary = () => {
-    const totalSales = salesData.reduce((sum, sale) => sum + sale.total, 0);
-    const totalPaid = salesData.reduce((sum, sale) => sum + sale.amountPaid, 0);
-    const totalOutstanding = salesData.reduce(
-      (sum, sale) => sum + sale.balance,
-      0
-    );
-    const totalTransactions = salesData.length;
-    const totalDiscounts = salesData.reduce(
-      (sum, sale) => sum + sale.discount,
-      0
-    );
+  // Handle filter changes
+  useEffect(() => {
+    applyFilters(filters);
+  }, [filters, applyFilters]);
 
-    const wholesaleRevenue = salesData
-      .filter((sale) => sale.customerType === "wholesale")
-      .reduce((sum, sale) => sum + sale.total, 0);
-
-    const retailRevenue = salesData
-      .filter((sale) => sale.customerType === "retail")
-      .reduce((sum, sale) => sum + sale.total, 0);
-
-    return {
-      totalSales,
-      totalPaid,
-      totalOutstanding,
-      totalTransactions,
-      totalDiscounts,
-      wholesaleRevenue,
-      retailRevenue,
-      averageTransaction: totalSales / totalTransactions || 0,
-    };
-  };
-
-  const summary = calculateSummary();
-
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case "paid":
-        return "text-green-600 bg-green-100";
-      case "partial":
-        return "text-yellow-600 bg-yellow-100";
-      case "pending":
-        return "text-red-600 bg-red-100";
-      default:
-        return "text-gray-600 bg-gray-100";
-    }
+  // Handle refresh
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
   };
 
   const getPaymentMethodIcon = (method: string): JSX.Element => {
@@ -167,7 +146,8 @@ const SalesReportPage = () => {
                       Sales Reports
                     </h1>
                     <p className="text-xs text-orange-600">
-                      Analytics & Insights
+                      Live Analytics & Insights{" "}
+                      {isDataLoading && "• Updating..."}
                     </p>
                   </div>
                 </motion.div>
@@ -178,6 +158,47 @@ const SalesReportPage = () => {
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.5, duration: 0.5 }}
               >
+                {/* Refresh Button */}
+                <motion.button
+                  onClick={handleRefresh}
+                  disabled={isDataLoading || isRefreshing}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    isDataLoading || isRefreshing
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-blue-100 text-blue-700 hover:bg-blue-200 hover:scale-105"
+                  }`}
+                  whileHover={
+                    !isDataLoading && !isRefreshing ? { scale: 1.05 } : {}
+                  }
+                  whileTap={
+                    !isDataLoading && !isRefreshing ? { scale: 0.95 } : {}
+                  }
+                >
+                  <RefreshCw
+                    className={`w-4 h-4 ${
+                      isDataLoading || isRefreshing ? "animate-spin" : ""
+                    }`}
+                  />
+                  <span>
+                    {isDataLoading || isRefreshing
+                      ? "Refreshing..."
+                      : "Refresh"}
+                  </span>
+                </motion.button>
+
+                {/* Error indicator */}
+                {dataError && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="flex items-center space-x-1 px-2 py-1 bg-red-100 text-red-700 rounded-lg text-sm"
+                    title={dataError}
+                  >
+                    <AlertCircle className="w-4 h-4" />
+                    <span>Error</span>
+                  </motion.div>
+                )}
+
                 <motion.button
                   onClick={() => setShowFilters(!showFilters)}
                   className="flex items-center space-x-2 px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors"
@@ -339,9 +360,13 @@ const SalesReportPage = () => {
             >
               <StatsCard
                 title="Total Sales"
-                value={`₦${summary.totalSales.toLocaleString()}`}
+                value={
+                  isDataLoading
+                    ? "Loading..."
+                    : formatCurrency(summary.totalSales)
+                }
                 change={{
-                  value: "+8.2% from last month",
+                  value: isDataLoading ? "..." : "+8.2% from last month",
                   icon: TrendingUp,
                   textColor: "text-green-600",
                 }}
@@ -359,9 +384,13 @@ const SalesReportPage = () => {
             >
               <StatsCard
                 title="Total Transactions"
-                value={summary.totalTransactions}
+                value={
+                  isDataLoading
+                    ? "Loading..."
+                    : summary.totalTransactions.toString()
+                }
                 change={{
-                  value: "+12 from yesterday",
+                  value: isDataLoading ? "..." : "+12 from yesterday",
                   icon: TrendingUp,
                   textColor: "text-blue-600",
                 }}
@@ -379,9 +408,17 @@ const SalesReportPage = () => {
             >
               <StatsCard
                 title="Outstanding Debt"
-                value={`₦${summary.totalOutstanding.toLocaleString()}`}
+                value={
+                  isDataLoading
+                    ? "Loading..."
+                    : formatCurrency(summary.totalOutstanding)
+                }
                 change={{
-                  value: "3 customers",
+                  value: isDataLoading
+                    ? "..."
+                    : `${
+                        salesData.filter((sale) => sale.amountDue > 0).length
+                      } customers`,
                   icon: TrendingDown,
                   textColor: "text-red-600",
                 }}
@@ -399,9 +436,13 @@ const SalesReportPage = () => {
             >
               <StatsCard
                 title="Average Sale"
-                value={`₦${summary.averageTransaction.toLocaleString()}`}
+                value={
+                  isDataLoading
+                    ? "Loading..."
+                    : formatCurrency(summary.averageTransaction)
+                }
                 change={{
-                  value: "Per transaction",
+                  value: isDataLoading ? "..." : "Per transaction",
                   icon: TrendingUp,
                   textColor: "text-orange-600",
                 }}
@@ -513,13 +554,16 @@ const SalesReportPage = () => {
                         </div>
                         <div className="text-right">
                           <div className="font-bold text-gray-900">
-                            ₦{summary.wholesaleRevenue.toLocaleString()}
+                            {formatCurrency(summary.wholesaleRevenue)}
                           </div>
                           <div className="text-sm text-gray-600">
-                            {(
-                              (summary.wholesaleRevenue / summary.totalSales) *
-                              100
-                            ).toFixed(1)}
+                            {safeNumber(summary.totalSales) > 0
+                              ? (
+                                  (safeNumber(summary.wholesaleRevenue) /
+                                    safeNumber(summary.totalSales)) *
+                                  100
+                                ).toFixed(1)
+                              : "0.0"}
                             % of total
                           </div>
                         </div>
@@ -540,13 +584,16 @@ const SalesReportPage = () => {
                         </div>
                         <div className="text-right">
                           <div className="font-bold text-gray-900">
-                            ₦{summary.retailRevenue.toLocaleString()}
+                            {formatCurrency(summary.retailRevenue)}
                           </div>
                           <div className="text-sm text-gray-600">
-                            {(
-                              (summary.retailRevenue / summary.totalSales) *
-                              100
-                            ).toFixed(1)}
+                            {safeNumber(summary.totalSales) > 0
+                              ? (
+                                  (safeNumber(summary.retailRevenue) /
+                                    safeNumber(summary.totalSales)) *
+                                  100
+                                ).toFixed(1)
+                              : "0.0"}
                             % of total
                           </div>
                         </div>
@@ -567,7 +614,7 @@ const SalesReportPage = () => {
                         </div>
                         <div className="text-right">
                           <div className="font-bold text-gray-900">
-                            ₦{summary.totalDiscounts.toLocaleString()}
+                            {formatCurrency(summary.totalDiscounts)}
                           </div>
                           <div className="text-sm text-gray-600">
                             Customer savings
@@ -592,50 +639,61 @@ const SalesReportPage = () => {
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 0.4, duration: 0.5 }}
                     >
-                      {["cash", "transfer", "credit", "part_payment"].map(
-                        (method, index) => {
-                          const methodSales = salesData.filter(
-                            (sale) => sale.paymentMethod === method
-                          );
-                          const methodTotal = methodSales.reduce(
-                            (sum, sale) => sum + sale.total,
-                            0
-                          );
-                          const percentage = (
-                            (methodTotal / summary.totalSales) *
-                            100
-                          ).toFixed(1);
-
+                      {["CASH", "TRANSFER", "CREDIT"].map((method, index) => {
+                        // Calculate totals for this payment method from all payments
+                        const methodTotal = salesData.reduce((sum, sale) => {
+                          const methodPayments =
+                            sale.payments?.filter(
+                              (payment) => payment.method === method
+                            ) || [];
                           return (
-                            <motion.div
-                              key={method}
-                              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                              initial={{ x: -20, opacity: 0 }}
-                              animate={{ x: 0, opacity: 1 }}
-                              transition={{
-                                delay: 0.5 + index * 0.1,
-                                duration: 0.4,
-                              }}
-                              whileHover={{ scale: 1.02, x: 5 }}
-                            >
-                              <div className="flex items-center space-x-3">
-                                {getPaymentMethodIcon(method)}
-                                <span className="font-medium text-gray-900 capitalize">
-                                  {method.replace("_", " ")}
-                                </span>
-                              </div>
-                              <div className="text-right">
-                                <div className="font-medium text-gray-900">
-                                  ₦{methodTotal.toLocaleString()}
-                                </div>
-                                <div className="text-sm text-gray-600">
-                                  {percentage}%
-                                </div>
-                              </div>
-                            </motion.div>
+                            sum +
+                            methodPayments.reduce(
+                              (paymentSum, payment) =>
+                                paymentSum + safeNumber(payment.amount),
+                              0
+                            )
                           );
-                        }
-                      )}
+                        }, 0);
+
+                        const percentage =
+                          safeNumber(summary.totalSales) > 0
+                            ? (
+                                (safeNumber(methodTotal) /
+                                  safeNumber(summary.totalSales)) *
+                                100
+                              ).toFixed(1)
+                            : "0.0";
+
+                        return (
+                          <motion.div
+                            key={method}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                            initial={{ x: -20, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{
+                              delay: 0.5 + index * 0.1,
+                              duration: 0.4,
+                            }}
+                            whileHover={{ scale: 1.02, x: 5 }}
+                          >
+                            <div className="flex items-center space-x-3">
+                              {getPaymentMethodIcon(method.toLowerCase())}
+                              <span className="font-medium text-gray-900 capitalize">
+                                {method.toLowerCase()}
+                              </span>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-medium text-gray-900">
+                                {formatCurrency(methodTotal)}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {percentage}%
+                              </div>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
                     </motion.div>
                   </motion.div>
                 </motion.div>
@@ -707,68 +765,95 @@ const SalesReportPage = () => {
                             }}
                           >
                             <td className="py-3 px-4 font-mono text-sm">
-                              {sale.id}
+                              {sale.transactionId}
                             </td>
                             <td className="py-3 px-4">
                               <div className="text-sm">
                                 <div className="font-medium text-gray-900">
-                                  {sale.date}
+                                  {new Date(
+                                    sale.createdAt
+                                  ).toLocaleDateString()}
                                 </div>
-                                <div className="text-gray-600">{sale.time}</div>
+                                <div className="text-gray-600">
+                                  {new Date(
+                                    sale.createdAt
+                                  ).toLocaleTimeString()}
+                                </div>
                               </div>
                             </td>
                             <td className="py-3 px-4">
                               <div className="text-sm">
                                 <div className="font-medium text-gray-900">
-                                  {sale.customer}
+                                  {sale.customer?.name || "Walk-in Customer"}
                                 </div>
                                 <div className="text-gray-600 capitalize">
-                                  {sale.customerType}
+                                  {sale.saleType.toLowerCase()}
                                 </div>
                               </div>
                             </td>
                             <td className="py-3 px-4">
                               <span
                                 className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                  sale.customerType === "wholesale"
+                                  sale.saleType === "WHOLESALE"
                                     ? "bg-blue-100 text-blue-800"
                                     : "bg-green-100 text-green-800"
                                 }`}
                               >
-                                {sale.customerType}
+                                {sale.saleType.toLowerCase()}
                               </span>
                             </td>
                             <td className="py-3 px-4">
                               <div className="text-sm">
                                 <div className="font-medium text-gray-900">
-                                  ₦{sale.total.toLocaleString()}
+                                  {formatCurrency(sale.total)}
                                 </div>
-                                {sale.discount > 0 && (
+                                {safeNumber(sale.discount) > 0 && (
                                   <div className="text-green-600">
-                                    -₦{sale.discount.toLocaleString()} discount
+                                    -{formatCurrency(sale.discount)} discount
                                   </div>
                                 )}
                               </div>
                             </td>
                             <td className="py-3 px-4">
-                              <div className="flex items-center space-x-1 text-sm">
-                                {getPaymentMethodIcon(sale.paymentMethod)}
-                                <span className="capitalize">
-                                  {sale.paymentMethod.replace("_", " ")}
-                                </span>
+                              <div className="flex flex-wrap gap-1 text-sm">
+                                {sale.payments?.map((payment, paymentIndex) => (
+                                  <div
+                                    key={paymentIndex}
+                                    className="flex items-center space-x-1"
+                                  >
+                                    {getPaymentMethodIcon(
+                                      payment.method.toLowerCase()
+                                    )}
+                                    <span className="capitalize text-xs">
+                                      {payment.method.toLowerCase()}
+                                    </span>
+                                  </div>
+                                )) || (
+                                  <span className="text-gray-500 text-xs">
+                                    No payments
+                                  </span>
+                                )}
                               </div>
                             </td>
                             <td className="py-3 px-4">
                               <span
-                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                                  sale.status
-                                )}`}
+                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                  sale.amountDue === 0
+                                    ? "text-green-600 bg-green-100"
+                                    : sale.amountDue < sale.total
+                                    ? "text-yellow-600 bg-yellow-100"
+                                    : "text-red-600 bg-red-100"
+                                }`}
                               >
-                                {sale.status}
+                                {sale.amountDue === 0
+                                  ? "paid"
+                                  : sale.amountDue < sale.total
+                                  ? "partial"
+                                  : "pending"}
                               </span>
-                              {sale.balance > 0 && (
+                              {safeNumber(sale.amountDue) > 0 && (
                                 <div className="text-xs text-red-600 mt-1">
-                                  ₦{sale.balance.toLocaleString()} remaining
+                                  {formatCurrency(sale.amountDue)} remaining
                                 </div>
                               )}
                             </td>
@@ -826,8 +911,9 @@ const SalesReportPage = () => {
                                               duration: 0.3,
                                             }}
                                           >
-                                            {item.name} x {item.quantity} = ₦
-                                            {item.total.toLocaleString()}
+                                            {item.product.name} x{" "}
+                                            {item.quantity} =
+                                            {formatCurrency(item.totalPrice)}
                                           </motion.div>
                                         ))}
                                       </div>
@@ -845,27 +931,30 @@ const SalesReportPage = () => {
                                           }}
                                         >
                                           <div>
-                                            Subtotal: ₦
-                                            {sale.subtotal.toLocaleString()}
+                                            Subtotal:
+                                            {formatCurrency(sale.subtotal)}
                                           </div>
-                                          {sale.discount > 0 && (
+                                          {safeNumber(sale.discount) > 0 && (
                                             <div>
-                                              Discount: -₦
-                                              {sale.discount.toLocaleString()}
+                                              Discount: -
+                                              {formatCurrency(sale.discount)}
                                             </div>
                                           )}
                                           <div>
-                                            Total: ₦
-                                            {sale.total.toLocaleString()}
+                                            Total:
+                                            {formatCurrency(sale.total)}
                                           </div>
                                           <div>
-                                            Amount Paid: ₦
-                                            {sale.amountPaid.toLocaleString()}
+                                            Amount Paid:
+                                            {formatCurrency(
+                                              safeNumber(sale.total) -
+                                                safeNumber(sale.amountDue)
+                                            )}
                                           </div>
-                                          {sale.balance > 0 && (
+                                          {safeNumber(sale.amountDue) > 0 && (
                                             <div className="text-red-600">
-                                              Balance: ₦
-                                              {sale.balance.toLocaleString()}
+                                              Balance:
+                                              {formatCurrency(sale.amountDue)}
                                             </div>
                                           )}
                                         </motion.div>
@@ -880,6 +969,54 @@ const SalesReportPage = () => {
                       ))}
                     </tbody>
                   </motion.table>
+                </motion.div>
+
+                {/* Load More Button */}
+                {hasNextPage && (
+                  <motion.div
+                    className="flex justify-center mt-6"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2, duration: 0.4 }}
+                  >
+                    <motion.button
+                      onClick={loadMore}
+                      disabled={isDataLoading}
+                      className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                        isDataLoading
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : "bg-orange-100 text-orange-700 hover:bg-orange-200 hover:scale-105"
+                      }`}
+                      whileHover={!isDataLoading ? { scale: 1.05 } : {}}
+                      whileTap={!isDataLoading ? { scale: 0.95 } : {}}
+                    >
+                      {isDataLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Package className="w-4 h-4" />
+                      )}
+                      <span>
+                        {isDataLoading
+                          ? "Loading..."
+                          : "Load More Transactions"}
+                      </span>
+                    </motion.button>
+                  </motion.div>
+                )}
+
+                {/* Total transactions indicator */}
+                <motion.div
+                  className="text-center mt-4 text-sm text-gray-600"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3, duration: 0.4 }}
+                >
+                  Showing {salesData.length} transactions
+                  {!hasNextPage && salesData.length > 0 && (
+                    <span className="text-green-600 ml-2">
+                      • All transactions loaded
+                    </span>
+                  )}
                 </motion.div>
               </motion.div>
             )}
@@ -913,66 +1050,70 @@ const SalesReportPage = () => {
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 0.4, duration: 0.5 }}
                     >
-                      {Array.from(
-                        new Set(salesData.map((sale) => sale.customer))
-                      )
-                        .map((customer) => {
-                          const customerSales = salesData.filter(
-                            (sale) => sale.customer === customer
-                          );
-                          const totalRevenue = customerSales.reduce(
-                            (sum, sale) => sum + sale.total,
-                            0
-                          );
-                          const totalTransactions = customerSales.length;
-                          const customerType = customerSales[0]?.customerType;
+                      {/* Group sales by customer and calculate top customers */}
+                      {(() => {
+                        const customerMap = new Map();
 
-                          return {
-                            name: customer,
-                            revenue: totalRevenue,
-                            transactions: totalTransactions,
-                            type: customerType,
-                          };
-                        })
-                        .sort((a, b) => b.revenue - a.revenue)
-                        .slice(0, 5)
-                        .map((customer, index) => (
-                          <motion.div
-                            key={customer.name}
-                            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                            initial={{ x: -20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{
-                              delay: 0.5 + index * 0.1,
-                              duration: 0.4,
-                            }}
-                            whileHover={{ scale: 1.02, x: 5 }}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                                <span className="text-sm font-medium text-orange-700">
-                                  #{index + 1}
-                                </span>
-                              </div>
-                              <div>
-                                <div className="font-medium text-gray-900">
-                                  {customer.name}
+                        salesData.forEach((sale) => {
+                          const customerKey = sale.customer?.id || "walk-in";
+                          const customerName =
+                            sale.customer?.name || "Walk-in Customer";
+
+                          if (!customerMap.has(customerKey)) {
+                            customerMap.set(customerKey, {
+                              name: customerName,
+                              revenue: 0,
+                              transactions: 0,
+                              type: sale.saleType.toLowerCase(),
+                            });
+                          }
+
+                          const customer = customerMap.get(customerKey);
+                          customer.revenue += sale.total;
+                          customer.transactions += 1;
+                        });
+
+                        return Array.from(customerMap.values())
+                          .sort((a, b) => b.revenue - a.revenue)
+                          .slice(0, 5)
+                          .map((customer, index) => (
+                            <motion.div
+                              key={customer.name}
+                              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                              initial={{ x: -20, opacity: 0 }}
+                              animate={{ x: 0, opacity: 1 }}
+                              transition={{
+                                delay: 0.5 + index * 0.1,
+                                duration: 0.4,
+                              }}
+                              whileHover={{ scale: 1.02, x: 5 }}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                  <span className="text-sm font-medium text-orange-700">
+                                    #{index + 1}
+                                  </span>
                                 </div>
-                                <div className="text-sm text-gray-600 capitalize">
-                                  {customer.type} customer
+                                <div>
+                                  <div className="font-medium text-gray-900">
+                                    {customer.name}
+                                  </div>
+                                  <div className="text-sm text-gray-600 capitalize">
+                                    {customer.type} customer
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="font-bold text-gray-900">
-                                ₦{customer.revenue.toLocaleString()}
+                              <div className="text-right">
+                                <div className="font-bold text-gray-900">
+                                  {formatCurrency(customer.revenue)}
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                  {customer.transactions} transactions
+                                </div>
                               </div>
-                              <div className="text-sm text-gray-600">
-                                {customer.transactions} transactions
-                              </div>
-                            </div>
-                          </motion.div>
-                        ))}
+                            </motion.div>
+                          ));
+                      })()}
                     </motion.div>
                   </motion.div>
 
@@ -992,8 +1133,8 @@ const SalesReportPage = () => {
                       transition={{ delay: 0.4, duration: 0.5 }}
                     >
                       {salesData
-                        .filter((sale) => sale.balance > 0)
-                        .sort((a, b) => b.balance - a.balance)
+                        .filter((sale) => sale.amountDue > 0)
+                        .sort((a, b) => b.amountDue - a.amountDue)
                         .map((sale, index) => (
                           <motion.div
                             key={sale.id}
@@ -1008,28 +1149,34 @@ const SalesReportPage = () => {
                           >
                             <div>
                               <div className="font-medium text-gray-900">
-                                {sale.customer}
+                                {sale.customer?.name || "Walk-in Customer"}
                               </div>
                               <div className="text-sm text-gray-600">
-                                Transaction: {sale.id}
+                                Transaction: {sale.transactionId}
                               </div>
                               <div className="text-xs text-gray-500">
-                                {sale.date} at {sale.time}
+                                {new Date(sale.createdAt).toLocaleDateString()}{" "}
+                                at{" "}
+                                {new Date(sale.createdAt).toLocaleTimeString()}
                               </div>
                             </div>
                             <div className="text-right">
                               <div className="font-bold text-red-600">
-                                ₦{sale.balance.toLocaleString()}
+                                {formatCurrency(sale.amountDue)}
                               </div>
                               <div className="text-sm text-gray-600">
-                                Paid: ₦{sale.amountPaid.toLocaleString()} / ₦
-                                {sale.total.toLocaleString()}
+                                Paid:
+                                {formatCurrency(
+                                  safeNumber(sale.total) -
+                                    safeNumber(sale.amountDue)
+                                )}{" "}
+                                / {formatCurrency(sale.total)}
                               </div>
                             </div>
                           </motion.div>
                         ))}
 
-                      {salesData.filter((sale) => sale.balance > 0).length ===
+                      {salesData.filter((sale) => sale.amountDue > 0).length ===
                         0 && (
                         <motion.div
                           className="text-center py-8 text-gray-500"
@@ -1082,7 +1229,11 @@ const SalesReportPage = () => {
                           <div className="text-lg font-bold text-blue-900">
                             {
                               Array.from(
-                                new Set(salesData.map((sale) => sale.customer))
+                                new Set(
+                                  salesData.map(
+                                    (sale) => sale.customer?.id || "walk-in"
+                                  )
+                                )
                               ).length
                             }
                           </div>
@@ -1109,10 +1260,11 @@ const SalesReportPage = () => {
                                 new Set(
                                   salesData
                                     .filter(
-                                      (sale) =>
-                                        sale.customerType === "wholesale"
+                                      (sale) => sale.saleType === "WHOLESALE"
                                     )
-                                    .map((sale) => sale.customer)
+                                    .map(
+                                      (sale) => sale.customer?.id || "walk-in"
+                                    )
                                 )
                               ).length
                             }
@@ -1140,9 +1292,11 @@ const SalesReportPage = () => {
                                 new Set(
                                   salesData
                                     .filter(
-                                      (sale) => sale.customerType === "retail"
+                                      (sale) => sale.saleType === "RETAIL"
                                     )
-                                    .map((sale) => sale.customer)
+                                    .map(
+                                      (sale) => sale.customer?.id || "walk-in"
+                                    )
                                 )
                               ).length
                             }

@@ -35,13 +35,28 @@ export interface StockDelivery {
   supplier?: string;
 }
 
+// Raw response interface for handling Decimal strings
+interface RawStockDelivery {
+  id: string;
+  deliveredQuantity: string | number;
+  cumulativeStock: string | number;
+  remainingStock: string | number;
+  soldStock: string | number;
+  price: string | number;
+  stockUtilizationPercentage: string | number;
+  previousRemainingStock?: string | number;
+  createdAt?: string;
+  updatedAt?: string;
+  supplier?: string;
+}
+
 export interface ProductInventoryResponse {
   products: {
     edges: Array<{
       node: Product;
     }>;
   };
-  latestStockDeliveries: StockDelivery[];
+  latestStockDeliveries: RawStockDelivery[];
 }
 
 export interface StockDeliveriesResponse {
@@ -71,6 +86,25 @@ export interface AddStockDeliveryMutationResponse {
 // Service Implementation
 export const inventoryService = {
   /**
+   * Normalize raw stock delivery data to proper types
+   */
+  normalizeStockDelivery(raw: RawStockDelivery): StockDelivery {
+    return {
+      id: raw.id,
+      deliveredQuantity: parseFloat(raw.deliveredQuantity?.toString() || '0'),
+      cumulativeStock: parseFloat(raw.cumulativeStock?.toString() || '0'),
+      remainingStock: parseFloat(raw.remainingStock?.toString() || '0'),
+      soldStock: parseFloat(raw.soldStock?.toString() || '0'),
+      price: parseFloat(raw.price?.toString() || '0'),
+      stockUtilizationPercentage: parseFloat(raw.stockUtilizationPercentage?.toString() || '0'),
+      previousRemainingStock: raw.previousRemainingStock ? parseFloat(raw.previousRemainingStock.toString()) : undefined,
+      createdAt: raw.createdAt,
+      updatedAt: raw.updatedAt,
+      supplier: raw.supplier,
+    };
+  },
+
+  /**
    * Get product inventory and latest stock deliveries
    */
   async getProductInventory(): Promise<{
@@ -85,7 +119,8 @@ export const inventoryService = {
       );
 
       const products = response.products.edges.map(edge => edge.node);
-      const latestStockDelivery = response.latestStockDeliveries[0] || null;
+      const rawLatestStockDelivery = response.latestStockDeliveries[0] || null;
+      const latestStockDelivery = rawLatestStockDelivery ? this.normalizeStockDelivery(rawLatestStockDelivery) : null;
 
       return {
         success: true,
