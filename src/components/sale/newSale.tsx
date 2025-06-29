@@ -5,7 +5,6 @@ import {
   ShoppingCart,
   Package,
   Users,
-  Calculator,
   Plus,
   Minus,
   ArrowLeft,
@@ -99,10 +98,6 @@ const NewSalePage = () => {
   const [discountType, setDiscountType] = useState<"amount" | "percentage">(
     "amount"
   );
-  const [partPaymentAmount, setPartPaymentAmount] = useState<number>(0);
-  const [partPaymentMethod, setPartPaymentMethod] = useState<
-    "cash" | "transfer"
-  >("cash");
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [showDiscountInput, setShowDiscountInput] = useState<boolean>(false);
   const [showAddCustomerModal, setShowAddCustomerModal] =
@@ -238,13 +233,6 @@ const NewSalePage = () => {
     return Math.max(0, subtotal - discount);
   };
 
-  const calculateRemainingBalance = (): number => {
-    if (paymentMethod === "part_payment") {
-      return Math.max(0, calculateActualAmountOwed(partPaymentAmount));
-    }
-    return 0;
-  };
-
   const getCustomerDebt = (): number => {
     if (!selectedCustomer || selectedCustomer.balance >= 0) {
       return 0;
@@ -267,24 +255,6 @@ const NewSalePage = () => {
         ? selectedCustomer.balance
         : parseFloat(selectedCustomer.balance) || 0;
     return balance > 0 ? balance : 0;
-  };
-
-  const calculateGrandTotal = (): number => {
-    const currentTotal = calculateTotal();
-    const customerDebt = getCustomerDebt();
-    const customerCredit = getCustomerCredit();
-
-    // If customer has debt, add it to current total
-    if (customerDebt > 0) {
-      return currentTotal + customerDebt;
-    }
-
-    // If customer has credit, deduct it from current total
-    if (customerCredit > 0) {
-      return Math.max(0, currentTotal - customerCredit);
-    }
-
-    return currentTotal;
   };
 
   // Calculate what customer actually owes after considering their existing credit/debt
@@ -355,11 +325,6 @@ const NewSalePage = () => {
     }
 
     // Validate payment amounts based on payment method
-    if (paymentMethod === "part_payment" && partPaymentAmount <= 0) {
-      setCustomerValidationError("Please enter a valid part payment amount");
-      return;
-    }
-
     // Check if customer has enough credit to cover the purchase
     const currentTotal = calculateTotal();
     const customerCredit = getCustomerCredit();
@@ -389,9 +354,7 @@ const NewSalePage = () => {
 
       // Determine the actual payment amount based on method and customer credit
       let actualPaymentAmount = total;
-      if (paymentMethod === "part_payment") {
-        actualPaymentAmount = partPaymentAmount;
-      } else if (paymentMethod === "cash" || paymentMethod === "transfer") {
+      if (paymentMethod === "cash" || paymentMethod === "transfer") {
         // Always send the payment amount entered by user, even if customer has enough credit
         // This allows for additional payments to be added to customer credit balance
         actualPaymentAmount = paymentAmount;
@@ -415,8 +378,7 @@ const NewSalePage = () => {
             method: paymentMethod.toUpperCase() as
               | "CASH"
               | "TRANSFER"
-              | "CREDIT"
-              | "PART_PAYMENT",
+              | "CREDIT",
             amount: actualPaymentAmount,
           },
         ],
@@ -429,7 +391,6 @@ const NewSalePage = () => {
         total: total,
         actualPaymentAmount: actualPaymentAmount,
         paymentAmount: paymentAmount,
-        partPaymentAmount: partPaymentAmount,
         customerCredit: customerCredit,
         customerDebt: customerDebt,
         actualAmountOwed: actualAmountOwed,
@@ -487,8 +448,6 @@ const NewSalePage = () => {
         setCartItems([]);
         setSelectedCustomer(null);
         setDiscountAmount(0);
-        setPartPaymentAmount(0);
-        setPartPaymentMethod("cash");
         setPaymentAmount(0);
         setShowDiscountInput(false);
         setCustomerValidationError("");
@@ -1327,11 +1286,11 @@ const NewSalePage = () => {
                     </motion.button>
 
                     <motion.button
-                      onClick={() => setPaymentMethod("part_payment")}
+                      onClick={() => setPaymentMethod("credit")}
                       className={`w-full p-3 rounded-lg border-2 transition-all ${
-                        paymentMethod === "part_payment"
-                          ? "border-purple-500 bg-purple-50 text-purple-700"
-                          : "border-gray-200 hover:border-purple-300"
+                        paymentMethod === "credit"
+                          ? "border-orange-500 bg-orange-50 text-orange-700"
+                          : "border-gray-200 hover:border-orange-300"
                       }`}
                       whileHover={{ scale: 1.02, y: -2 }}
                       whileTap={{ scale: 0.98 }}
@@ -1343,516 +1302,15 @@ const NewSalePage = () => {
                         className="flex items-center space-x-3"
                         whileHover={{ x: 5 }}
                       >
-                        <Calculator className="w-5 h-5" />
-                        <span className="font-medium">Part Payment</span>
-                      </motion.div>
-                    </motion.button>
-
-                    <motion.button
-                      onClick={() => setPaymentMethod("credit")}
-                      className={`w-full p-3 rounded-lg border-2 transition-all ${
-                        paymentMethod === "credit"
-                          ? "border-orange-500 bg-orange-50 text-orange-700"
-                          : "border-gray-200 hover:border-orange-300"
-                      }`}
-                      whileHover={{ scale: 1.02, y: -2 }}
-                      whileTap={{ scale: 0.98 }}
-                      initial={{ x: -20, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: 0.6 }}
-                    >
-                      <motion.div
-                        className="flex items-center space-x-3"
-                        whileHover={{ x: 5 }}
-                      >
                         <AlertCircle className="w-5 h-5" />
                         <span className="font-medium">Credit (Pay Later)</span>
                       </motion.div>
                     </motion.button>
                   </motion.div>
 
-                  {/* Payment Amount Input for Non-Part Payment Methods */}
+                  {/* Payment Amount Input for Non-Credit Methods */}
                   <AnimatePresence>
-                    {paymentMethod !== "part_payment" &&
-                      paymentMethod !== "credit" && (
-                        <motion.div
-                          className="mt-4 space-y-3"
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          {(() => {
-                            // Calculate if payment is needed
-                            const currentTotal = calculateTotal();
-                            const customerCredit = getCustomerCredit();
-                            const customerDebt = getCustomerDebt();
-                            const actualAmountOwed =
-                              currentTotal + customerDebt - customerCredit;
-                            const needsPayment = actualAmountOwed > 0;
-
-                            if (!needsPayment) {
-                              // Customer has enough credit - no payment needed, but allow optional additional payment
-                              return (
-                                <motion.div
-                                  className="space-y-3"
-                                  initial={{ opacity: 0, scale: 0.95 }}
-                                  animate={{ opacity: 1, scale: 1 }}
-                                  transition={{ duration: 0.3 }}
-                                >
-                                  <motion.div
-                                    className="bg-green-50 border border-green-200 rounded-lg p-4"
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.3 }}
-                                  >
-                                    <div className="flex items-center space-x-2">
-                                      <Check className="w-5 h-5 text-green-600" />
-                                      <div>
-                                        <div className="font-medium text-green-800">
-                                          No Payment Required
-                                        </div>
-                                        <div className="text-sm text-green-600">
-                                          Customer credit (
-                                          {formatCurrency(customerCredit)})
-                                          covers the full purchase amount (
-                                          {formatCurrency(currentTotal)})
-                                        </div>
-                                        {actualAmountOwed < 0 && (
-                                          <div className="text-xs text-blue-600 mt-1">
-                                            Remaining credit after purchase:{" "}
-                                            {formatCurrency(
-                                              Math.abs(actualAmountOwed)
-                                            )}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </motion.div>
-
-                                  {/* Optional Additional Payment */}
-                                  <motion.div
-                                    className="bg-blue-50 border border-blue-200 rounded-lg p-4"
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.2 }}
-                                  >
-                                    <div className="mb-3">
-                                      <h4 className="font-medium text-blue-800 mb-1">
-                                        Optional Additional Payment
-                                      </h4>
-                                      <p className="text-sm text-blue-600">
-                                        Customer can make an additional payment
-                                        to further increase their credit balance
-                                      </p>
-                                    </div>
-
-                                    <div className="relative">
-                                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Additional Amount{" "}
-                                        {paymentMethod === "cash"
-                                          ? "Received"
-                                          : "Paid"}{" "}
-                                        (Optional)
-                                      </label>
-                                      <input
-                                        value={paymentAmount || ""}
-                                        onChange={(e) => {
-                                          const value =
-                                            parseFloat(e.target.value) || 0;
-                                          setPaymentAmount(Math.max(0, value));
-                                        }}
-                                        placeholder={`Enter additional amount ${
-                                          paymentMethod === "cash"
-                                            ? "received from customer"
-                                            : "paid"
-                                        }`}
-                                        className="w-full px-4 py-3 pr-10 border border-blue-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                      />
-                                      <span className="absolute right-3 top-10 text-gray-500">
-                                        ₦
-                                      </span>
-                                    </div>
-
-                                    {paymentAmount > 0 && (
-                                      <motion.div
-                                        className="mt-3 p-3 bg-blue-100 rounded-lg"
-                                        initial={{ opacity: 0, scale: 0.95 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                      >
-                                        <div className="text-sm text-blue-800">
-                                          <div className="flex justify-between">
-                                            <span>Current Credit Balance:</span>
-                                            <span className="font-medium">
-                                              {formatCurrency(
-                                                customerCredit || 0
-                                              )}
-                                            </span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span>Purchase Amount:</span>
-                                            <span className="font-medium">
-                                              -{formatCurrency(currentTotal)}
-                                            </span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span>Additional Payment:</span>
-                                            <span className="font-medium text-green-700">
-                                              +{formatCurrency(paymentAmount)}
-                                            </span>
-                                          </div>
-                                          <div className="border-t border-blue-300 pt-2 mt-2 flex justify-between font-semibold">
-                                            <span>New Credit Balance:</span>
-                                            <span className="text-blue-900">
-                                              {formatCurrency(
-                                                customerCredit -
-                                                  currentTotal +
-                                                  paymentAmount
-                                              )}
-                                            </span>
-                                          </div>
-                                        </div>
-                                      </motion.div>
-                                    )}
-                                  </motion.div>
-                                </motion.div>
-                              );
-                            }
-
-                            // Payment is needed - show input
-                            return (
-                              <motion.div
-                                className="relative"
-                                initial={{ y: 20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                transition={{ delay: 0.1 }}
-                              >
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                  Amount{" "}
-                                  {paymentMethod === "cash"
-                                    ? "Received"
-                                    : "Paid"}
-                                  {actualAmountOwed < currentTotal && (
-                                    <span className="text-green-600 text-xs ml-2">
-                                      (Only {formatCurrency(actualAmountOwed)}{" "}
-                                      needed after credit)
-                                    </span>
-                                  )}
-                                </label>
-                                <input
-                                  value={paymentAmount || ""}
-                                  onChange={(e) => {
-                                    const value =
-                                      parseFloat(e.target.value) || 0;
-                                    setPaymentAmount(Math.max(0, value));
-                                  }}
-                                  placeholder={`Enter amount ${
-                                    paymentMethod === "cash"
-                                      ? "received from customer"
-                                      : "paid"
-                                  }`}
-                                  className="w-full px-4 py-3 pr-10 border border-orange-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                                />
-                                <span className="absolute right-3 top-10 text-gray-500">
-                                  ₦
-                                </span>
-                              </motion.div>
-                            );
-                          })()}
-
-                          <AnimatePresence>
-                            {paymentMethod === "cash" && paymentAmount > 0 && (
-                              <motion.div
-                                className={`border rounded-lg p-3 ${
-                                  paymentAmount >= calculateTotal()
-                                    ? "bg-green-50 border-green-200"
-                                    : "bg-yellow-50 border-yellow-200"
-                                }`}
-                                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                                transition={{ duration: 0.3 }}
-                              >
-                                <div className="flex justify-between items-center text-sm">
-                                  <span
-                                    className={
-                                      paymentAmount >= calculateTotal()
-                                        ? "text-green-700"
-                                        : "text-yellow-700"
-                                    }
-                                  >
-                                    Amount Due:
-                                  </span>
-                                  <span
-                                    className={`font-medium ${
-                                      paymentAmount >= calculateTotal()
-                                        ? "text-green-900"
-                                        : "text-yellow-900"
-                                    }`}
-                                  >
-                                    {formatCurrency(calculateTotal())}
-                                  </span>
-                                </div>
-                                {selectedCustomer &&
-                                  (getCustomerCredit() > 0 ||
-                                    getCustomerDebt() > 0) && (
-                                    <div className="flex justify-between items-center text-sm">
-                                      <span className="text-gray-700">
-                                        {getCustomerCredit() > 0
-                                          ? "Customer Credit:"
-                                          : "Customer Debt:"}
-                                      </span>
-                                      <span
-                                        className={`font-medium ${
-                                          getCustomerCredit() > 0
-                                            ? "text-green-700"
-                                            : "text-red-700"
-                                        }`}
-                                      >
-                                        {getCustomerCredit() > 0 ? "-" : "+"}
-                                        {formatCurrency(
-                                          getCustomerCredit() ||
-                                            getCustomerDebt() ||
-                                            0
-                                        )}
-                                      </span>
-                                    </div>
-                                  )}
-                                {paymentAmount > calculateTotal() && (
-                                  <div className="flex justify-between items-center text-sm border-t border-green-200 pt-2 mt-2">
-                                    <span className="text-green-700">
-                                      Change to Give:
-                                    </span>
-                                    <span className="font-bold text-green-900">
-                                      {formatCurrency(
-                                        paymentAmount - calculateTotal()
-                                      )}
-                                    </span>
-                                  </div>
-                                )}
-                                {calculateActualAmountOwed(paymentAmount) >
-                                  0 && (
-                                  <div className="flex justify-between items-center text-sm border-t border-yellow-200 pt-2 mt-2">
-                                    <span className="text-yellow-700">
-                                      Customer Still Owes:
-                                    </span>
-                                    <span className="font-bold text-yellow-900">
-                                      {formatCurrency(
-                                        calculateActualAmountOwed(paymentAmount)
-                                      )}
-                                    </span>
-                                  </div>
-                                )}
-                                {calculateActualAmountOwed(paymentAmount) < 0 &&
-                                  paymentAmount <= calculateTotal() && (
-                                    <div className="flex justify-between items-center text-sm border-t border-green-200 pt-2 mt-2">
-                                      <span className="text-green-700">
-                                        Customer Credit Balance:
-                                      </span>
-                                      <span className="font-bold text-green-900">
-                                        {formatCurrency(
-                                          Math.abs(
-                                            calculateActualAmountOwed(
-                                              paymentAmount
-                                            )
-                                          )
-                                        )}
-                                      </span>
-                                    </div>
-                                  )}
-                              </motion.div>
-                            )}
-
-                            {paymentMethod === "transfer" &&
-                              paymentAmount > 0 && (
-                                <motion.div
-                                  className={`border rounded-lg p-3 ${
-                                    paymentAmount >= calculateTotal()
-                                      ? "bg-blue-50 border-blue-200"
-                                      : "bg-yellow-50 border-yellow-200"
-                                  }`}
-                                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                                  transition={{ duration: 0.3 }}
-                                >
-                                  <div className="flex justify-between items-center text-sm">
-                                    <span
-                                      className={
-                                        paymentAmount >= calculateTotal()
-                                          ? "text-blue-700"
-                                          : "text-yellow-700"
-                                      }
-                                    >
-                                      Amount Due:
-                                    </span>
-                                    <span
-                                      className={`font-medium ${
-                                        paymentAmount >= calculateTotal()
-                                          ? "text-blue-900"
-                                          : "text-yellow-900"
-                                      }`}
-                                    >
-                                      {formatCurrency(calculateTotal())}
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between items-center text-sm">
-                                    <span
-                                      className={
-                                        paymentAmount >= calculateTotal()
-                                          ? "text-blue-700"
-                                          : "text-yellow-700"
-                                      }
-                                    >
-                                      Transfer Amount:
-                                    </span>
-                                    <span
-                                      className={`font-medium ${
-                                        paymentAmount >= calculateTotal()
-                                          ? "text-blue-900"
-                                          : "text-yellow-900"
-                                      }`}
-                                    >
-                                      {formatCurrency(paymentAmount)}
-                                    </span>
-                                  </div>
-                                  {selectedCustomer &&
-                                    (getCustomerCredit() > 0 ||
-                                      getCustomerDebt() > 0) && (
-                                      <div className="flex justify-between items-center text-sm">
-                                        <span className="text-gray-700">
-                                          {getCustomerCredit() > 0
-                                            ? "Customer Credit:"
-                                            : "Customer Debt:"}
-                                        </span>
-                                        <span
-                                          className={`font-medium ${
-                                            getCustomerCredit() > 0
-                                              ? "text-green-700"
-                                              : "text-red-700"
-                                          }`}
-                                        >
-                                          {getCustomerCredit() > 0 ? "-" : "+"}
-                                          {formatCurrency(
-                                            getCustomerCredit() ||
-                                              getCustomerDebt() ||
-                                              0
-                                          )}
-                                        </span>
-                                      </div>
-                                    )}
-                                  {calculateActualAmountOwed(paymentAmount) >
-                                    0 && (
-                                    <div className="flex justify-between items-center text-sm border-t border-yellow-200 pt-2 mt-2">
-                                      <span className="text-yellow-700">
-                                        Customer Still Owes:
-                                      </span>
-                                      <span className="font-bold text-yellow-900">
-                                        {formatCurrency(
-                                          calculateActualAmountOwed(
-                                            paymentAmount
-                                          )
-                                        )}
-                                      </span>
-                                    </div>
-                                  )}
-                                  {paymentAmount > calculateTotal() && (
-                                    <div className="flex justify-between items-center text-sm border-t border-blue-200 pt-2 mt-2">
-                                      <span className="text-blue-700">
-                                        Excess Transfer Amount:
-                                      </span>
-                                      <span className="font-bold text-blue-900">
-                                        {formatCurrency(
-                                          paymentAmount - calculateTotal()
-                                        )}
-                                      </span>
-                                    </div>
-                                  )}
-                                  {calculateActualAmountOwed(paymentAmount) <
-                                    0 &&
-                                    paymentAmount <= calculateTotal() && (
-                                      <div className="flex justify-between items-center text-sm border-t border-blue-200 pt-2 mt-2">
-                                        <span className="text-blue-700">
-                                          Customer Credit Balance:
-                                        </span>
-                                        <span className="font-bold text-blue-900">
-                                          {formatCurrency(
-                                            Math.abs(
-                                              calculateActualAmountOwed(
-                                                paymentAmount
-                                              )
-                                            )
-                                          )}
-                                        </span>
-                                      </div>
-                                    )}
-                                  {paymentAmount >= calculateTotal() &&
-                                    calculateActualAmountOwed(paymentAmount) <=
-                                      0 && (
-                                      <div className="text-xs text-blue-600 mt-2">
-                                        ✓ Transfer amount covers the full sale
-                                        amount
-                                      </div>
-                                    )}
-                                </motion.div>
-                              )}
-                          </AnimatePresence>
-
-                          {/* Cash/Transfer Payment Amount Validation Warning */}
-                          <AnimatePresence>
-                            {(() => {
-                              if (
-                                paymentMethod !== "cash" &&
-                                paymentMethod !== "transfer"
-                              )
-                                return false;
-                              if (!selectedCustomer) return false;
-                              if (paymentAmount > 0) return false;
-
-                              // Check if payment is actually required
-                              const currentTotal = calculateTotal();
-                              const customerCredit = getCustomerCredit();
-                              const customerDebt = getCustomerDebt();
-                              const actualAmountOwed =
-                                currentTotal + customerDebt - customerCredit;
-                              const needsPayment = actualAmountOwed > 0;
-
-                              return needsPayment; // Only show warning if payment is needed
-                            })() && (
-                              <motion.div
-                                className="bg-red-50 border border-red-200 rounded-lg p-3"
-                                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                                transition={{ duration: 0.3 }}
-                              >
-                                <motion.div
-                                  className="flex items-center space-x-2 text-red-700"
-                                  animate={{ x: [0, 2, -2, 0] }}
-                                  transition={{
-                                    duration: 0.5,
-                                    repeat: Infinity,
-                                    repeatDelay: 2,
-                                  }}
-                                >
-                                  <AlertCircle className="w-4 h-4" />
-                                  <span className="text-sm">
-                                    Enter amount{" "}
-                                    {paymentMethod === "cash"
-                                      ? "received from customer"
-                                      : "paid"}
-                                  </span>
-                                </motion.div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </motion.div>
-                      )}
-                  </AnimatePresence>
-
-                  {/* Part Payment Input */}
-                  <AnimatePresence>
-                    {paymentMethod === "part_payment" && (
+                    {paymentMethod !== "credit" && (
                       <motion.div
                         className="mt-4 space-y-3"
                         initial={{ height: 0, opacity: 0 }}
@@ -1860,113 +1318,614 @@ const NewSalePage = () => {
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.3 }}
                       >
-                        {/* Part Payment Method Selection */}
-                        <motion.div
-                          className="space-y-2"
-                          initial={{ y: 20, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          transition={{ delay: 0.1 }}
-                        >
-                          <label className="text-sm font-medium text-gray-700">
-                            Part Payment Method
-                          </label>
-                          <div className="flex space-x-2">
-                            <motion.button
-                              onClick={() => setPartPaymentMethod("cash")}
-                              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                                partPaymentMethod === "cash"
-                                  ? "bg-green-500 text-white"
-                                  : "bg-gray-100 text-gray-600 hover:bg-green-100"
-                              }`}
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                            >
-                              <div className="flex items-center justify-center space-x-2">
-                                <Banknote className="w-4 h-4" />
-                                <span>Cash</span>
-                              </div>
-                            </motion.button>
-                            <motion.button
-                              onClick={() => setPartPaymentMethod("transfer")}
-                              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                                partPaymentMethod === "transfer"
-                                  ? "bg-blue-500 text-white"
-                                  : "bg-gray-100 text-gray-600 hover:bg-blue-100"
-                              }`}
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                            >
-                              <div className="flex items-center justify-center space-x-2">
-                                <CreditCard className="w-4 h-4" />
-                                <span>Transfer</span>
-                              </div>
-                            </motion.button>
-                          </div>
-                        </motion.div>
+                        {(() => {
+                          // Calculate if payment is needed
+                          const currentTotal = calculateTotal();
+                          const customerCredit = getCustomerCredit();
+                          const customerDebt = getCustomerDebt();
+                          const actualAmountOwed =
+                            currentTotal + customerDebt - customerCredit;
+                          const needsPayment = actualAmountOwed > 0;
 
-                        <motion.div
-                          className="relative"
-                          initial={{ y: 20, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          transition={{ delay: 0.2 }}
-                        >
-                          <input
-                            value={partPaymentAmount || ""}
-                            onChange={(e) =>
-                              setPartPaymentAmount(
-                                Math.max(0, parseFloat(e.target.value) || 0)
-                              )
-                            }
-                            placeholder="Enter part payment amount"
-                            max={
-                              selectedCustomer &&
-                              (getCustomerDebt() > 0 || getCustomerCredit() > 0)
-                                ? calculateGrandTotal()
-                                : calculateTotal()
-                            }
-                            className="w-full px-3 py-3 pr-10 border border-orange-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                            // className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          />
-                          <span className="absolute right-3 top-3 text-gray-500">
-                            ₦
-                          </span>
-                        </motion.div>
+                          if (!needsPayment) {
+                            // Customer has enough credit - no payment needed, but allow optional additional payment
+                            return (
+                              <motion.div
+                                className="space-y-3"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.3 }}
+                              >
+                                <motion.div
+                                  className="bg-green-50 border border-green-200 rounded-lg p-4"
+                                  initial={{ opacity: 0, scale: 0.95 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  transition={{ duration: 0.3 }}
+                                >
+                                  <div className="flex items-center space-x-2">
+                                    <Check className="w-5 h-5 text-green-600" />
+                                    <div>
+                                      <div className="font-medium text-green-800">
+                                        No Payment Required
+                                      </div>
+                                      <div className="text-sm text-green-600">
+                                        Customer credit (
+                                        {formatCurrency(customerCredit)}) covers
+                                        the full purchase amount (
+                                        {formatCurrency(currentTotal)})
+                                      </div>
+                                      {actualAmountOwed < 0 && (
+                                        <div className="text-xs text-blue-600 mt-1">
+                                          Remaining credit after purchase:{" "}
+                                          {formatCurrency(
+                                            Math.abs(actualAmountOwed)
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </motion.div>
+
+                                {/* Optional Additional Payment */}
+                                <motion.div
+                                  className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: 0.2 }}
+                                >
+                                  <div className="mb-3">
+                                    <h4 className="font-medium text-blue-800 mb-1">
+                                      Optional Additional Payment
+                                    </h4>
+                                    <p className="text-sm text-blue-600">
+                                      Customer can make an additional payment to
+                                      further increase their credit balance
+                                    </p>
+                                  </div>
+
+                                  <div className="relative">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                      Additional Amount{" "}
+                                      {paymentMethod === "cash"
+                                        ? "Received"
+                                        : "Paid"}{" "}
+                                      (Optional)
+                                    </label>
+                                    <input
+                                      value={paymentAmount || ""}
+                                      onChange={(e) => {
+                                        const value =
+                                          parseFloat(e.target.value) || 0;
+                                        setPaymentAmount(Math.max(0, value));
+                                      }}
+                                      placeholder={`Enter additional amount ${
+                                        paymentMethod === "cash"
+                                          ? "received from customer"
+                                          : "paid"
+                                      }`}
+                                      className="w-full px-4 py-3 pr-10 border border-blue-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                    <span className="absolute right-3 top-10 text-gray-500">
+                                      ₦
+                                    </span>
+                                  </div>
+
+                                  {paymentAmount > 0 && (
+                                    <motion.div
+                                      className="mt-3 p-3 bg-blue-100 rounded-lg"
+                                      initial={{ opacity: 0, scale: 0.95 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                    >
+                                      <div className="text-sm text-blue-800">
+                                        <div className="flex justify-between">
+                                          <span>Current Credit Balance:</span>
+                                          <span className="font-medium">
+                                            {formatCurrency(
+                                              customerCredit || 0
+                                            )}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span>Purchase Amount:</span>
+                                          <span className="font-medium">
+                                            -{formatCurrency(currentTotal)}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span>Additional Payment:</span>
+                                          <span className="font-medium text-green-700">
+                                            +{formatCurrency(paymentAmount)}
+                                          </span>
+                                        </div>
+                                        <div className="border-t border-blue-300 pt-2 mt-2 flex justify-between font-semibold">
+                                          <span>New Credit Balance:</span>
+                                          <span className="text-blue-900">
+                                            {formatCurrency(
+                                              customerCredit -
+                                                currentTotal +
+                                                paymentAmount
+                                            )}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </motion.div>
+                              </motion.div>
+                            );
+                          }
+
+                          // Payment is needed - show input
+                          return (
+                            <motion.div
+                              className="relative"
+                              initial={{ y: 20, opacity: 0 }}
+                              animate={{ y: 0, opacity: 1 }}
+                              transition={{ delay: 0.1 }}
+                            >
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Amount{" "}
+                                {paymentMethod === "cash" ? "Received" : "Paid"}
+                                {actualAmountOwed < currentTotal && (
+                                  <span className="text-green-600 text-xs ml-2">
+                                    (Only {formatCurrency(actualAmountOwed)}{" "}
+                                    needed after credit)
+                                  </span>
+                                )}
+                              </label>
+                              <input
+                                value={paymentAmount || ""}
+                                onChange={(e) => {
+                                  const value = parseFloat(e.target.value) || 0;
+                                  setPaymentAmount(Math.max(0, value));
+                                }}
+                                placeholder={`Enter amount ${
+                                  paymentMethod === "cash"
+                                    ? "received from customer"
+                                    : "paid"
+                                }`}
+                                className="w-full px-4 py-3 pr-10 border border-orange-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                              />
+                              <span className="absolute right-3 top-10 text-gray-500">
+                                ₦
+                              </span>
+                            </motion.div>
+                          );
+                        })()}
 
                         <AnimatePresence>
-                          {partPaymentAmount > 0 && (
+                          {paymentMethod === "cash" && paymentAmount > 0 && (
                             <motion.div
-                              className="bg-purple-50 border border-purple-200 rounded-lg p-3"
+                              className={`border rounded-lg p-4 ${(() => {
+                                const currentTotal = calculateTotal();
+                                const customerCredit = getCustomerCredit();
+                                const customerDebt = getCustomerDebt();
+                                const actualAmountOwed =
+                                  currentTotal + customerDebt - customerCredit;
+
+                                if (paymentAmount >= actualAmountOwed) {
+                                  return "bg-green-50 border-green-200";
+                                } else {
+                                  return "bg-red-50 border-red-200";
+                                }
+                              })()}`}
                               initial={{ opacity: 0, scale: 0.95, y: 10 }}
                               animate={{ opacity: 1, scale: 1, y: 0 }}
                               exit={{ opacity: 0, scale: 0.95, y: -10 }}
                               transition={{ duration: 0.3 }}
                             >
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-purple-700">
-                                  Payment Method:
-                                </span>
-                                <span className="font-medium text-purple-900 capitalize">
-                                  {partPaymentMethod}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-purple-700">
-                                  Payment:
-                                </span>
-                                <span className="font-medium text-purple-900">
-                                  {formatCurrency(partPaymentAmount)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-purple-700">
-                                  Customer Still Owes:
-                                </span>
-                                <span className="font-medium text-purple-900">
-                                  {formatCurrency(calculateRemainingBalance())}
-                                </span>
-                              </div>
+                              {(() => {
+                                const currentTotal = calculateTotal();
+                                const customerCredit = getCustomerCredit();
+                                const customerDebt = getCustomerDebt();
+                                const actualAmountOwed =
+                                  currentTotal + customerDebt - customerCredit;
+                                const remainingOwed =
+                                  calculateActualAmountOwed(paymentAmount);
+                                const isFullyPaid =
+                                  paymentAmount >= actualAmountOwed;
+                                const isOverpaid =
+                                  paymentAmount > actualAmountOwed;
+
+                                return (
+                                  <div className="space-y-3">
+                                    {/* Header Status */}
+                                    <div
+                                      className={`flex items-center space-x-2 ${
+                                        isFullyPaid
+                                          ? "text-green-700"
+                                          : "text-red-700"
+                                      }`}
+                                    >
+                                      {isFullyPaid ? (
+                                        <>
+                                          <motion.div
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            transition={{
+                                              duration: 0.3,
+                                              delay: 0.1,
+                                            }}
+                                          >
+                                            <Check className="w-5 h-5" />
+                                          </motion.div>
+                                          <span className="font-semibold">
+                                            {isOverpaid
+                                              ? "Overpaid - Change Required"
+                                              : "Payment Complete"}
+                                          </span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <motion.div
+                                            animate={{ x: [0, 2, -2, 0] }}
+                                            transition={{
+                                              duration: 0.5,
+                                              repeat: Infinity,
+                                              repeatDelay: 1,
+                                            }}
+                                          >
+                                            <AlertCircle className="w-5 h-5" />
+                                          </motion.div>
+                                          <span className="font-semibold">
+                                            Partial Payment - Balance Remaining
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+
+                                    {/* Payment Breakdown */}
+                                    <div className="space-y-2">
+                                      <div className="flex justify-between items-center text-sm">
+                                        <span className="text-gray-700">
+                                          Sale Amount:
+                                        </span>
+                                        <span className="font-medium text-gray-900">
+                                          {formatCurrency(currentTotal)}
+                                        </span>
+                                      </div>
+
+                                      {customerDebt > 0 && (
+                                        <div className="flex justify-between items-center text-sm">
+                                          <span className="text-red-700">
+                                            Previous Debt:
+                                          </span>
+                                          <span className="font-medium text-red-700">
+                                            +{formatCurrency(customerDebt)}
+                                          </span>
+                                        </div>
+                                      )}
+
+                                      {customerCredit > 0 && (
+                                        <div className="flex justify-between items-center text-sm">
+                                          <span className="text-green-700">
+                                            Customer Credit:
+                                          </span>
+                                          <span className="font-medium text-green-700">
+                                            -{formatCurrency(customerCredit)}
+                                          </span>
+                                        </div>
+                                      )}
+
+                                      <div
+                                        className={`flex justify-between items-center text-sm border-t pt-2 ${
+                                          isFullyPaid
+                                            ? "border-green-200"
+                                            : "border-red-200"
+                                        }`}
+                                      >
+                                        <span
+                                          className={`font-medium ${
+                                            isFullyPaid
+                                              ? "text-green-700"
+                                              : "text-red-700"
+                                          }`}
+                                        >
+                                          Total Due:
+                                        </span>
+                                        <span
+                                          className={`font-bold ${
+                                            isFullyPaid
+                                              ? "text-green-900"
+                                              : "text-red-900"
+                                          }`}
+                                        >
+                                          {formatCurrency(actualAmountOwed)}
+                                        </span>
+                                      </div>
+
+                                      <div className="flex justify-between items-center text-sm">
+                                        <span className="text-blue-700">
+                                          Cash Received:
+                                        </span>
+                                        <span className="font-medium text-blue-900">
+                                          {formatCurrency(paymentAmount)}
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    {/* Result */}
+                                    {isOverpaid ? (
+                                      <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="bg-green-100 border border-green-300 rounded-lg p-3"
+                                      >
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-green-700 font-medium">
+                                            Change to Give:
+                                          </span>
+                                          <span className="font-bold text-green-900 text-lg">
+                                            {formatCurrency(
+                                              paymentAmount - actualAmountOwed
+                                            )}
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-green-600 mt-1">
+                                          ✓ Payment complete with change due
+                                        </div>
+                                      </motion.div>
+                                    ) : remainingOwed > 0 ? (
+                                      <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="bg-red-100 border border-red-300 rounded-lg p-3"
+                                      >
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-red-700 font-medium">
+                                            Still Owes:
+                                          </span>
+                                          <span className="font-bold text-red-900 text-lg">
+                                            {formatCurrency(remainingOwed)}
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-red-600 mt-1">
+                                          ⚠ Partial payment - balance will be
+                                          added to customer debt
+                                        </div>
+                                      </motion.div>
+                                    ) : (
+                                      <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="bg-green-100 border border-green-300 rounded-lg p-3"
+                                      >
+                                        <div className="flex items-center justify-center space-x-2">
+                                          <Check className="w-4 h-4 text-green-600" />
+                                          <span className="text-green-700 font-medium">
+                                            Payment Complete
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-green-600 text-center mt-1">
+                                          ✓ Full payment received
+                                        </div>
+                                      </motion.div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                             </motion.div>
                           )}
+
+                          {paymentMethod === "transfer" &&
+                            paymentAmount > 0 && (
+                              <motion.div
+                                className={`border rounded-lg p-4 ${(() => {
+                                  const currentTotal = calculateTotal();
+                                  const customerCredit = getCustomerCredit();
+                                  const customerDebt = getCustomerDebt();
+                                  const actualAmountOwed =
+                                    currentTotal +
+                                    customerDebt -
+                                    customerCredit;
+
+                                  if (paymentAmount >= actualAmountOwed) {
+                                    return "bg-blue-50 border-blue-200";
+                                  } else {
+                                    return "bg-orange-50 border-orange-200";
+                                  }
+                                })()}`}
+                                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                transition={{ duration: 0.3 }}
+                              >
+                                {(() => {
+                                  const currentTotal = calculateTotal();
+                                  const customerCredit = getCustomerCredit();
+                                  const customerDebt = getCustomerDebt();
+                                  const actualAmountOwed =
+                                    currentTotal +
+                                    customerDebt -
+                                    customerCredit;
+                                  const remainingOwed =
+                                    calculateActualAmountOwed(paymentAmount);
+                                  const isFullyPaid =
+                                    paymentAmount >= actualAmountOwed;
+                                  const isOverpaid =
+                                    paymentAmount > actualAmountOwed;
+
+                                  return (
+                                    <div className="space-y-3">
+                                      {/* Header Status */}
+                                      <div
+                                        className={`flex items-center space-x-2 ${
+                                          isFullyPaid
+                                            ? "text-blue-700"
+                                            : "text-orange-700"
+                                        }`}
+                                      >
+                                        {isFullyPaid ? (
+                                          <>
+                                            <motion.div
+                                              initial={{ scale: 0 }}
+                                              animate={{ scale: 1 }}
+                                              transition={{
+                                                duration: 0.3,
+                                                delay: 0.1,
+                                              }}
+                                            >
+                                              <Check className="w-5 h-5" />
+                                            </motion.div>
+                                            <span className="font-semibold">
+                                              {isOverpaid
+                                                ? "Overpaid - Excess Transfer"
+                                                : "Transfer Complete"}
+                                            </span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <motion.div
+                                              animate={{ x: [0, 2, -2, 0] }}
+                                              transition={{
+                                                duration: 0.5,
+                                                repeat: Infinity,
+                                                repeatDelay: 1,
+                                              }}
+                                            >
+                                              <AlertCircle className="w-5 h-5" />
+                                            </motion.div>
+                                            <span className="font-semibold">
+                                              Partial Transfer - Balance
+                                              Remaining
+                                            </span>
+                                          </>
+                                        )}
+                                      </div>
+
+                                      {/* Payment Breakdown */}
+                                      <div className="space-y-2">
+                                        <div className="flex justify-between items-center text-sm">
+                                          <span className="text-gray-700">
+                                            Sale Amount:
+                                          </span>
+                                          <span className="font-medium text-gray-900">
+                                            {formatCurrency(currentTotal)}
+                                          </span>
+                                        </div>
+
+                                        {customerDebt > 0 && (
+                                          <div className="flex justify-between items-center text-sm">
+                                            <span className="text-red-700">
+                                              Previous Debt:
+                                            </span>
+                                            <span className="font-medium text-red-700">
+                                              +{formatCurrency(customerDebt)}
+                                            </span>
+                                          </div>
+                                        )}
+
+                                        {customerCredit > 0 && (
+                                          <div className="flex justify-between items-center text-sm">
+                                            <span className="text-green-700">
+                                              Customer Credit:
+                                            </span>
+                                            <span className="font-medium text-green-700">
+                                              -{formatCurrency(customerCredit)}
+                                            </span>
+                                          </div>
+                                        )}
+
+                                        <div
+                                          className={`flex justify-between items-center text-sm border-t pt-2 ${
+                                            isFullyPaid
+                                              ? "border-blue-200"
+                                              : "border-orange-200"
+                                          }`}
+                                        >
+                                          <span
+                                            className={`font-medium ${
+                                              isFullyPaid
+                                                ? "text-blue-700"
+                                                : "text-orange-700"
+                                            }`}
+                                          >
+                                            Total Due:
+                                          </span>
+                                          <span
+                                            className={`font-bold ${
+                                              isFullyPaid
+                                                ? "text-blue-900"
+                                                : "text-orange-900"
+                                            }`}
+                                          >
+                                            {formatCurrency(actualAmountOwed)}
+                                          </span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center text-sm">
+                                          <span className="text-blue-700">
+                                            Transfer Amount:
+                                          </span>
+                                          <span className="font-medium text-blue-900">
+                                            {formatCurrency(paymentAmount)}
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      {/* Result */}
+                                      {isOverpaid ? (
+                                        <motion.div
+                                          initial={{ opacity: 0, y: 10 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          className="bg-blue-100 border border-blue-300 rounded-lg p-3"
+                                        >
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-blue-700 font-medium">
+                                              Excess Amount:
+                                            </span>
+                                            <span className="font-bold text-blue-900 text-lg">
+                                              {formatCurrency(
+                                                paymentAmount - actualAmountOwed
+                                              )}
+                                            </span>
+                                          </div>
+                                          <div className="text-xs text-blue-600 mt-1">
+                                            ✓ Transfer complete - excess added
+                                            to customer credit
+                                          </div>
+                                        </motion.div>
+                                      ) : remainingOwed > 0 ? (
+                                        <motion.div
+                                          initial={{ opacity: 0, y: 10 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          className="bg-orange-100 border border-orange-300 rounded-lg p-3"
+                                        >
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-orange-700 font-medium">
+                                              Still Owes:
+                                            </span>
+                                            <span className="font-bold text-orange-900 text-lg">
+                                              {formatCurrency(remainingOwed)}
+                                            </span>
+                                          </div>
+                                          <div className="text-xs text-orange-600 mt-1">
+                                            ⚠ Partial transfer - balance will be
+                                            added to customer debt
+                                          </div>
+                                        </motion.div>
+                                      ) : (
+                                        <motion.div
+                                          initial={{ opacity: 0, y: 10 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          className="bg-blue-100 border border-blue-300 rounded-lg p-3"
+                                        >
+                                          <div className="flex items-center justify-center space-x-2">
+                                            <Check className="w-4 h-4 text-blue-600" />
+                                            <span className="text-blue-700 font-medium">
+                                              Transfer Complete
+                                            </span>
+                                          </div>
+                                          <div className="text-xs text-blue-600 text-center mt-1">
+                                            ✓ Full transfer amount received
+                                          </div>
+                                        </motion.div>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
+                              </motion.div>
+                            )}
                         </AnimatePresence>
                       </motion.div>
                     )}
@@ -2239,83 +2198,6 @@ const NewSalePage = () => {
                     </AnimatePresence>
 
                     <AnimatePresence>
-                      {paymentMethod === "part_payment" &&
-                        partPaymentAmount > 0 && (
-                          <motion.div
-                            className="bg-purple-50 border border-purple-200 rounded-lg p-3"
-                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <div className="flex justify-between items-center text-sm">
-                              <span className="text-purple-700">
-                                Paying Now:
-                              </span>
-                              <span className="font-medium text-purple-900">
-                                {formatCurrency(partPaymentAmount)}
-                              </span>
-                            </div>
-                            {selectedCustomer &&
-                              (getCustomerCredit() > 0 ||
-                                getCustomerDebt() > 0) && (
-                                <div className="flex justify-between items-center text-sm">
-                                  <span className="text-gray-700">
-                                    {getCustomerCredit() > 0
-                                      ? "Customer Credit:"
-                                      : "Customer Debt:"}
-                                  </span>
-                                  <span
-                                    className={`font-medium ${
-                                      getCustomerCredit() > 0
-                                        ? "text-green-700"
-                                        : "text-red-700"
-                                    }`}
-                                  >
-                                    {getCustomerCredit() > 0 ? "-" : "+"}
-                                    {formatCurrency(
-                                      getCustomerCredit() ||
-                                        getCustomerDebt() ||
-                                        0
-                                    )}
-                                  </span>
-                                </div>
-                              )}
-                            {calculateActualAmountOwed(partPaymentAmount) >
-                              0 && (
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-purple-700">
-                                  Customer Still Owes:
-                                </span>
-                                <span className="font-medium text-red-600">
-                                  {formatCurrency(
-                                    calculateActualAmountOwed(partPaymentAmount)
-                                  )}
-                                </span>
-                              </div>
-                            )}
-                            {calculateActualAmountOwed(partPaymentAmount) <=
-                              0 && (
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-green-700">
-                                  Customer Credit Balance:
-                                </span>
-                                <span className="font-medium text-green-600">
-                                  {formatCurrency(
-                                    Math.abs(
-                                      calculateActualAmountOwed(
-                                        partPaymentAmount
-                                      )
-                                    )
-                                  )}
-                                </span>
-                              </div>
-                            )}
-                          </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    <AnimatePresence>
                       {!selectedCustomer && (
                         <motion.div
                           className="bg-red-50 border border-red-200 rounded-lg p-3"
@@ -2342,31 +2224,102 @@ const NewSalePage = () => {
                       )}
                     </AnimatePresence>
 
+                    {/* Payment Status Summary */}
                     <AnimatePresence>
-                      {paymentMethod === "part_payment" &&
-                        selectedCustomer &&
-                        partPaymentAmount === 0 && (
+                      {selectedCustomer &&
+                        (paymentMethod === "cash" ||
+                          paymentMethod === "transfer") &&
+                        paymentAmount > 0 && (
                           <motion.div
-                            className="bg-red-50 border border-red-200 rounded-lg p-3"
+                            className={`rounded-lg p-4 border ${(() => {
+                              const currentTotal = calculateTotal();
+                              const customerCredit = getCustomerCredit();
+                              const customerDebt = getCustomerDebt();
+                              const actualAmountOwed =
+                                currentTotal + customerDebt - customerCredit;
+
+                              if (paymentAmount >= actualAmountOwed) {
+                                return "bg-green-50 border-green-200";
+                              } else {
+                                return "bg-orange-50 border-orange-200";
+                              }
+                            })()}`}
                             initial={{ opacity: 0, scale: 0.95, y: 10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: -10 }}
                             transition={{ duration: 0.3 }}
                           >
-                            <motion.div
-                              className="flex items-center space-x-2 text-red-700"
-                              animate={{ x: [0, 2, -2, 0] }}
-                              transition={{
-                                duration: 0.5,
-                                repeat: Infinity,
-                                repeatDelay: 2,
-                              }}
-                            >
-                              <AlertCircle className="w-4 h-4" />
-                              <span className="text-sm">
-                                Enter part payment amount
-                              </span>
-                            </motion.div>
+                            {(() => {
+                              const currentTotal = calculateTotal();
+                              const customerCredit = getCustomerCredit();
+                              const customerDebt = getCustomerDebt();
+                              const actualAmountOwed =
+                                currentTotal + customerDebt - customerCredit;
+                              const remainingOwed =
+                                calculateActualAmountOwed(paymentAmount);
+                              const isFullyPaid =
+                                paymentAmount >= actualAmountOwed;
+                              const isOverpaid =
+                                paymentAmount > actualAmountOwed;
+
+                              return (
+                                <div className="text-center">
+                                  <div
+                                    className={`flex items-center justify-center space-x-2 mb-2 ${
+                                      isFullyPaid
+                                        ? "text-green-700"
+                                        : "text-orange-700"
+                                    }`}
+                                  >
+                                    {isFullyPaid ? (
+                                      <motion.div
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        transition={{ duration: 0.3 }}
+                                      >
+                                        <Check className="w-5 h-5" />
+                                      </motion.div>
+                                    ) : (
+                                      <motion.div
+                                        animate={{ rotate: [0, 10, -10, 0] }}
+                                        transition={{
+                                          duration: 0.5,
+                                          repeat: Infinity,
+                                          repeatDelay: 1,
+                                        }}
+                                      >
+                                        <AlertCircle className="w-5 h-5" />
+                                      </motion.div>
+                                    )}
+                                    <span className="font-semibold">
+                                      {isFullyPaid
+                                        ? isOverpaid
+                                          ? "Ready: Overpaid"
+                                          : "Ready: Fully Paid"
+                                        : "Partial Payment"}
+                                    </span>
+                                  </div>
+
+                                  <div
+                                    className={`text-sm ${
+                                      isFullyPaid
+                                        ? "text-green-600"
+                                        : "text-orange-600"
+                                    }`}
+                                  >
+                                    {isFullyPaid
+                                      ? isOverpaid
+                                        ? `Change: ${formatCurrency(
+                                            paymentAmount - actualAmountOwed
+                                          )}`
+                                        : "Payment complete - ready to process"
+                                      : `Balance remaining: ${formatCurrency(
+                                          remainingOwed
+                                        )}`}
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </motion.div>
                         )}
                     </AnimatePresence>
@@ -2375,13 +2328,6 @@ const NewSalePage = () => {
                       onClick={handleSaleComplete}
                       disabled={(() => {
                         if (!selectedCustomer) return true;
-
-                        if (
-                          paymentMethod === "part_payment" &&
-                          partPaymentAmount === 0
-                        ) {
-                          return true;
-                        }
 
                         if (
                           paymentMethod === "cash" ||
@@ -2404,13 +2350,6 @@ const NewSalePage = () => {
                       className={`w-full py-4 px-6 rounded-lg font-semibold transition-all ${(() => {
                         if (!selectedCustomer)
                           return "bg-gray-300 text-gray-500 cursor-not-allowed";
-
-                        if (
-                          paymentMethod === "part_payment" &&
-                          partPaymentAmount === 0
-                        ) {
-                          return "bg-gray-300 text-gray-500 cursor-not-allowed";
-                        }
 
                         if (
                           paymentMethod === "cash" ||
@@ -2437,13 +2376,6 @@ const NewSalePage = () => {
                         if (!selectedCustomer) return {};
 
                         if (
-                          paymentMethod === "part_payment" &&
-                          partPaymentAmount === 0
-                        ) {
-                          return {};
-                        }
-
-                        if (
                           paymentMethod === "cash" ||
                           paymentMethod === "transfer"
                         ) {
@@ -2463,13 +2395,6 @@ const NewSalePage = () => {
                       })()}
                       whileTap={(() => {
                         if (!selectedCustomer) return {};
-
-                        if (
-                          paymentMethod === "part_payment" &&
-                          partPaymentAmount === 0
-                        ) {
-                          return {};
-                        }
 
                         if (
                           paymentMethod === "cash" ||
@@ -2496,12 +2421,9 @@ const NewSalePage = () => {
                       >
                         <Receipt className="w-5 h-5" />
                         <span>
-                          {paymentMethod === "part_payment" &&
-                          partPaymentAmount > 0
-                            ? `Pay ${formatCurrency(partPaymentAmount)} Now`
-                            : `Complete Sale - ${formatCurrency(
-                                calculateTotal()
-                              )}`}
+                          {`Complete Sale - ${formatCurrency(
+                            calculateTotal()
+                          )}`}
                         </span>
                       </motion.div>
                     </motion.button>
@@ -2731,30 +2653,12 @@ const NewSalePage = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.5 }}
               >
-                {paymentMethod === "part_payment" && partPaymentAmount > 0
-                  ? `Part payment of ${formatCurrency(
-                      partPaymentAmount
-                    )} via ${partPaymentMethod} processed successfully!`
-                  : `Transaction processed successfully for ${formatCurrency(
-                      lastCompletedTransactionAmount
-                    )}`}
+                {`Transaction processed successfully for ${formatCurrency(
+                  lastCompletedTransactionAmount
+                )}`}
               </motion.p>
 
               <AnimatePresence>
-                {paymentMethod === "part_payment" &&
-                  calculateRemainingBalance() > 0 && (
-                    <motion.p
-                      className="text-sm text-red-600 mb-4"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ delay: 0.6 }}
-                    >
-                      Remaining balance:{" "}
-                      {formatCurrency(calculateRemainingBalance())}
-                    </motion.p>
-                  )}
-
                 {/* Data Refresh Status */}
                 {(isRefreshingData || dataRefreshComplete) && (
                   <motion.div
