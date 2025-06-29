@@ -74,11 +74,13 @@ const NewSalePage = () => {
     customers,
     isLoading: customersLoading,
     createCustomer,
+    refetch: refetchCustomers,
   } = useCustomers();
   const {
     products,
     totalAvailableStock,
     isLoading: productsLoading,
+    refetch: refetchProducts,
   } = useProducts();
   const { createSale, isLoading: salesLoading } = useSales();
 
@@ -115,6 +117,11 @@ const NewSalePage = () => {
   });
   const [customerValidationError, setCustomerValidationError] =
     useState<string>("");
+  const [isRefreshingData, setIsRefreshingData] = useState<boolean>(false);
+  const [dataRefreshComplete, setDataRefreshComplete] =
+    useState<boolean>(false);
+  const [lastCompletedTransactionAmount, setLastCompletedTransactionAmount] =
+    useState<number>(0);
 
   // Filter customers based on search term
   const filteredCustomers = customers.filter(
@@ -443,6 +450,38 @@ const NewSalePage = () => {
       const result = await createSale(saleData);
 
       if (result.success) {
+        console.log("Sale completed successfully!");
+
+        // Store the transaction amount before clearing the cart
+        const completedTransactionAmount = calculateTotal();
+        setLastCompletedTransactionAmount(completedTransactionAmount);
+
+        // Refresh all data to get updated information for next transaction
+        console.log("Refreshing data after successful sale...");
+        setIsRefreshingData(true);
+        setDataRefreshComplete(false);
+        try {
+          await Promise.all([
+            refetchCustomers(), // Refresh customer data (updated balances)
+            refetchProducts(), // Refresh product data (updated stock levels)
+          ]);
+          console.log("Data refresh completed successfully");
+          setDataRefreshComplete(true);
+
+          // Brief delay to show the completion status
+          setTimeout(() => {
+            setDataRefreshComplete(false);
+          }, 2000);
+        } catch (refreshError) {
+          console.error(
+            "Warning: Failed to refresh data after sale:",
+            refreshError
+          );
+          // Don't fail the sale completion if refresh fails
+        } finally {
+          setIsRefreshingData(false);
+        }
+
         // Reset the form
         setCartItems([]);
         setSelectedCustomer(null);
@@ -452,12 +491,16 @@ const NewSalePage = () => {
         setPaymentAmount(0);
         setShowDiscountInput(false);
         setCustomerValidationError("");
+        setIsRefreshingData(false);
+        setDataRefreshComplete(false);
         setShowConfirmation(true);
 
-        // Auto-hide confirmation after 3 seconds
+        // Auto-hide confirmation after 5 seconds to account for data refresh time
         setTimeout(() => {
           setShowConfirmation(false);
-        }, 3000);
+          // Reset the stored amount when hiding confirmation
+          setLastCompletedTransactionAmount(0);
+        }, 5000);
       } else {
         console.error("Sale failed:", result.errors);
         setCustomerValidationError(
@@ -469,8 +512,6 @@ const NewSalePage = () => {
       setCustomerValidationError("An error occurred while processing the sale");
     }
   };
-
-  // ...existing code...
 
   const handleAddNewCustomer = async () => {
     // Clear previous validation errors
@@ -2694,7 +2735,7 @@ const NewSalePage = () => {
               >
                 {paymentMethod === "part_payment" && partPaymentAmount > 0
                   ? `Part payment of ₦${partPaymentAmount.toLocaleString()} via ${partPaymentMethod} processed successfully!`
-                  : `Transaction processed successfully for ₦${calculateTotal().toLocaleString()}`}
+                  : `Transaction processed successfully for ₦${lastCompletedTransactionAmount.toLocaleString()}`}
               </motion.p>
 
               <AnimatePresence>
@@ -2711,6 +2752,52 @@ const NewSalePage = () => {
                       {calculateRemainingBalance().toLocaleString()}
                     </motion.p>
                   )}
+
+                {/* Data Refresh Status */}
+                {(isRefreshingData || dataRefreshComplete) && (
+                  <motion.div
+                    className={`flex items-center justify-center space-x-2 mb-4 p-3 rounded-lg ${
+                      dataRefreshComplete
+                        ? "bg-green-50 border border-green-200"
+                        : "bg-blue-50 border border-blue-200"
+                    }`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {isRefreshingData && (
+                      <>
+                        <motion.div
+                          className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full"
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            duration: 1,
+                            repeat: Infinity,
+                            ease: "linear",
+                          }}
+                        />
+                        <span className="text-sm text-blue-700 font-medium">
+                          Refreshing data for next transaction...
+                        </span>
+                      </>
+                    )}
+                    {dataRefreshComplete && (
+                      <>
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <Check className="w-4 h-4 text-green-600" />
+                        </motion.div>
+                        <span className="text-sm text-green-700 font-medium">
+                          Data refreshed successfully!
+                        </span>
+                      </>
+                    )}
+                  </motion.div>
+                )}
               </AnimatePresence>
 
               <motion.div
