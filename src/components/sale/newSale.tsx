@@ -1914,8 +1914,7 @@ const NewSalePage = () => {
                           transition={{ delay: 0.2 }}
                         >
                           <input
-                            type="number"
-                            value={partPaymentAmount}
+                            value={partPaymentAmount || ""}
                             onChange={(e) =>
                               setPartPaymentAmount(
                                 Math.max(0, parseFloat(e.target.value) || 0)
@@ -1928,7 +1927,8 @@ const NewSalePage = () => {
                                 ? calculateGrandTotal()
                                 : calculateTotal()
                             }
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            className="w-full px-3 py-3 pr-10 border border-orange-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                            // className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                           />
                           <span className="absolute right-3 top-3 text-gray-500">
                             ₦
