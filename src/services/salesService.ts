@@ -59,7 +59,7 @@ export interface Sale {
   subtotal: number;
   discount: number;
   total: number;
-  creditApplied: number;
+  // creditApplied: number;
   amountDue: number;
   createdAt: string;
   updatedAt: string;
@@ -87,7 +87,7 @@ export interface CreateSaleInput {
     unitPrice: number;
   }[];
   discount?: number;
-  creditApplied?: number;
+  // creditApplied?: number;
 }
 
 export interface CreateSaleResponse {

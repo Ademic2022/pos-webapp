@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   ShoppingCart,
@@ -20,19 +20,69 @@ import {
   UserPlus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Customer, Product, CartItem } from "@/interfaces/interface";
 import { SaleType, PaymentMethod } from "@/types/types";
-import { customers } from "@/data/customers";
-import { products } from "@/data/sales";
-import { checkStockAvailability } from "@/utils/stockManager";
+import { useCustomers, useProducts, useSales } from "@/hooks/useSales";
+import { checkStockAvailability } from "@/utils/stockUtils";
+import { safeExtractId } from "@/utils/graphqlUtils";
 import { KEG_CAPACITY } from "@/data/constants";
-import { dashboardStat } from "@/data/stock";
 import TransactionId from "../TransactionId";
 import AddCustomerModal from "../modals/addCustomerModal";
+
+// Import types from hooks instead of interfaces
+import type {
+  Customer,
+  Product,
+  CartItem,
+  CreateCustomerInput,
+} from "@/hooks/useSales";
+import { Customer as InterfaceCustomer } from "@/interfaces/interface";
+
+// Type converters for compatibility between frontend and backend types
+const convertCustomerInputToModal = (
+  input: CreateCustomerInput
+): Partial<InterfaceCustomer> => {
+  return {
+    name: input.name,
+    phone: input.phone,
+    email: input.email,
+    address: input.address,
+    type: input.type.toLowerCase() as "wholesale" | "retail",
+    creditLimit: input.creditLimit,
+    notes: input.notes,
+  };
+};
+
+const convertModalToCustomerInput = (
+  modal: Partial<InterfaceCustomer>
+): CreateCustomerInput => {
+  return {
+    name: modal.name || "",
+    phone: modal.phone || "",
+    email: modal.email,
+    address: modal.address,
+    type: (modal.type?.toUpperCase() || "RETAIL") as "RETAIL" | "WHOLESALE",
+    creditLimit: modal.creditLimit,
+    notes: modal.notes,
+  };
+};
 
 const NewSalePage = () => {
   const router = useRouter();
 
+  // Live data hooks
+  const {
+    customers,
+    isLoading: customersLoading,
+    createCustomer,
+  } = useCustomers();
+  const {
+    products,
+    totalAvailableStock,
+    isLoading: productsLoading,
+  } = useProducts();
+  const { createSale, isLoading: salesLoading } = useSales();
+
+  // Component state
   const [saleType, setSaleType] = useState<SaleType>("retail");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null
@@ -50,36 +100,40 @@ const NewSalePage = () => {
   const [partPaymentMethod, setPartPaymentMethod] = useState<
     "cash" | "transfer"
   >("cash");
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [showDiscountInput, setShowDiscountInput] = useState<boolean>(false);
   const [showAddCustomerModal, setShowAddCustomerModal] =
     useState<boolean>(false);
-  const [newCustomer, setNewCustomer] = useState<Partial<Customer>>({
+  const [newCustomer, setNewCustomer] = useState<CreateCustomerInput>({
     name: "",
     phone: "",
     email: "",
     address: "",
-    type: "retail",
+    type: "RETAIL",
     creditLimit: 5000,
     notes: "",
   });
   const [customerValidationError, setCustomerValidationError] =
     useState<string>("");
 
+  // Filter customers based on search term
   const filteredCustomers = customers.filter(
     (customer) =>
       customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.phone.includes(searchTerm)
   );
 
-  const totalStockLiters = dashboardStat.stockData.totalAvailableStock;
+  // Get products based on sale type
+  const currentProducts =
+    saleType === "retail" ? products.retail : products.wholesale;
 
   const addToCart = (product: Product) => {
     const unitKegs = parseInt(product.unit);
 
-    // Check stock availability for this product
+    // Check stock availability for this product using live data
     const { isAvailable, remainingStock } = checkStockAvailability(
       unitKegs,
-      totalStockLiters,
+      totalAvailableStock,
       cartItems
     );
 
@@ -131,8 +185,8 @@ const NewSalePage = () => {
     const cartItem = cartItems.find((item) => item.id === productId);
     if (!cartItem) return;
 
-    // Find the original product data
-    const product = products[saleType].find((p) => p.id === productId);
+    // Find the original product data from live products
+    const product = currentProducts.find((p) => p.id === productId);
     if (!product) return;
 
     // If increasing quantity, check stock availability
@@ -141,7 +195,7 @@ const NewSalePage = () => {
 
       const { remainingStock } = checkStockAvailability(
         unitKegs,
-        totalStockLiters,
+        totalAvailableStock,
         cartItems
       );
 
@@ -177,13 +231,8 @@ const NewSalePage = () => {
   };
 
   const calculateRemainingBalance = (): number => {
-    const totalToPay =
-      selectedCustomer && (getCustomerDebt() > 0 || getCustomerCredit() > 0)
-        ? calculateGrandTotal()
-        : calculateTotal();
-
     if (paymentMethod === "part_payment") {
-      return Math.max(0, totalToPay - partPaymentAmount);
+      return Math.max(0, calculateActualAmountOwed(partPaymentAmount));
     }
     return 0;
   };
@@ -220,6 +269,19 @@ const NewSalePage = () => {
     return currentTotal;
   };
 
+  // Calculate what customer actually owes after considering their existing credit/debt
+  const calculateActualAmountOwed = (paymentReceived: number): number => {
+    const currentPurchase = calculateTotal(); // Just the current purchase amount
+    const customerCredit = getCustomerCredit(); // Money we owe customer
+    const customerDebt = getCustomerDebt(); // Money customer owes us
+
+    // Total amount due = current purchase + existing debt - existing credit
+    const totalAmountDue = currentPurchase + customerDebt - customerCredit;
+
+    // Amount still owed = total due - payment received
+    return totalAmountDue - paymentReceived;
+  };
+
   const calculateRemainingCredit = (): number => {
     if (!selectedCustomer || selectedCustomer.balance <= 0) {
       return 0;
@@ -236,25 +298,154 @@ const NewSalePage = () => {
     return 0;
   };
 
-  const handleSaleComplete = () => {
-    setShowConfirmation(true);
-    // Here you would normally save the transaction to your database
-    setTimeout(() => {
-      setShowConfirmation(false);
-      // Reset form
-      setCartItems([]);
-      setSelectedCustomer(null);
-      setPaymentMethod("cash");
-      setDiscountAmount(0);
-      setDiscountType("amount");
-      setPartPaymentAmount(0);
-      setPartPaymentMethod("cash");
-      setShowDiscountInput(false);
-      setCustomerValidationError("");
-    }, 3000);
+  // Debug: Log data state changes
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      console.log("Products loaded:", {
+        retail: products.retail.length,
+        wholesale: products.wholesale.length,
+        currentSaleType: saleType,
+        totalAvailableStock,
+        loading: {
+          customersLoading,
+          productsLoading,
+          salesLoading,
+        },
+      });
+    }
+  }, [
+    products,
+    saleType,
+    totalAvailableStock,
+    customersLoading,
+    productsLoading,
+    salesLoading,
+  ]);
+
+  // Sale completion function
+  const handleSaleComplete = async () => {
+    if (!selectedCustomer) {
+      setCustomerValidationError(
+        "Please select a customer to complete the sale"
+      );
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      setCustomerValidationError("Please add items to the cart");
+      return;
+    }
+
+    // Validate payment amounts based on payment method
+    if (paymentMethod === "part_payment" && partPaymentAmount <= 0) {
+      setCustomerValidationError("Please enter a valid part payment amount");
+      return;
+    }
+
+    if (
+      (paymentMethod === "cash" || paymentMethod === "transfer") &&
+      paymentAmount <= 0
+    ) {
+      setCustomerValidationError(
+        `Please enter the amount ${
+          paymentMethod === "cash" ? "received" : "paid"
+        }`
+      );
+      return;
+    }
+
+    try {
+      const subtotal = calculateSubtotal();
+      const discount = calculateDiscount();
+      const total = subtotal - discount;
+
+      // Determine the actual payment amount based on method
+      let actualPaymentAmount = total;
+      if (paymentMethod === "part_payment") {
+        actualPaymentAmount = partPaymentAmount;
+      } else if (paymentMethod === "cash" || paymentMethod === "transfer") {
+        actualPaymentAmount = paymentAmount;
+      } else if (paymentMethod === "credit") {
+        actualPaymentAmount = 0; // Credit means no immediate payment
+      }
+
+      // Prepare sale data - decode GraphQL IDs to get numeric database IDs
+      const decodedCustomerId = safeExtractId(selectedCustomer.id);
+
+      const saleData = {
+        customerId: decodedCustomerId,
+        saleType: saleType.toUpperCase() as "RETAIL" | "WHOLESALE",
+        items: cartItems.map((item) => ({
+          productId: safeExtractId(item.id),
+          quantity: item.quantity,
+          unitPrice: item.price,
+        })),
+        payments: [
+          {
+            method: paymentMethod.toUpperCase() as
+              | "CASH"
+              | "TRANSFER"
+              | "CREDIT"
+              | "PART_PAYMENT",
+            amount: actualPaymentAmount,
+          },
+        ],
+        discount: discount,
+      };
+
+      console.log("Creating sale with data:", saleData);
+      console.log("Payment details:", {
+        method: paymentMethod,
+        total: total,
+        actualPaymentAmount: actualPaymentAmount,
+        paymentAmount: paymentAmount,
+        partPaymentAmount: partPaymentAmount,
+      });
+      console.log("Original customer ID:", selectedCustomer.id);
+      console.log("Decoded customer ID:", decodedCustomerId);
+      console.log(
+        "Cart items with IDs:",
+        cartItems.map((item) => ({
+          originalId: item.id,
+          decodedId: safeExtractId(item.id),
+          name: item.name,
+        }))
+      );
+
+      // Create the sale
+      const result = await createSale(saleData);
+
+      if (result.success) {
+        // Reset the form
+        setCartItems([]);
+        setSelectedCustomer(null);
+        setDiscountAmount(0);
+        setPartPaymentAmount(0);
+        setPartPaymentMethod("cash");
+        setPaymentAmount(0);
+        setShowDiscountInput(false);
+        setCustomerValidationError("");
+        setShowConfirmation(true);
+
+        // Auto-hide confirmation after 3 seconds
+        setTimeout(() => {
+          setShowConfirmation(false);
+        }, 3000);
+      } else {
+        console.error("Sale failed:", result.errors);
+        setCustomerValidationError(
+          result.errors?.[0] || "Failed to create sale"
+        );
+      }
+    } catch (error) {
+      console.error("Error completing sale:", error);
+      setCustomerValidationError("An error occurred while processing the sale");
+    }
   };
 
-  const handleAddNewCustomer = () => {
+  // ...existing code...
+
+  const handleAddNewCustomer = async () => {
     // Clear previous validation errors
     setCustomerValidationError("");
 
@@ -274,50 +465,43 @@ const NewSalePage = () => {
       return;
     }
 
-    // Generate a new customer ID (in a real app, this would come from the backend)
-    const newId = `CUST_${Date.now()}_${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
+    try {
+      // Create customer using backend hook
+      const result = await createCustomer(newCustomer);
 
-    const customerToAdd: Customer = {
-      id: newId,
-      name: newCustomer.name,
-      phone: newCustomer.phone,
-      email: newCustomer.email || "",
-      address: newCustomer.address || "",
-      type: (newCustomer.type as "wholesale" | "retail") || "retail",
-      balance: 0,
-      creditLimit: newCustomer.creditLimit || 5000,
-      totalPurchases: 0,
-      lastPurchase: new Date().toISOString().split("T")[0],
-      joinDate: new Date().toISOString().split("T")[0],
-      status: "active" as const,
-      notes: newCustomer.notes || "",
-    };
+      if (result.success && result.customer) {
+        // Select the new customer and close modals
+        setSelectedCustomer(result.customer);
+        setShowAddCustomerModal(false);
+        setShowCustomerModal(false);
 
-    // In a real app, you would add this to your database
-    // For now, we'll just add it to the local customers array
-    customers.push(customerToAdd);
+        // Auto-set sale type based on customer type
+        setSaleType(
+          result.customer.type === "WHOLESALE" ? "wholesale" : "retail"
+        );
 
-    // Select the new customer and close modals
-    setSelectedCustomer(customerToAdd);
-    setShowAddCustomerModal(false);
-    setShowCustomerModal(false);
-
-    // Auto-set sale type based on customer type
-    setSaleType(customerToAdd.type === "wholesale" ? "wholesale" : "retail");
-
-    // Reset the form
-    setNewCustomer({
-      name: "",
-      phone: "",
-      email: "",
-      address: "",
-      type: "retail",
-      creditLimit: 5000,
-      notes: "",
-    });
-    setCustomerValidationError("");
+        // Reset the form
+        setNewCustomer({
+          name: "",
+          phone: "",
+          email: "",
+          address: "",
+          type: "RETAIL",
+          creditLimit: 5000,
+          notes: "",
+        });
+        setCustomerValidationError("");
+      } else {
+        setCustomerValidationError(
+          result.errors?.[0] || "Failed to create customer"
+        );
+      }
+    } catch (error) {
+      console.error("Error creating customer:", error);
+      setCustomerValidationError(
+        "An error occurred while creating the customer"
+      );
+    }
   };
 
   // Calculate remaining stock for display
@@ -327,7 +511,7 @@ const NewSalePage = () => {
       return total + itemLiters;
     }, 0);
 
-    return totalStockLiters - usedLiters;
+    return totalAvailableStock - usedLiters;
   };
 
   const remainingStock = calculateRemainingStock();
@@ -605,7 +789,7 @@ const NewSalePage = () => {
               </motion.h2>
 
               <AnimatePresence mode="wait">
-                {products[saleType] && products[saleType].length > 0 ? (
+                {currentProducts && currentProducts.length > 0 ? (
                   <motion.div
                     key={`products-${saleType}`}
                     className="grid md:grid-cols-2 gap-4"
@@ -614,14 +798,14 @@ const NewSalePage = () => {
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.4 }}
                   >
-                    {products[saleType].map((product, index) => {
+                    {currentProducts.map((product, index) => {
                       const unitKegs = parseInt(product.unit);
 
                       // Check stock availability for this product
                       const { isAvailable, remainingStock } =
                         checkStockAvailability(
                           unitKegs,
-                          totalStockLiters,
+                          totalAvailableStock,
                           cartItems
                         );
 
@@ -720,8 +904,21 @@ const NewSalePage = () => {
                     transition={{ duration: 0.3 }}
                   >
                     <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p>No products available</p>
-                    <p className="text-sm">Check back later</p>
+                    <p>
+                      {productsLoading
+                        ? "Loading products..."
+                        : "No products available"}
+                    </p>
+                    <p className="text-sm">
+                      {productsLoading
+                        ? "Please wait while we fetch products from the backend"
+                        : products.retail.length > 0 ||
+                          products.wholesale.length > 0
+                        ? `Try switching to ${
+                            saleType === "retail" ? "wholesale" : "retail"
+                          } products`
+                        : "Products are being loaded from the backend..."}
+                    </p>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -1108,6 +1305,319 @@ const NewSalePage = () => {
                     </motion.button>
                   </motion.div>
 
+                  {/* Payment Amount Input for Non-Part Payment Methods */}
+                  <AnimatePresence>
+                    {paymentMethod !== "part_payment" &&
+                      paymentMethod !== "credit" && (
+                        <motion.div
+                          className="mt-4 space-y-3"
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <motion.div
+                            className="relative"
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.1 }}
+                          >
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Amount{" "}
+                              {paymentMethod === "cash" ? "Received" : "Paid"}
+                            </label>
+                            <input
+                              type="number"
+                              value={paymentAmount || ""}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value) || 0;
+                                setPaymentAmount(Math.max(0, value));
+                              }}
+                              placeholder={`Enter amount ${
+                                paymentMethod === "cash"
+                                  ? "received from customer"
+                                  : "paid"
+                              }`}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                            />
+                            <span className="absolute right-3 top-9 text-gray-500">
+                              ₦
+                            </span>
+                          </motion.div>
+
+                          <AnimatePresence>
+                            {paymentMethod === "cash" && paymentAmount > 0 && (
+                              <motion.div
+                                className={`border rounded-lg p-3 ${
+                                  paymentAmount >= calculateTotal()
+                                    ? "bg-green-50 border-green-200"
+                                    : "bg-yellow-50 border-yellow-200"
+                                }`}
+                                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                transition={{ duration: 0.3 }}
+                              >
+                                <div className="flex justify-between items-center text-sm">
+                                  <span
+                                    className={
+                                      paymentAmount >= calculateTotal()
+                                        ? "text-green-700"
+                                        : "text-yellow-700"
+                                    }
+                                  >
+                                    Amount Due:
+                                  </span>
+                                  <span
+                                    className={`font-medium ${
+                                      paymentAmount >= calculateTotal()
+                                        ? "text-green-900"
+                                        : "text-yellow-900"
+                                    }`}
+                                  >
+                                    ₦{calculateTotal().toLocaleString()}
+                                  </span>
+                                </div>
+                                {selectedCustomer &&
+                                  (getCustomerCredit() > 0 ||
+                                    getCustomerDebt() > 0) && (
+                                    <div className="flex justify-between items-center text-sm">
+                                      <span className="text-gray-700">
+                                        {getCustomerCredit() > 0
+                                          ? "Customer Credit:"
+                                          : "Customer Debt:"}
+                                      </span>
+                                      <span
+                                        className={`font-medium ${
+                                          getCustomerCredit() > 0
+                                            ? "text-green-700"
+                                            : "text-red-700"
+                                        }`}
+                                      >
+                                        {getCustomerCredit() > 0 ? "-" : "+"}₦
+                                        {(
+                                          getCustomerCredit() ||
+                                          getCustomerDebt()
+                                        ).toLocaleString()}
+                                      </span>
+                                    </div>
+                                  )}
+                                {paymentAmount > calculateTotal() && (
+                                  <div className="flex justify-between items-center text-sm border-t border-green-200 pt-2 mt-2">
+                                    <span className="text-green-700">
+                                      Change to Give:
+                                    </span>
+                                    <span className="font-bold text-green-900">
+                                      ₦
+                                      {(
+                                        paymentAmount - calculateTotal()
+                                      ).toLocaleString()}
+                                    </span>
+                                  </div>
+                                )}
+                                {calculateActualAmountOwed(paymentAmount) >
+                                  0 && (
+                                  <div className="flex justify-between items-center text-sm border-t border-yellow-200 pt-2 mt-2">
+                                    <span className="text-yellow-700">
+                                      Customer Still Owes:
+                                    </span>
+                                    <span className="font-bold text-yellow-900">
+                                      ₦
+                                      {calculateActualAmountOwed(
+                                        paymentAmount
+                                      ).toLocaleString()}
+                                    </span>
+                                  </div>
+                                )}
+                                {calculateActualAmountOwed(paymentAmount) < 0 &&
+                                  paymentAmount <= calculateTotal() && (
+                                    <div className="flex justify-between items-center text-sm border-t border-green-200 pt-2 mt-2">
+                                      <span className="text-green-700">
+                                        Customer Credit Balance:
+                                      </span>
+                                      <span className="font-bold text-green-900">
+                                        ₦
+                                        {Math.abs(
+                                          calculateActualAmountOwed(
+                                            paymentAmount
+                                          )
+                                        ).toLocaleString()}
+                                      </span>
+                                    </div>
+                                  )}
+                              </motion.div>
+                            )}
+
+                            {paymentMethod === "transfer" &&
+                              paymentAmount > 0 && (
+                                <motion.div
+                                  className={`border rounded-lg p-3 ${
+                                    paymentAmount >= calculateTotal()
+                                      ? "bg-blue-50 border-blue-200"
+                                      : "bg-yellow-50 border-yellow-200"
+                                  }`}
+                                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                  transition={{ duration: 0.3 }}
+                                >
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span
+                                      className={
+                                        paymentAmount >= calculateTotal()
+                                          ? "text-blue-700"
+                                          : "text-yellow-700"
+                                      }
+                                    >
+                                      Amount Due:
+                                    </span>
+                                    <span
+                                      className={`font-medium ${
+                                        paymentAmount >= calculateTotal()
+                                          ? "text-blue-900"
+                                          : "text-yellow-900"
+                                      }`}
+                                    >
+                                      ₦{calculateTotal().toLocaleString()}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span
+                                      className={
+                                        paymentAmount >= calculateTotal()
+                                          ? "text-blue-700"
+                                          : "text-yellow-700"
+                                      }
+                                    >
+                                      Transfer Amount:
+                                    </span>
+                                    <span
+                                      className={`font-medium ${
+                                        paymentAmount >= calculateTotal()
+                                          ? "text-blue-900"
+                                          : "text-yellow-900"
+                                      }`}
+                                    >
+                                      ₦{paymentAmount.toLocaleString()}
+                                    </span>
+                                  </div>
+                                  {selectedCustomer &&
+                                    (getCustomerCredit() > 0 ||
+                                      getCustomerDebt() > 0) && (
+                                      <div className="flex justify-between items-center text-sm">
+                                        <span className="text-gray-700">
+                                          {getCustomerCredit() > 0
+                                            ? "Customer Credit:"
+                                            : "Customer Debt:"}
+                                        </span>
+                                        <span
+                                          className={`font-medium ${
+                                            getCustomerCredit() > 0
+                                              ? "text-green-700"
+                                              : "text-red-700"
+                                          }`}
+                                        >
+                                          {getCustomerCredit() > 0 ? "-" : "+"}₦
+                                          {(
+                                            getCustomerCredit() ||
+                                            getCustomerDebt()
+                                          ).toLocaleString()}
+                                        </span>
+                                      </div>
+                                    )}
+                                  {calculateActualAmountOwed(paymentAmount) >
+                                    0 && (
+                                    <div className="flex justify-between items-center text-sm border-t border-yellow-200 pt-2 mt-2">
+                                      <span className="text-yellow-700">
+                                        Customer Still Owes:
+                                      </span>
+                                      <span className="font-bold text-yellow-900">
+                                        ₦
+                                        {calculateActualAmountOwed(
+                                          paymentAmount
+                                        ).toLocaleString()}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {paymentAmount > calculateTotal() && (
+                                    <div className="flex justify-between items-center text-sm border-t border-blue-200 pt-2 mt-2">
+                                      <span className="text-blue-700">
+                                        Excess Transfer Amount:
+                                      </span>
+                                      <span className="font-bold text-blue-900">
+                                        ₦
+                                        {(
+                                          paymentAmount - calculateTotal()
+                                        ).toLocaleString()}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {calculateActualAmountOwed(paymentAmount) <
+                                    0 &&
+                                    paymentAmount <= calculateTotal() && (
+                                      <div className="flex justify-between items-center text-sm border-t border-blue-200 pt-2 mt-2">
+                                        <span className="text-blue-700">
+                                          Customer Credit Balance:
+                                        </span>
+                                        <span className="font-bold text-blue-900">
+                                          ₦
+                                          {Math.abs(
+                                            calculateActualAmountOwed(
+                                              paymentAmount
+                                            )
+                                          ).toLocaleString()}
+                                        </span>
+                                      </div>
+                                    )}
+                                  {paymentAmount >= calculateTotal() &&
+                                    calculateActualAmountOwed(paymentAmount) <=
+                                      0 && (
+                                      <div className="text-xs text-blue-600 mt-2">
+                                        ✓ Transfer amount covers the full sale
+                                        amount
+                                      </div>
+                                    )}
+                                </motion.div>
+                              )}
+                          </AnimatePresence>
+
+                          {/* Cash/Transfer Payment Amount Validation Warning */}
+                          <AnimatePresence>
+                            {(paymentMethod === "cash" ||
+                              paymentMethod === "transfer") &&
+                              selectedCustomer &&
+                              paymentAmount === 0 && (
+                                <motion.div
+                                  className="bg-red-50 border border-red-200 rounded-lg p-3"
+                                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                  transition={{ duration: 0.3 }}
+                                >
+                                  <motion.div
+                                    className="flex items-center space-x-2 text-red-700"
+                                    animate={{ x: [0, 2, -2, 0] }}
+                                    transition={{
+                                      duration: 0.5,
+                                      repeat: Infinity,
+                                      repeatDelay: 2,
+                                    }}
+                                  >
+                                    <AlertCircle className="w-4 h-4" />
+                                    <span className="text-sm">
+                                      Enter amount{" "}
+                                      {paymentMethod === "cash"
+                                        ? "received from customer"
+                                        : "paid"}
+                                    </span>
+                                  </motion.div>
+                                </motion.div>
+                              )}
+                          </AnimatePresence>
+                        </motion.div>
+                      )}
+                  </AnimatePresence>
+
                   {/* Part Payment Input */}
                   <AnimatePresence>
                     {paymentMethod === "part_payment" && (
@@ -1217,7 +1727,7 @@ const NewSalePage = () => {
                               </div>
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-purple-700">
-                                  Remaining:
+                                  Customer Still Owes:
                                 </span>
                                 <span className="font-medium text-purple-900">
                                   ₦
@@ -1352,14 +1862,48 @@ const NewSalePage = () => {
                             </span>
                             <motion.span
                               className="text-red-800"
-                              key={calculateGrandTotal()}
+                              key={calculateActualAmountOwed(0)}
                               initial={{ scale: 1.1 }}
                               animate={{ scale: 1 }}
                               transition={{ duration: 0.2 }}
                             >
-                              ₦{calculateGrandTotal().toLocaleString()}
+                              ₦{calculateActualAmountOwed(0).toLocaleString()}
                             </motion.span>
                           </div>
+
+                          {/* Show payment impact if payment amounts are entered */}
+                          {(paymentMethod === "cash" ||
+                            paymentMethod === "transfer") &&
+                            paymentAmount > 0 && (
+                              <div className="border-t border-red-200 pt-2 mt-2">
+                                {calculateActualAmountOwed(paymentAmount) >
+                                0 ? (
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-red-700">
+                                      After Payment - Still Owes:
+                                    </span>
+                                    <span className="font-medium text-red-700">
+                                      ₦
+                                      {calculateActualAmountOwed(
+                                        paymentAmount
+                                      ).toLocaleString()}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-green-700">
+                                      After Payment - Credit Balance:
+                                    </span>
+                                    <span className="font-medium text-green-700">
+                                      ₦
+                                      {Math.abs(
+                                        calculateActualAmountOwed(paymentAmount)
+                                      ).toLocaleString()}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -1387,31 +1931,76 @@ const NewSalePage = () => {
                             </span>
                             <motion.span
                               className="text-green-800"
-                              key={calculateGrandTotal()}
+                              key={calculateActualAmountOwed(0)}
                               initial={{ scale: 1.1 }}
                               animate={{ scale: 1 }}
                               transition={{ duration: 0.2 }}
                             >
-                              ₦{calculateGrandTotal().toLocaleString()}
+                              ₦
+                              {Math.max(
+                                0,
+                                calculateActualAmountOwed(0)
+                              ).toLocaleString()}
                             </motion.span>
                           </div>
-                          <AnimatePresence>
-                            {calculateRemainingCredit() > 0 && (
-                              <motion.div
-                                className="flex justify-between items-center text-sm border-t border-green-200 pt-2 mt-2"
-                                initial={{ opacity: 0, y: 5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -5 }}
-                                transition={{ duration: 0.2 }}
-                              >
-                                <span className="text-green-700">
-                                  Remaining Credit After Sale:
-                                </span>
-                                <span className="font-medium text-green-700">
-                                  ₦{calculateRemainingCredit().toLocaleString()}
-                                </span>
-                              </motion.div>
+
+                          {/* Show payment impact if payment amounts are entered */}
+                          {(paymentMethod === "cash" ||
+                            paymentMethod === "transfer") &&
+                            paymentAmount > 0 && (
+                              <div className="border-t border-green-200 pt-2 mt-2">
+                                {calculateActualAmountOwed(paymentAmount) >
+                                0 ? (
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-yellow-700">
+                                      After Payment - Still Owes:
+                                    </span>
+                                    <span className="font-medium text-yellow-700">
+                                      ₦
+                                      {calculateActualAmountOwed(
+                                        paymentAmount
+                                      ).toLocaleString()}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-green-700">
+                                      After Payment - Credit Balance:
+                                    </span>
+                                    <span className="font-medium text-green-700">
+                                      ₦
+                                      {Math.abs(
+                                        calculateActualAmountOwed(paymentAmount)
+                                      ).toLocaleString()}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             )}
+
+                          <AnimatePresence>
+                            {calculateRemainingCredit() > 0 &&
+                              !(
+                                (paymentMethod === "cash" ||
+                                  paymentMethod === "transfer") &&
+                                paymentAmount > 0
+                              ) && (
+                                <motion.div
+                                  className="flex justify-between items-center text-sm border-t border-green-200 pt-2 mt-2"
+                                  initial={{ opacity: 0, y: 5 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: -5 }}
+                                  transition={{ duration: 0.2 }}
+                                >
+                                  <span className="text-green-700">
+                                    Remaining Credit After Sale:
+                                  </span>
+                                  <span className="font-medium text-green-700">
+                                    ₦
+                                    {calculateRemainingCredit().toLocaleString()}
+                                  </span>
+                                </motion.div>
+                              )}
                           </AnimatePresence>
                         </motion.div>
                       )}
@@ -1435,14 +2024,57 @@ const NewSalePage = () => {
                                 ₦{partPaymentAmount.toLocaleString()}
                               </span>
                             </div>
-                            <div className="flex justify-between items-center text-sm">
-                              <span className="text-purple-700">
-                                Remaining Balance:
-                              </span>
-                              <span className="font-medium text-red-600">
-                                ₦{calculateRemainingBalance().toLocaleString()}
-                              </span>
-                            </div>
+                            {selectedCustomer &&
+                              (getCustomerCredit() > 0 ||
+                                getCustomerDebt() > 0) && (
+                                <div className="flex justify-between items-center text-sm">
+                                  <span className="text-gray-700">
+                                    {getCustomerCredit() > 0
+                                      ? "Customer Credit:"
+                                      : "Customer Debt:"}
+                                  </span>
+                                  <span
+                                    className={`font-medium ${
+                                      getCustomerCredit() > 0
+                                        ? "text-green-700"
+                                        : "text-red-700"
+                                    }`}
+                                  >
+                                    {getCustomerCredit() > 0 ? "-" : "+"}₦
+                                    {(
+                                      getCustomerCredit() || getCustomerDebt()
+                                    ).toLocaleString()}
+                                  </span>
+                                </div>
+                              )}
+                            {calculateActualAmountOwed(partPaymentAmount) >
+                              0 && (
+                              <div className="flex justify-between items-center text-sm">
+                                <span className="text-purple-700">
+                                  Customer Still Owes:
+                                </span>
+                                <span className="font-medium text-red-600">
+                                  ₦
+                                  {calculateActualAmountOwed(
+                                    partPaymentAmount
+                                  ).toLocaleString()}
+                                </span>
+                              </div>
+                            )}
+                            {calculateActualAmountOwed(partPaymentAmount) <=
+                              0 && (
+                              <div className="flex justify-between items-center text-sm">
+                                <span className="text-green-700">
+                                  Customer Credit Balance:
+                                </span>
+                                <span className="font-medium text-green-600">
+                                  ₦
+                                  {Math.abs(
+                                    calculateActualAmountOwed(partPaymentAmount)
+                                  ).toLocaleString()}
+                                </span>
+                              </div>
+                            )}
                           </motion.div>
                         )}
                     </AnimatePresence>
@@ -1508,12 +2140,18 @@ const NewSalePage = () => {
                       disabled={
                         !selectedCustomer ||
                         (paymentMethod === "part_payment" &&
-                          partPaymentAmount === 0)
+                          partPaymentAmount === 0) ||
+                        ((paymentMethod === "cash" ||
+                          paymentMethod === "transfer") &&
+                          paymentAmount === 0)
                       }
                       className={`w-full py-4 px-6 rounded-lg font-semibold transition-all ${
                         !selectedCustomer ||
                         (paymentMethod === "part_payment" &&
-                          partPaymentAmount === 0)
+                          partPaymentAmount === 0) ||
+                        ((paymentMethod === "cash" ||
+                          paymentMethod === "transfer") &&
+                          paymentAmount === 0)
                           ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                           : "bg-gradient-to-r from-orange-500 to-amber-600 text-white hover:from-orange-600 hover:to-amber-700 transform hover:scale-105"
                       }`}
@@ -1523,14 +2161,20 @@ const NewSalePage = () => {
                       whileHover={
                         !selectedCustomer ||
                         (paymentMethod === "part_payment" &&
-                          partPaymentAmount === 0)
+                          partPaymentAmount === 0) ||
+                        ((paymentMethod === "cash" ||
+                          paymentMethod === "transfer") &&
+                          paymentAmount === 0)
                           ? {}
                           : { scale: 1.05, y: -3 }
                       }
                       whileTap={
                         !selectedCustomer ||
                         (paymentMethod === "part_payment" &&
-                          partPaymentAmount === 0)
+                          partPaymentAmount === 0) ||
+                        ((paymentMethod === "cash" ||
+                          paymentMethod === "transfer") &&
+                          paymentAmount === 0)
                           ? {}
                           : { scale: 0.98 }
                       }
@@ -1634,7 +2278,7 @@ const NewSalePage = () => {
                             setSearchTerm("");
                             // Auto-set sale type based on customer type
                             setSaleType(
-                              customer.type === "wholesale"
+                              customer.type === "WHOLESALE"
                                 ? "wholesale"
                                 : "retail"
                             );
@@ -1713,8 +2357,10 @@ const NewSalePage = () => {
       {/* Add New Customer Modal */}
       <AddCustomerModal
         show={showAddCustomerModal}
-        newCustomer={newCustomer}
-        setNewCustomer={setNewCustomer}
+        newCustomer={convertCustomerInputToModal(newCustomer)}
+        setNewCustomer={(customer: Partial<InterfaceCustomer>) =>
+          setNewCustomer(convertModalToCustomerInput(customer))
+        }
         onClose={() => setShowAddCustomerModal(false)}
         onSubmit={handleAddNewCustomer}
         validationError={customerValidationError}

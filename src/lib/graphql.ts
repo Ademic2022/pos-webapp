@@ -294,6 +294,25 @@ export const PRODUCT_INVENTORY_QUERY = `
   }
 `;
 
+
+export const PRODUCT_INVENTORY = `
+  query ProductInventory {
+    products {
+      edges {
+        node {
+          id
+          name
+          price
+          saleType
+          stock
+          unit
+          updatedAt
+        }
+      }
+    }
+  }
+`;
+
 export const ADD_STOCK_DELIVERY_MUTATION = `
   mutation AddStockDelivery($deliveredQuantity: Float!, $supplier: String!, $price: Decimal!) {
     addStockDelivery(
@@ -370,7 +389,6 @@ export const SALES_QUERY = `
           subtotal
           discount
           total
-          creditApplied
           amountDue
           createdAt
           updatedAt
@@ -418,7 +436,6 @@ export const SALE_BY_ID_QUERY = `
       subtotal
       discount
       total
-      creditApplied
       amountDue
       createdAt
       updatedAt
@@ -483,27 +500,31 @@ export const CUSTOMER_CREDIT_BALANCE_QUERY = `
 
 // GraphQL Mutations
 export const CREATE_SALE_MUTATION = `
-  mutation CreateSale($saleData: CreateSaleInput!, $payments: [PaymentInput!]) {
-    createSale(saleData: $saleData, payments: $payments) {
+  mutation CreateSale($input: CreateSaleInput!) {
+    createSale(input: $input) {
       success
+      message
       errors
       sale {
         id
         transactionId
         customer {
+          id
           name
+          phone
         }
         saleType
         subtotal
         discount
         total
-        creditApplied
         amountDue
         createdAt
         items {
           id
           product {
+            id
             name
+            unit
           }
           quantity
           unitPrice
@@ -513,6 +534,7 @@ export const CREATE_SALE_MUTATION = `
           id
           method
           amount
+          createdAt
         }
       }
     }
