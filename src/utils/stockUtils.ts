@@ -1,3 +1,5 @@
+import { KEG_CAPACITY } from "@/data/constants";
+
 interface CartItem {
   id: string;
   name: string;
@@ -21,12 +23,10 @@ export function checkStockAvailability(
   // Calculate total liters used by current cart
   const usedLiters = cart.reduce((total, item) => {
     const itemKegs = parseInt(item.unit);
-    const KEG_CAPACITY = 50; // 50 liters per keg
     return total + (itemKegs * KEG_CAPACITY * item.quantity);
   }, 0);
 
   const remainingStock = Math.max(0, totalAvailableStock - usedLiters);
-  const KEG_CAPACITY = 50; // 50 liters per keg
   const litersNeeded = unitKegs * KEG_CAPACITY;
   
   return {
@@ -52,7 +52,6 @@ export function calculateRemainingStock(
   totalStock: number,
   cart: CartItem[]
 ): number {
-  const KEG_CAPACITY = 50; // 50 liters per keg
   const usedLiters = cart.reduce((total, item) => {
     const itemKegs = parseInt(item.unit);
     return total + (itemKegs * KEG_CAPACITY * item.quantity);
