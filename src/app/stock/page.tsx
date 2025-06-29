@@ -12,11 +12,12 @@ import {
   Cylinder,
 } from "lucide-react";
 import Link from "next/link";
-import { dashboardStat } from "@/data/stock";
-import { getFillColor, getFillDetails } from "@/utils/utils";
+import { getFillColor } from "@/utils/utils";
 import { InventoryCard } from "@/components/cards/inventoryCard";
-import { KEG_CAPACITY } from "@/data/constants";
 import { usePageLoading } from "@/hooks/usePageLoading";
+import { useInventory } from "@/hooks/useInventory";
+import { formatCurrency, formatNumber } from "@/utils/formatters";
+import { KEG_CAPACITY } from "@/data/constants";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 const ManageStock: React.FC = () => {
@@ -27,10 +28,19 @@ const ManageStock: React.FC = () => {
     minDuration: 600,
   });
 
-  const stock = dashboardStat.stockData;
+  // Use live inventory data instead of static mock data
+  const {
+    latestStockDelivery,
+    fillDetails,
+    isLoading,
+    error,
+    refetchInventory,
+  } = useInventory();
 
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
+  // Extract fill details from live data
   const {
     totalDrums,
     totalKegs,
@@ -38,12 +48,20 @@ const ManageStock: React.FC = () => {
     remainingLitres,
     fillPercentage,
     totalAvailableStock,
-  } = getFillDetails();
+    soldStock,
+  } = fillDetails;
 
-  // Handle refresh
-  const handleRefresh = () => {
+  // Handle refresh - now fetches live data
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
     setLastUpdate(new Date());
-    // You could add logic here to fetch fresh data from an API
+    try {
+      await refetchInventory();
+    } catch (error) {
+      console.error("Failed to refresh inventory:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   return (
@@ -53,6 +71,73 @@ const ManageStock: React.FC = () => {
         animate={{ opacity: 1 }}
         className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50"
       >
+        {/* Loading State */}
+        {isLoading && (
+          <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="text-center">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full mx-auto mb-4"
+              />
+              <p className="text-gray-600">Loading stock data...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="text-center p-8 bg-white rounded-xl shadow-lg border border-red-200">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Activity className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Failed to Load Stock Data
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Unable to fetch inventory information
+              </p>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleRefresh}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+              >
+                Try Again
+              </motion.button>
+            </div>
+          </div>
+        )}
+
+        {/* No Data State */}
+        {!isLoading &&
+          !error &&
+          !latestStockDelivery &&
+          totalAvailableStock === 0 && (
+            <div className="flex items-center justify-center min-h-[60vh]">
+              <div className="text-center p-8 bg-white rounded-xl shadow-lg border border-gray-200">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Droplets className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  No Stock Data Available
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Start by adding your first stock delivery
+                </p>
+                <Link href="/inventory/settings">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                  >
+                    Add Stock
+                  </motion.button>
+                </Link>
+              </div>
+            </div>
+          )}
         {/* Header */}
         <motion.header
           initial={{ y: -20, opacity: 0 }}
@@ -103,15 +188,27 @@ const ManageStock: React.FC = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleRefresh}
-                  className="flex items-center space-x-2 px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200"
+                  disabled={isRefreshing}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
+                    isRefreshing
+                      ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                      : "bg-orange-100 text-orange-700 hover:bg-orange-200"
+                  }`}
                 >
                   <motion.div
-                    whileHover={{ rotate: 180 }}
-                    transition={{ duration: 0.3 }}
+                    animate={isRefreshing ? { rotate: 360 } : {}}
+                    transition={
+                      isRefreshing
+                        ? { duration: 1, repeat: Infinity, ease: "linear" }
+                        : { duration: 0.3 }
+                    }
+                    whileHover={!isRefreshing ? { rotate: 180 } : {}}
                   >
                     <RefreshCw className="w-4 h-4" />
                   </motion.div>
-                  <span className="text-sm font-medium">Refresh</span>
+                  <span className="text-sm font-medium">
+                    {isRefreshing ? "Refreshing..." : "Refresh"}
+                  </span>
                 </motion.button>
 
                 <Link href="/inventory/settings">
@@ -222,6 +319,7 @@ const ManageStock: React.FC = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 1.0 }}
               >
+                {" "}
                 <InventoryCard
                   value={totalKegs}
                   unit="Kegs"
@@ -239,7 +337,7 @@ const ManageStock: React.FC = () => {
                 transition={{ delay: 1.1 }}
               >
                 <InventoryCard
-                  value={stock?.soldStock || 0}
+                  value={soldStock || 0}
                   unit="Litres"
                   icon={Droplets}
                   iconBg="bg-blue-100"
@@ -282,7 +380,7 @@ const ManageStock: React.FC = () => {
                     Main Storage Tank
                   </h3>
                   <p className="text-lg text-gray-600">
-                    {totalAvailableStock}L / {stock?.soldStock ?? 0}L
+                    {totalAvailableStock}L / {soldStock || 0}L
                   </p>
                 </div>
                 <motion.div
@@ -332,7 +430,10 @@ const ManageStock: React.FC = () => {
                   className="text-center p-4 bg-blue-50 rounded-lg"
                 >
                   <div className="text-xl font-bold text-blue-600 mb-1">
-                    {stock?.availableStock.toLocaleString()}
+                    {formatNumber(
+                      latestStockDelivery?.remainingStock || totalAvailableStock
+                    )}
+                    L
                   </div>
                   <div className="text-sm text-gray-600">
                     Volume (L) since last restock
@@ -346,7 +447,7 @@ const ManageStock: React.FC = () => {
                   className="text-center p-4 bg-green-50 rounded-lg"
                 >
                   <div className="text-xl font-bold text-green-600 mb-1">
-                    {totalAvailableStock.toLocaleString()}
+                    {formatNumber(totalAvailableStock)}L
                   </div>
                   <div className="text-sm text-gray-600">
                     Available Capacity (L)
@@ -360,7 +461,7 @@ const ManageStock: React.FC = () => {
                   className="text-center p-4 bg-green-50 rounded-lg"
                 >
                   <div className="text-xl font-bold text-green-600 mb-1">
-                    {stock.soldStock.toLocaleString()}
+                    {formatNumber(soldStock || 0)}L
                   </div>
                   <div className="text-sm text-gray-600">Sold Capacity (L)</div>
                 </motion.div>
