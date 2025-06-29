@@ -241,14 +241,24 @@ const NewSalePage = () => {
     if (!selectedCustomer || selectedCustomer.balance >= 0) {
       return 0;
     }
-    return Math.abs(selectedCustomer.balance);
+    // Ensure the balance is a valid number
+    const balance =
+      typeof selectedCustomer.balance === "number"
+        ? selectedCustomer.balance
+        : parseFloat(selectedCustomer.balance) || 0;
+    return balance < 0 ? Math.abs(balance) : 0;
   };
 
   const getCustomerCredit = (): number => {
     if (!selectedCustomer || selectedCustomer.balance <= 0) {
       return 0;
     }
-    return selectedCustomer.balance;
+    // Ensure the balance is a valid number
+    const balance =
+      typeof selectedCustomer.balance === "number"
+        ? selectedCustomer.balance
+        : parseFloat(selectedCustomer.balance) || 0;
+    return balance > 0 ? balance : 0;
   };
 
   const calculateGrandTotal = (): number => {
@@ -1434,7 +1444,10 @@ const NewSalePage = () => {
                                           <div className="flex justify-between">
                                             <span>Current Credit Balance:</span>
                                             <span className="font-medium">
-                                              ₦{customerCredit.toLocaleString()}
+                                              ₦
+                                              {(
+                                                customerCredit || 0
+                                              ).toLocaleString()}
                                             </span>
                                           </div>
                                           <div className="flex justify-between">
@@ -1562,7 +1575,8 @@ const NewSalePage = () => {
                                         {getCustomerCredit() > 0 ? "-" : "+"}₦
                                         {(
                                           getCustomerCredit() ||
-                                          getCustomerDebt()
+                                          getCustomerDebt() ||
+                                          0
                                         ).toLocaleString()}
                                       </span>
                                     </div>
@@ -1685,7 +1699,8 @@ const NewSalePage = () => {
                                           {getCustomerCredit() > 0 ? "-" : "+"}₦
                                           {(
                                             getCustomerCredit() ||
-                                            getCustomerDebt()
+                                            getCustomerDebt() ||
+                                            0
                                           ).toLocaleString()}
                                         </span>
                                       </div>
@@ -2033,7 +2048,7 @@ const NewSalePage = () => {
                               Customer Outstanding Debt:
                             </span>
                             <span className="font-medium text-red-700">
-                              ₦{getCustomerDebt().toLocaleString()}
+                              ₦{(getCustomerDebt() || 0).toLocaleString()}
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-lg font-bold border-t border-red-200 pt-2 mt-2">
@@ -2102,7 +2117,7 @@ const NewSalePage = () => {
                               Customer Available Credit:
                             </span>
                             <span className="font-medium text-green-700">
-                              ₦{getCustomerCredit().toLocaleString()}
+                              ₦{(getCustomerCredit() || 0).toLocaleString()}
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-lg font-bold border-t border-green-200 pt-2 mt-2">
@@ -2222,7 +2237,9 @@ const NewSalePage = () => {
                                   >
                                     {getCustomerCredit() > 0 ? "-" : "+"}₦
                                     {(
-                                      getCustomerCredit() || getCustomerDebt()
+                                      getCustomerCredit() ||
+                                      getCustomerDebt() ||
+                                      0
                                     ).toLocaleString()}
                                   </span>
                                 </div>
