@@ -199,7 +199,10 @@ export const GET_CUSTOMER_STATS = `
       inactiveCustomers
       blockedCustomers
       totalCreditIssued
-      totalOutstandingBalance
+      debt {
+        value
+        count
+      }
     }
   }
 `;

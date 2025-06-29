@@ -19,7 +19,7 @@ export const dashboardStat: DashboardStats = {
     wholeSales: 160,
     retails: 260,
   },
-  outstandingDebts: {
+  debt: {
     debtValue: 230000,
     customerCount: 34,
   },

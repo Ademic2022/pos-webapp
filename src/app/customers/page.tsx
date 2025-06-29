@@ -352,7 +352,7 @@ const CustomerManagementPage = () => {
             <StatsCard
               title="Outstanding Balance"
               value={`₦${(
-                customerStats?.totalOutstandingBalance || localStats.totalDebt
+                customerStats?.debt?.value || localStats.totalDebt
               ).toLocaleString()}`}
               change={{
                 value: `${
@@ -458,7 +458,7 @@ const CustomerManagementPage = () => {
                   >
                     {filter.charAt(0).toUpperCase() + filter.slice(1)}
                     {filter === "debt" &&
-                      (customerStats?.totalOutstandingBalance ||
+                      (customerStats?.debt?.value ||
                         localStats.withDebt) > 0 && (
                         <motion.span
                           initial={{ scale: 0 }}

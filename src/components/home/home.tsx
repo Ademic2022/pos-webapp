@@ -236,13 +236,13 @@ const Home = () => {
                 value={
                   isLoading
                     ? "Loading..."
-                    : formatCurrency(currentStats.outstandingDebts.debtValue)
+                    : formatCurrency(currentStats.debt.debtValue)
                 }
                 change={{
                   value: isLoading
                     ? "..."
                     : `${formatNumber(
-                        currentStats.outstandingDebts.customerCount
+                        currentStats.debt.customerCount
                       )} customers`,
                   textColor: "text-orange-600",
                 }}

@@ -53,7 +53,10 @@ export interface CustomerStats {
   inactiveCustomers: number;
   blockedCustomers: number;
   totalCreditIssued: number;
-  totalOutstandingBalance: number;
+  debt: {
+    value: number;
+    count: number;
+  };
 }
 
 export interface CreateCustomerInput {

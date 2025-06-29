@@ -28,7 +28,10 @@ export interface QuickMetricsResponse {
   };
   customerStats: {
     totalCustomers: number;
-    totalOutstandingBalance: number;
+    debt: {
+      value: number;
+      count: number;
+    };
   };
   latestStockDeliveries: Array<{
     id: string;
@@ -107,9 +110,9 @@ class DashboardService {
           wholeSales: transactionBreakdown.wholesale,
           retails: transactionBreakdown.retail,
         },
-        outstandingDebts: {
-          debtValue: customerStats.totalOutstandingBalance,
-          customerCount: this.calculateDebtCustomerCount(customerStats),
+        debt: {
+          debtValue: customerStats.debt.value,
+          customerCount: customerStats.debt.count,
         },
         returns: returnsData,
         stockData: this.transformToDeliveryHistory(latestStockDelivery),
@@ -154,18 +157,6 @@ class DashboardService {
       totalStock,
       totalDeliveries,
     };
-  }
-
-  /**
-   * Calculate number of customers with debt
-   */
-  private calculateDebtCustomerCount(customerStats: { totalCustomers: number; totalOutstandingBalance: number }): number {
-    // This would ideally come from a specific query for customers with outstanding balance > 0
-    // For now, estimate based on total outstanding balance and average debt
-    if (customerStats.totalOutstandingBalance > 0) {
-      return Math.max(1, Math.floor(customerStats.totalCustomers * 0.15)); // Estimate 15% have debt
-    }
-    return 0;
   }
 
   /**
@@ -290,7 +281,7 @@ class DashboardService {
       success: true,
       data: {
         totalCustomers: stats.totalCustomers,
-        totalOutstandingBalance: stats.totalOutstandingBalance,
+        totalOutstandingBalance: stats.debt.value,
         totalCreditIssued: stats.totalCreditIssued,
         retailCustomers: stats.retailCustomers,
         wholesaleCustomers: stats.wholesaleCustomers,

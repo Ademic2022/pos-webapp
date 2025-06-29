@@ -62,7 +62,7 @@ export type Returns = {
 export type DashboardStats = {
   totalSales: number;
   transaction: Transactions;
-  outstandingDebts: Debt;
+  debt: Debt;
   returns: Returns;
   stockData: DeliveryHistory;
   totalLitres: number;
