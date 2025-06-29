@@ -1209,7 +1209,6 @@ const NewSalePage = () => {
 
                       <motion.div className="relative">
                         <input
-                          type="number"
                           value={discountAmount || ""}
                           onChange={(e) => {
                             const value = e.target.value;
@@ -1225,7 +1224,7 @@ const NewSalePage = () => {
                           placeholder={`Enter ${
                             discountType === "amount" ? "amount" : "percentage"
                           }`}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          className="w-full px-4 py-3 pr-10 border border-orange-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                         />
                         <span className="absolute right-3 top-3 text-gray-500">
                           {discountType === "amount" ? "₦" : "%"}
@@ -1458,7 +1457,6 @@ const NewSalePage = () => {
                                         (Optional)
                                       </label>
                                       <input
-                                        type="number"
                                         value={paymentAmount || ""}
                                         onChange={(e) => {
                                           const value =
@@ -1470,9 +1468,9 @@ const NewSalePage = () => {
                                             ? "received from customer"
                                             : "paid"
                                         }`}
-                                        className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                        className="w-full px-4 py-3 pr-10 border border-blue-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                       />
-                                      <span className="absolute right-3 top-9 text-gray-500">
+                                      <span className="absolute right-3 top-10 text-gray-500">
                                         ₦
                                       </span>
                                     </div>
@@ -1545,7 +1543,6 @@ const NewSalePage = () => {
                                   )}
                                 </label>
                                 <input
-                                  type="number"
                                   value={paymentAmount || ""}
                                   onChange={(e) => {
                                     const value =
@@ -1557,9 +1554,9 @@ const NewSalePage = () => {
                                       ? "received from customer"
                                       : "paid"
                                   }`}
-                                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                  className="w-full px-4 py-3 pr-10 border border-orange-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                                 />
-                                <span className="absolute right-3 top-9 text-gray-500">
+                                <span className="absolute right-3 top-10 text-gray-500">
                                   ₦
                                 </span>
                               </motion.div>
@@ -2527,7 +2524,7 @@ const NewSalePage = () => {
             onClick={() => setShowCustomerModal(false)}
           >
             <motion.div
-              className="bg-white rounded-xl p-6 w-full max-w-md mx-4"
+              className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] mx-4"
               initial={{ scale: 0.9, y: 50, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.9, y: 50, opacity: 0 }}
@@ -2540,12 +2537,12 @@ const NewSalePage = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-gray-900 m-4">
                   Select Customer
                 </h3>
                 <motion.button
                   onClick={() => setShowCustomerModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 m-4"
                   whileHover={{ scale: 1.1, rotate: 90 }}
                   whileTap={{ scale: 0.9 }}
                 >
@@ -2554,7 +2551,7 @@ const NewSalePage = () => {
               </motion.div>
 
               <motion.div
-                className="relative mb-4"
+                className="relative m-4"
                 initial={{ y: 10, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3 }}
@@ -2579,6 +2576,7 @@ const NewSalePage = () => {
                   {filteredCustomers.length > 0 ? (
                     <motion.div
                       key="customer-list"
+                      className="space-y-2 m-4"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
