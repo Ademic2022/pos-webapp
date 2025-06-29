@@ -16,7 +16,7 @@ import { getFillColor } from "@/utils/utils";
 import { InventoryCard } from "@/components/cards/inventoryCard";
 import { usePageLoading } from "@/hooks/usePageLoading";
 import { useInventory } from "@/hooks/useInventory";
-import { formatCurrency, formatNumber } from "@/utils/formatters";
+import { formatNumber } from "@/utils/formatters";
 import { KEG_CAPACITY } from "@/data/constants";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
