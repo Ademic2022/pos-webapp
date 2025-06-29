@@ -384,12 +384,9 @@ const NewSalePage = () => {
       if (paymentMethod === "part_payment") {
         actualPaymentAmount = partPaymentAmount;
       } else if (paymentMethod === "cash" || paymentMethod === "transfer") {
-        // If customer has enough credit to cover the purchase, no additional payment needed
-        if (!needsPayment) {
-          actualPaymentAmount = 0;
-        } else {
-          actualPaymentAmount = paymentAmount;
-        }
+        // Always send the payment amount entered by user, even if customer has enough credit
+        // This allows for additional payments to be added to customer credit balance
+        actualPaymentAmount = paymentAmount;
       } else if (paymentMethod === "credit") {
         actualPaymentAmount = 0; // Credit means no immediate payment
       }
@@ -425,6 +422,11 @@ const NewSalePage = () => {
         actualPaymentAmount: actualPaymentAmount,
         paymentAmount: paymentAmount,
         partPaymentAmount: partPaymentAmount,
+        customerCredit: customerCredit,
+        customerDebt: customerDebt,
+        actualAmountOwed: actualAmountOwed,
+        needsPayment: needsPayment,
+        isAdditionalPayment: !needsPayment && actualPaymentAmount > 0,
       });
       console.log("Original customer ID:", selectedCustomer.id);
       console.log("Decoded customer ID:", decodedCustomerId);
