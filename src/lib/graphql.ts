@@ -364,10 +364,19 @@ export const SALES_QUERY = `
     $after: String,
     $saleType: String,
     $customerName: String,
-    $totalMin: Float,
-    $totalMax: Float,
+    $totalMin: Decimal,
+    $totalMax: Decimal,
     $dateFrom: Date,
-    $dateTo: Date
+    $dateTo: Date,
+    $hasAmountDue: Boolean,
+    $hasDiscount: Boolean,
+    $amountDue_Gte: Decimal,
+    $amountDue_Lte: Decimal,
+    $discount_Gte: Decimal,
+    $discount_Lte: Decimal,
+    $subtotal_Gte: Decimal,
+    $subtotal_Lte: Decimal,
+    $search: String
   ) {
     sales(
       first: $first,
@@ -376,8 +385,17 @@ export const SALES_QUERY = `
       customerName: $customerName,
       totalMin: $totalMin,
       totalMax: $totalMax,
-      createdAt_Date_Gte: $dateFrom,
-      createdAt_Date_Lte: $dateTo
+      createdAtDateGte: $dateFrom,
+      createdAtDateLte: $dateTo,
+      hasAmountDue: $hasAmountDue,
+      hasDiscount: $hasDiscount,
+      amountDue_Gte: $amountDue_Gte,
+      amountDue_Lte: $amountDue_Lte,
+      discount_Gte: $discount_Gte,
+      discount_Lte: $discount_Lte,
+      subtotal_Gte: $subtotal_Gte,
+      subtotal_Lte: $subtotal_Lte,
+      search: $search
     ) {
       edges {
         node {
@@ -425,7 +443,7 @@ export const SALES_QUERY = `
 `;
 
 export const SALE_BY_ID_QUERY = `
-  query Sale($id: $ID!) {
+  query Sale($id: ID!) {
     sale(id: $id) {
       id
       transactionId

@@ -123,6 +123,15 @@ export const salesService = {
     totalMax?: number;
     dateFrom?: string;
     dateTo?: string;
+    hasAmountDue?: boolean;
+    hasDiscount?: boolean;
+    amountDue_Gte?: number;
+    amountDue_Lte?: number;
+    discount_Gte?: number;
+    discount_Lte?: number;
+    subtotal_Gte?: number;
+    subtotal_Lte?: number;
+    search?: string;
   } = {}): Promise<{
     success: boolean;
     data?: SalesConnection;
