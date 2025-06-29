@@ -342,8 +342,18 @@ const NewSalePage = () => {
       return;
     }
 
+    // Check if customer has enough credit to cover the purchase
+    const currentTotal = calculateTotal();
+    const customerCredit = getCustomerCredit();
+    const customerDebt = getCustomerDebt();
+    const actualAmountOwed = currentTotal + customerDebt - customerCredit;
+
+    // Only require payment input if customer doesn't have enough credit to cover the purchase
+    const needsPayment = actualAmountOwed > 0;
+
     if (
       (paymentMethod === "cash" || paymentMethod === "transfer") &&
+      needsPayment &&
       paymentAmount <= 0
     ) {
       setCustomerValidationError(
@@ -359,12 +369,17 @@ const NewSalePage = () => {
       const discount = calculateDiscount();
       const total = subtotal - discount;
 
-      // Determine the actual payment amount based on method
+      // Determine the actual payment amount based on method and customer credit
       let actualPaymentAmount = total;
       if (paymentMethod === "part_payment") {
         actualPaymentAmount = partPaymentAmount;
       } else if (paymentMethod === "cash" || paymentMethod === "transfer") {
-        actualPaymentAmount = paymentAmount;
+        // If customer has enough credit to cover the purchase, no additional payment needed
+        if (!needsPayment) {
+          actualPaymentAmount = 0;
+        } else {
+          actualPaymentAmount = paymentAmount;
+        }
       } else if (paymentMethod === "credit") {
         actualPaymentAmount = 0; // Credit means no immediate payment
       }
@@ -1316,34 +1331,184 @@ const NewSalePage = () => {
                           exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.3 }}
                         >
-                          <motion.div
-                            className="relative"
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.1 }}
-                          >
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Amount{" "}
-                              {paymentMethod === "cash" ? "Received" : "Paid"}
-                            </label>
-                            <input
-                              type="number"
-                              value={paymentAmount || ""}
-                              onChange={(e) => {
-                                const value = parseFloat(e.target.value) || 0;
-                                setPaymentAmount(Math.max(0, value));
-                              }}
-                              placeholder={`Enter amount ${
-                                paymentMethod === "cash"
-                                  ? "received from customer"
-                                  : "paid"
-                              }`}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                            />
-                            <span className="absolute right-3 top-9 text-gray-500">
-                              ₦
-                            </span>
-                          </motion.div>
+                          {(() => {
+                            // Calculate if payment is needed
+                            const currentTotal = calculateTotal();
+                            const customerCredit = getCustomerCredit();
+                            const customerDebt = getCustomerDebt();
+                            const actualAmountOwed =
+                              currentTotal + customerDebt - customerCredit;
+                            const needsPayment = actualAmountOwed > 0;
+
+                            if (!needsPayment) {
+                              // Customer has enough credit - no payment needed, but allow optional additional payment
+                              return (
+                                <motion.div
+                                  className="space-y-3"
+                                  initial={{ opacity: 0, scale: 0.95 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  transition={{ duration: 0.3 }}
+                                >
+                                  <motion.div
+                                    className="bg-green-50 border border-green-200 rounded-lg p-4"
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.3 }}
+                                  >
+                                    <div className="flex items-center space-x-2">
+                                      <Check className="w-5 h-5 text-green-600" />
+                                      <div>
+                                        <div className="font-medium text-green-800">
+                                          No Payment Required
+                                        </div>
+                                        <div className="text-sm text-green-600">
+                                          Customer credit (₦
+                                          {customerCredit.toLocaleString()})
+                                          covers the full purchase amount (₦
+                                          {currentTotal.toLocaleString()})
+                                        </div>
+                                        {actualAmountOwed < 0 && (
+                                          <div className="text-xs text-blue-600 mt-1">
+                                            Remaining credit after purchase: ₦
+                                            {Math.abs(
+                                              actualAmountOwed
+                                            ).toLocaleString()}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </motion.div>
+
+                                  {/* Optional Additional Payment */}
+                                  <motion.div
+                                    className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.2 }}
+                                  >
+                                    <div className="mb-3">
+                                      <h4 className="font-medium text-blue-800 mb-1">
+                                        Optional Additional Payment
+                                      </h4>
+                                      <p className="text-sm text-blue-600">
+                                        Customer can make an additional payment
+                                        to further increase their credit balance
+                                      </p>
+                                    </div>
+
+                                    <div className="relative">
+                                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Additional Amount{" "}
+                                        {paymentMethod === "cash"
+                                          ? "Received"
+                                          : "Paid"}{" "}
+                                        (Optional)
+                                      </label>
+                                      <input
+                                        type="number"
+                                        value={paymentAmount || ""}
+                                        onChange={(e) => {
+                                          const value =
+                                            parseFloat(e.target.value) || 0;
+                                          setPaymentAmount(Math.max(0, value));
+                                        }}
+                                        placeholder={`Enter additional amount ${
+                                          paymentMethod === "cash"
+                                            ? "received from customer"
+                                            : "paid"
+                                        }`}
+                                        className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                      />
+                                      <span className="absolute right-3 top-9 text-gray-500">
+                                        ₦
+                                      </span>
+                                    </div>
+
+                                    {paymentAmount > 0 && (
+                                      <motion.div
+                                        className="mt-3 p-3 bg-blue-100 rounded-lg"
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                      >
+                                        <div className="text-sm text-blue-800">
+                                          <div className="flex justify-between">
+                                            <span>Current Credit Balance:</span>
+                                            <span className="font-medium">
+                                              ₦{customerCredit.toLocaleString()}
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span>Purchase Amount:</span>
+                                            <span className="font-medium">
+                                              -₦{currentTotal.toLocaleString()}
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span>Additional Payment:</span>
+                                            <span className="font-medium text-green-700">
+                                              +₦{paymentAmount.toLocaleString()}
+                                            </span>
+                                          </div>
+                                          <div className="border-t border-blue-300 pt-2 mt-2 flex justify-between font-semibold">
+                                            <span>New Credit Balance:</span>
+                                            <span className="text-blue-900">
+                                              ₦
+                                              {(
+                                                customerCredit -
+                                                currentTotal +
+                                                paymentAmount
+                                              ).toLocaleString()}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </motion.div>
+                                    )}
+                                  </motion.div>
+                                </motion.div>
+                              );
+                            }
+
+                            // Payment is needed - show input
+                            return (
+                              <motion.div
+                                className="relative"
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.1 }}
+                              >
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Amount{" "}
+                                  {paymentMethod === "cash"
+                                    ? "Received"
+                                    : "Paid"}
+                                  {actualAmountOwed < currentTotal && (
+                                    <span className="text-green-600 text-xs ml-2">
+                                      (Only ₦{actualAmountOwed.toLocaleString()}{" "}
+                                      needed after credit)
+                                    </span>
+                                  )}
+                                </label>
+                                <input
+                                  type="number"
+                                  value={paymentAmount || ""}
+                                  onChange={(e) => {
+                                    const value =
+                                      parseFloat(e.target.value) || 0;
+                                    setPaymentAmount(Math.max(0, value));
+                                  }}
+                                  placeholder={`Enter amount ${
+                                    paymentMethod === "cash"
+                                      ? "received from customer"
+                                      : "paid"
+                                  }`}
+                                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                />
+                                <span className="absolute right-3 top-9 text-gray-500">
+                                  ₦
+                                </span>
+                              </motion.div>
+                            );
+                          })()}
 
                           <AnimatePresence>
                             {paymentMethod === "cash" && paymentAmount > 0 && (
@@ -1583,36 +1748,51 @@ const NewSalePage = () => {
 
                           {/* Cash/Transfer Payment Amount Validation Warning */}
                           <AnimatePresence>
-                            {(paymentMethod === "cash" ||
-                              paymentMethod === "transfer") &&
-                              selectedCustomer &&
-                              paymentAmount === 0 && (
+                            {(() => {
+                              if (
+                                paymentMethod !== "cash" &&
+                                paymentMethod !== "transfer"
+                              )
+                                return false;
+                              if (!selectedCustomer) return false;
+                              if (paymentAmount > 0) return false;
+
+                              // Check if payment is actually required
+                              const currentTotal = calculateTotal();
+                              const customerCredit = getCustomerCredit();
+                              const customerDebt = getCustomerDebt();
+                              const actualAmountOwed =
+                                currentTotal + customerDebt - customerCredit;
+                              const needsPayment = actualAmountOwed > 0;
+
+                              return needsPayment; // Only show warning if payment is needed
+                            })() && (
+                              <motion.div
+                                className="bg-red-50 border border-red-200 rounded-lg p-3"
+                                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                transition={{ duration: 0.3 }}
+                              >
                                 <motion.div
-                                  className="bg-red-50 border border-red-200 rounded-lg p-3"
-                                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                                  transition={{ duration: 0.3 }}
+                                  className="flex items-center space-x-2 text-red-700"
+                                  animate={{ x: [0, 2, -2, 0] }}
+                                  transition={{
+                                    duration: 0.5,
+                                    repeat: Infinity,
+                                    repeatDelay: 2,
+                                  }}
                                 >
-                                  <motion.div
-                                    className="flex items-center space-x-2 text-red-700"
-                                    animate={{ x: [0, 2, -2, 0] }}
-                                    transition={{
-                                      duration: 0.5,
-                                      repeat: Infinity,
-                                      repeatDelay: 2,
-                                    }}
-                                  >
-                                    <AlertCircle className="w-4 h-4" />
-                                    <span className="text-sm">
-                                      Enter amount{" "}
-                                      {paymentMethod === "cash"
-                                        ? "received from customer"
-                                        : "paid"}
-                                    </span>
-                                  </motion.div>
+                                  <AlertCircle className="w-4 h-4" />
+                                  <span className="text-sm">
+                                    Enter amount{" "}
+                                    {paymentMethod === "cash"
+                                      ? "received from customer"
+                                      : "paid"}
+                                  </span>
                                 </motion.div>
-                              )}
+                              </motion.div>
+                            )}
                           </AnimatePresence>
                         </motion.div>
                       )}
@@ -2137,47 +2317,122 @@ const NewSalePage = () => {
 
                     <motion.button
                       onClick={handleSaleComplete}
-                      disabled={
-                        !selectedCustomer ||
-                        (paymentMethod === "part_payment" &&
-                          partPaymentAmount === 0) ||
-                        ((paymentMethod === "cash" ||
-                          paymentMethod === "transfer") &&
-                          paymentAmount === 0)
-                      }
-                      className={`w-full py-4 px-6 rounded-lg font-semibold transition-all ${
-                        !selectedCustomer ||
-                        (paymentMethod === "part_payment" &&
-                          partPaymentAmount === 0) ||
-                        ((paymentMethod === "cash" ||
-                          paymentMethod === "transfer") &&
-                          paymentAmount === 0)
-                          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                          : "bg-gradient-to-r from-orange-500 to-amber-600 text-white hover:from-orange-600 hover:to-amber-700 transform hover:scale-105"
-                      }`}
+                      disabled={(() => {
+                        if (!selectedCustomer) return true;
+
+                        if (
+                          paymentMethod === "part_payment" &&
+                          partPaymentAmount === 0
+                        ) {
+                          return true;
+                        }
+
+                        if (
+                          paymentMethod === "cash" ||
+                          paymentMethod === "transfer"
+                        ) {
+                          // Check if customer has enough credit to cover the purchase
+                          const currentTotal = calculateTotal();
+                          const customerCredit = getCustomerCredit();
+                          const customerDebt = getCustomerDebt();
+                          const actualAmountOwed =
+                            currentTotal + customerDebt - customerCredit;
+                          const needsPayment = actualAmountOwed > 0;
+
+                          // Only require payment amount if customer doesn't have enough credit
+                          return needsPayment && paymentAmount === 0;
+                        }
+
+                        return false;
+                      })()}
+                      className={`w-full py-4 px-6 rounded-lg font-semibold transition-all ${(() => {
+                        if (!selectedCustomer)
+                          return "bg-gray-300 text-gray-500 cursor-not-allowed";
+
+                        if (
+                          paymentMethod === "part_payment" &&
+                          partPaymentAmount === 0
+                        ) {
+                          return "bg-gray-300 text-gray-500 cursor-not-allowed";
+                        }
+
+                        if (
+                          paymentMethod === "cash" ||
+                          paymentMethod === "transfer"
+                        ) {
+                          const currentTotal = calculateTotal();
+                          const customerCredit = getCustomerCredit();
+                          const customerDebt = getCustomerDebt();
+                          const actualAmountOwed =
+                            currentTotal + customerDebt - customerCredit;
+                          const needsPayment = actualAmountOwed > 0;
+
+                          if (needsPayment && paymentAmount === 0) {
+                            return "bg-gray-300 text-gray-500 cursor-not-allowed";
+                          }
+                        }
+
+                        return "bg-gradient-to-r from-orange-500 to-amber-600 text-white hover:from-orange-600 hover:to-amber-700 transform hover:scale-105";
+                      })()}`}
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 0.6 }}
-                      whileHover={
-                        !selectedCustomer ||
-                        (paymentMethod === "part_payment" &&
-                          partPaymentAmount === 0) ||
-                        ((paymentMethod === "cash" ||
-                          paymentMethod === "transfer") &&
-                          paymentAmount === 0)
-                          ? {}
-                          : { scale: 1.05, y: -3 }
-                      }
-                      whileTap={
-                        !selectedCustomer ||
-                        (paymentMethod === "part_payment" &&
-                          partPaymentAmount === 0) ||
-                        ((paymentMethod === "cash" ||
-                          paymentMethod === "transfer") &&
-                          paymentAmount === 0)
-                          ? {}
-                          : { scale: 0.98 }
-                      }
+                      whileHover={(() => {
+                        if (!selectedCustomer) return {};
+
+                        if (
+                          paymentMethod === "part_payment" &&
+                          partPaymentAmount === 0
+                        ) {
+                          return {};
+                        }
+
+                        if (
+                          paymentMethod === "cash" ||
+                          paymentMethod === "transfer"
+                        ) {
+                          const currentTotal = calculateTotal();
+                          const customerCredit = getCustomerCredit();
+                          const customerDebt = getCustomerDebt();
+                          const actualAmountOwed =
+                            currentTotal + customerDebt - customerCredit;
+                          const needsPayment = actualAmountOwed > 0;
+
+                          if (needsPayment && paymentAmount === 0) {
+                            return {};
+                          }
+                        }
+
+                        return { scale: 1.05, y: -3 };
+                      })()}
+                      whileTap={(() => {
+                        if (!selectedCustomer) return {};
+
+                        if (
+                          paymentMethod === "part_payment" &&
+                          partPaymentAmount === 0
+                        ) {
+                          return {};
+                        }
+
+                        if (
+                          paymentMethod === "cash" ||
+                          paymentMethod === "transfer"
+                        ) {
+                          const currentTotal = calculateTotal();
+                          const customerCredit = getCustomerCredit();
+                          const customerDebt = getCustomerDebt();
+                          const actualAmountOwed =
+                            currentTotal + customerDebt - customerCredit;
+                          const needsPayment = actualAmountOwed > 0;
+
+                          if (needsPayment && paymentAmount === 0) {
+                            return {};
+                          }
+                        }
+
+                        return { scale: 0.98 };
+                      })()}
                     >
                       <motion.div
                         className="flex items-center justify-center space-x-2"
