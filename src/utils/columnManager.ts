@@ -128,7 +128,10 @@ export class ColumnManager {
     });
     
     try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(visibility));
+      // Only access localStorage on client side
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(visibility));
+      }
     } catch (error) {
       console.warn('Failed to save column visibility:', error);
     }
@@ -136,6 +139,11 @@ export class ColumnManager {
 
   static loadColumnVisibility(): ColumnVisibilityState | null {
     try {
+      // Check if we're on the client side
+      if (typeof window === 'undefined') {
+        return null;
+      }
+      
       const saved = localStorage.getItem(this.STORAGE_KEY);
       return saved ? JSON.parse(saved) : null;
     } catch (error) {

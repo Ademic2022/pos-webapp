@@ -6,7 +6,7 @@ export interface BatchOperation {
   id: string;
   name: string;
   description: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ className?: string }>;
   action: (items: Sale[]) => Promise<BatchOperationResult>;
   requiresConfirmation?: boolean;
   confirmationMessage?: (items: Sale[]) => string;

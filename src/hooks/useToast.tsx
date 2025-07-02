@@ -19,7 +19,7 @@ export interface UseToastResult {
  * Custom hook for managing toast notifications
  */
 export function useToast(): UseToastResult {
-  const [toasts, setToasts] = React.useState<Toast[]>([]);
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
   const showToast = useCallback((toast: Omit<Toast, "id">) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

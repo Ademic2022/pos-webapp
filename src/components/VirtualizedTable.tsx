@@ -2,20 +2,34 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 
-export interface VirtualizedTableProps {
-  data: any[];
-  columns: any[];
-  renderCell: (item: any, columnKey: string) => React.ReactNode;
+export interface TableColumn {
+  key: string;
+  label: string;
+  width?: string;
+  sortable?: boolean;
+  required?: boolean;
+  visible?: boolean;
+}
+
+export interface TableItem {
+  id: string;
+  [key: string]: unknown;
+}
+
+export interface VirtualizedTableProps<T = TableItem> {
+  data: T[];
+  columns: TableColumn[];
+  renderCell: (item: T, columnKey: string) => React.ReactNode;
   itemHeight?: number;
   containerHeight?: number;
   overscan?: number;
-  onItemClick?: (item: any) => void;
+  onItemClick?: (item: T) => void;
   selectedItems?: Set<string>;
   loading?: boolean;
   loadingRowCount?: number;
 }
 
-export const VirtualizedTable: React.FC<VirtualizedTableProps> = ({
+export const VirtualizedTable = <T extends { id: string }>({
   data,
   columns,
   renderCell,
@@ -26,8 +40,9 @@ export const VirtualizedTable: React.FC<VirtualizedTableProps> = ({
   selectedItems = new Set(),
   loading = false,
   loadingRowCount = 10,
-}) => {
+}: VirtualizedTableProps<T>) => {
   const [scrollTop, setScrollTop] = useState(0);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [containerRef, setContainerRef] = useState<HTMLDivElement | null>(null);
 
   const visibleData = loading ? Array(loadingRowCount).fill(null) : data;
@@ -146,7 +161,7 @@ export const VirtualizedTable: React.FC<VirtualizedTableProps> = ({
 };
 
 // Hook for managing virtualized table state
-export function useVirtualizedTable(data: any[], itemHeight: number = 60) {
+export function useVirtualizedTable<T extends { id: string }>(data: T[]) {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [isVirtualized, setIsVirtualized] = useState(false);
 

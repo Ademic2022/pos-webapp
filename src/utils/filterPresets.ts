@@ -110,6 +110,11 @@ export class FilterPresetManager {
 
   static loadPresets(): FilterPreset[] {
     try {
+      // Check if we're on the client side
+      if (typeof window === 'undefined') {
+        return this.getDefaultPresets();
+      }
+      
       const stored = localStorage.getItem(this.STORAGE_KEY);
       if (!stored) {
         const defaults = this.getDefaultPresets();
@@ -117,10 +122,10 @@ export class FilterPresetManager {
         return defaults;
       }
 
-      const presets = JSON.parse(stored).map((preset: any) => ({
+      const presets = JSON.parse(stored).map((preset: Partial<FilterPreset> & { createdAt: string }) => ({
         ...preset,
         createdAt: new Date(preset.createdAt)
-      }));
+      })) as FilterPreset[];
 
       // Ensure default presets exist
       const defaultPresets = this.getDefaultPresets();
@@ -137,7 +142,11 @@ export class FilterPresetManager {
     try {
       // Limit number of presets
       const limited = presets.slice(0, this.MAX_PRESETS);
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(limited));
+      
+      // Only access localStorage on client side
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(limited));
+      }
     } catch (error) {
       console.warn('Failed to save filter presets:', error);
     }
