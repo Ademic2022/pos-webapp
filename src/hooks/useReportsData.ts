@@ -55,20 +55,20 @@ export function useReportsData(): UseReportsDataResult {
       first?: number;
       after?: string;
       saleType?: string;
-      customerName?: string;
-      totalMin?: number;
-      totalMax?: number;
-      dateFrom?: string;
-      dateTo?: string;
-      hasAmountDue?: boolean;
-      hasDiscount?: boolean;
+      customer?: string;
+      transactionId_Icontains?: string;
+      total_Gte?: number;
+      total_Lte?: number;
+      createdAt_Gte?: string;
+      createdAt_Lte?: string;
+      amountDue_Gt?: number;
       amountDue_Gte?: number;
       amountDue_Lte?: number;
+      discount_Gt?: number;
       discount_Gte?: number;
       discount_Lte?: number;
       subtotal_Gte?: number;
       subtotal_Lte?: number;
-      search?: string;
     } = {
       first: 50, // Load more data for reports
     };
@@ -96,13 +96,13 @@ export function useReportsData(): UseReportsDataResult {
           break;
       }
       
-      params.dateFrom = dateFrom.toISOString().split('T')[0];
+      params.createdAt_Gte = dateFrom.toISOString();
     } else if (filters.dateRange === 'custom') {
       if (filters.startDate) {
-        params.dateFrom = new Date(filters.startDate).toISOString().split('T')[0];
+        params.createdAt_Gte = new Date(filters.startDate).toISOString();
       }
       if (filters.endDate) {
-        params.dateTo = new Date(filters.endDate).toISOString().split('T')[0];
+        params.createdAt_Lte = new Date(filters.endDate).toISOString();
       }
     }
 
@@ -113,9 +113,10 @@ export function useReportsData(): UseReportsDataResult {
 
     // Status filtering (outstanding debt)
     if (filters.status === 'pending') {
-      params.hasAmountDue = true;
+      params.amountDue_Gt = 0;
     } else if (filters.status === 'paid') {
-      params.hasAmountDue = false;
+      params.amountDue_Gte = 0;
+      params.amountDue_Lte = 0;
     }
 
     return params;
