@@ -31,6 +31,13 @@ export interface ReportFilters {
     status: "all" | "paid" | "partial" | "pending";
     startDate: string;
     endDate: string;
+    // Advanced filters
+    searchTerm?: string;
+    amountMin?: number;
+    amountMax?: number;
+    customerId?: string;
+    sortBy?: "date" | "amount" | "customer" | "status";
+    sortDirection?: "asc" | "desc";
   }
 
 export interface Customer {

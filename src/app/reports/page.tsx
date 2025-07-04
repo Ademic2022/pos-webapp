@@ -1,5 +1,12 @@
 "use client";
-import React, { JSX, useState, useEffect } from "react";
+import React, {
+  JSX,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   BarChart3,
@@ -19,6 +26,10 @@ import {
   CheckCircle,
   RefreshCw,
   Loader2,
+  Mail,
+  FileText,
+  Check,
+  Settings,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ReportFilters } from "@/interfaces/interface";
@@ -28,6 +39,51 @@ import { useReportsData } from "@/hooks/useReportsData";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ProtectedElement from "@/components/auth/ProtectedElement";
 import { formatCurrency, safeNumber } from "@/utils/formatters";
+import { ReportsExporter } from "@/utils/exportUtils";
+import {
+  useDebounce,
+  useLocalStorage,
+  useClickOutside,
+} from "@/hooks/useUtilityHooks";
+import { useToast, ToastContainer } from "@/hooks/useToast";
+import { DatePresetUtils, DatePreset } from "@/utils/datePresets";
+import { useColumnVisibility } from "@/utils/columnManager";
+import { useFilterPresets, FilterPreset } from "@/utils/filterPresets";
+import {
+  VirtualizedTable,
+  useVirtualizedTable,
+} from "@/components/VirtualizedTable";
+import { useBatchOperations } from "@/utils/batchOperations";
+
+// Sale interface for better type safety
+interface Sale {
+  id: string;
+  transactionId: string;
+  createdAt: string;
+  total: number;
+  subtotal: number;
+  discount: number;
+  tax?: number;
+  amountDue: number;
+  saleType: "WHOLESALE" | "RETAIL";
+  notes?: string;
+  customer?: {
+    id: string;
+    name: string;
+    email?: string;
+  };
+  payments?: Array<{
+    method: string;
+    amount: number;
+  }>;
+  items: Array<{
+    quantity: number;
+    totalPrice: number;
+    product: {
+      name: string;
+    };
+  }>;
+}
 
 const SalesReportPage = () => {
   const router = useRouter();
@@ -57,26 +113,585 @@ const SalesReportPage = () => {
     null
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
 
-  const [filters, setFilters] = useState<ReportFilters>({
-    dateRange: "month",
-    customerType: "all",
-    paymentMethod: "all",
-    status: "all",
-    startDate: "",
-    endDate: "",
+  // New feature states
+  const [showDatePresets, setShowDatePresets] = useState(false);
+  const [showColumnSettings, setShowColumnSettings] = useState(false);
+  const [showPresetManager, setShowPresetManager] = useState(false);
+  const [selectedDatePreset, setSelectedDatePreset] = useState<string | null>(
+    null
+  );
+
+  // Column management
+  const { columns, visibleColumns, columnStats, toggleColumn, resetColumns } =
+    useColumnVisibility();
+
+  // Filter presets
+  const { presets, savePreset, deletePreset } = useFilterPresets();
+
+  // Virtualized table and batch operations
+  const {
+    selectedItems,
+    isVirtualized,
+    toggleSelection,
+    selectAll,
+    clearSelection,
+    getSelectedData,
+    setIsVirtualized,
+    selectionCount,
+    hasSelection,
+  } = useVirtualizedTable(salesData);
+
+  const {
+    isExecuting: isBatchExecuting,
+    lastResult: batchResult,
+    executeOperation,
+    clearResult: clearBatchResult,
+    availableOperations: batchOperations,
+  } = useBatchOperations();
+
+  // Use localStorage for filter persistence
+  const [filters, setFilters] = useLocalStorage<ReportFilters>(
+    "reportsFilters",
+    {
+      dateRange: "month",
+      customerType: "all",
+      paymentMethod: "all",
+      status: "all",
+      startDate: "",
+      endDate: "",
+      // Advanced filters
+      searchTerm: "",
+      amountMin: undefined,
+      amountMax: undefined,
+      customerId: "",
+      sortBy: "date",
+      sortDirection: "desc",
+    }
+  );
+
+  // Separate local search state to avoid circular dependency
+  const [localSearchTerm, setLocalSearchTerm] = useState(
+    filters.searchTerm || ""
+  );
+
+  // Debounced search term to avoid too many API calls
+  const debouncedSearchTerm = useDebounce(localSearchTerm, 500);
+
+  // Click outside refs for dropdowns
+  const exportDropdownRef = useClickOutside<HTMLDivElement>(() => {
+    setShowExportDropdown(false);
   });
 
-  // Handle filter changes
+  const datePresetRef = useClickOutside<HTMLDivElement>(() => {
+    setShowDatePresets(false);
+  });
+
+  const columnSettingsRef = useClickOutside<HTMLDivElement>(() => {
+    setShowColumnSettings(false);
+  });
+
+  const presetManagerRef = useClickOutside<HTMLDivElement>(() => {
+    setShowPresetManager(false);
+  });
+
+  // Toast notifications
+  const { toasts, showToast, hideToast } = useToast();
+
+  // Reset filters with confirmation
+  const handleResetFilters = () => {
+    const defaultFilters: ReportFilters = {
+      dateRange: "month",
+      customerType: "all",
+      paymentMethod: "all",
+      status: "all",
+      startDate: "",
+      endDate: "",
+      searchTerm: "",
+      amountMin: undefined,
+      amountMax: undefined,
+      customerId: "",
+      sortBy: "date",
+      sortDirection: "desc",
+    };
+
+    setFilters(defaultFilters);
+    setLocalSearchTerm(""); // Also reset local search term
+    showToast({
+      type: "info",
+      title: "Filters Reset",
+      message: "All filters have been reset to default values",
+    });
+  };
+
+  // Update filters when debounced search term changes (without causing circular dependency)
   useEffect(() => {
-    applyFilters(filters);
-  }, [filters, applyFilters]);
+    setFilters((prev) => {
+      if (prev.searchTerm !== debouncedSearchTerm) {
+        return { ...prev, searchTerm: debouncedSearchTerm };
+      }
+      return prev;
+    });
+  }, [debouncedSearchTerm, setFilters]);
+
+  // Sync local search term when filters are loaded from localStorage (initial load only)
+  useEffect(() => {
+    if (filters.searchTerm !== localSearchTerm) {
+      setLocalSearchTerm(filters.searchTerm || "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.searchTerm]); // Only when filters.searchTerm changes from external source
+
+  // Loading state for search
+  const isSearching = localSearchTerm !== debouncedSearchTerm;
+
+  // Create a debounced applyFilters to prevent too many API calls
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const debouncedApplyFilters = useCallback(
+    (filters: ReportFilters) => {
+      // Clear existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      // Set new timeout
+      timeoutRef.current = setTimeout(() => {
+        applyFilters(filters);
+      }, 300);
+    },
+    [applyFilters]
+  );
+
+  // Count active filters for badge
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.dateRange !== "month") count++;
+    if (filters.customerType !== "all") count++;
+    if (filters.paymentMethod !== "all") count++;
+    if (filters.status !== "all") count++;
+    if (filters.searchTerm) count++;
+    if (filters.amountMin) count++;
+    if (filters.amountMax) count++;
+    if (filters.sortBy !== "date" || filters.sortDirection !== "desc") count++;
+    return count;
+  }, [filters]);
+
+  // Handle filter changes with debouncing
+  useEffect(() => {
+    debouncedApplyFilters(filters);
+  }, [filters, debouncedApplyFilters]);
 
   // Handle refresh
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await refetch();
     setIsRefreshing(false);
+  };
+
+  // Handle export
+  const handleExport = (format: "csv" | "excel" | "pdf") => {
+    try {
+      const exportData = ReportsExporter.prepareExportData(
+        salesData,
+        summary,
+        filters
+      );
+
+      switch (format) {
+        case "csv":
+          ReportsExporter.exportToCSV(exportData);
+          showToast({
+            type: "success",
+            title: "CSV Export Successful",
+            message: `Exported ${salesData.length} transactions to CSV format`,
+          });
+          break;
+        case "excel":
+          ReportsExporter.exportToExcel(exportData);
+          showToast({
+            type: "success",
+            title: "Excel Export Successful",
+            message: `Exported ${salesData.length} transactions to Excel format`,
+          });
+          break;
+        case "pdf":
+          ReportsExporter.exportToPDF(exportData);
+          showToast({
+            type: "success",
+            title: "PDF Export Successful",
+            message: "Report opened for printing/saving as PDF",
+          });
+          break;
+      }
+
+      setShowExportDropdown(false);
+    } catch (err) {
+      console.error("Export failed:", err);
+      showToast({
+        type: "error",
+        title: "Export Failed",
+        message:
+          err instanceof Error
+            ? err.message
+            : "An unexpected error occurred during export",
+      });
+    }
+  };
+
+  // Date preset handlers
+  const handleDatePresetSelect = (preset: DatePreset) => {
+    setFilters((prev) => ({
+      ...prev,
+      dateRange: "custom",
+      startDate: DatePresetUtils.formatDateForInput(preset.startDate),
+      endDate: DatePresetUtils.formatDateForInput(preset.endDate),
+    }));
+    setSelectedDatePreset(preset.value);
+    setShowDatePresets(false);
+
+    showToast({
+      type: "info",
+      title: "Date Range Applied",
+      message: `Showing ${preset.label.toLowerCase()} transactions`,
+    });
+  };
+
+  // Filter preset handlers
+  const handleApplyPreset = (preset: FilterPreset) => {
+    setFilters(preset.filters);
+    setLocalSearchTerm(preset.filters.searchTerm || ""); // Sync local search term
+    setShowPresetManager(false);
+
+    showToast({
+      type: "info",
+      title: "Preset Applied",
+      message: `Applied filter preset: ${preset.name}`,
+    });
+  };
+
+  const handleSaveCurrentAsPreset = () => {
+    const presetName = prompt("Enter a name for this filter preset:");
+    if (!presetName?.trim()) return;
+
+    try {
+      savePreset({
+        name: presetName.trim(),
+        description: `Saved on ${new Date().toLocaleDateString()}`,
+        filters: { ...filters },
+      });
+
+      showToast({
+        type: "success",
+        title: "Preset Saved",
+        message: `Filter preset "${presetName}" has been saved`,
+      });
+    } catch (error) {
+      showToast({
+        type: "error",
+        title: "Save Failed",
+        message: "Failed to save filter preset",
+      });
+      console.log(error);
+    }
+  };
+
+  // Helper function to render table cell content
+  const renderTableCell = (sale: Sale, columnKey: string) => {
+    switch (columnKey) {
+      case "transactionId":
+        return (
+          <td className="py-3 px-4 font-mono text-sm">{sale.transactionId}</td>
+        );
+
+      case "datetime":
+        return (
+          <td className="py-3 px-4">
+            <div className="text-sm">
+              <div className="font-medium text-gray-900">
+                {new Date(sale.createdAt).toLocaleDateString()}
+              </div>
+              <div className="text-gray-600">
+                {new Date(sale.createdAt).toLocaleTimeString()}
+              </div>
+            </div>
+          </td>
+        );
+
+      case "customer":
+        return (
+          <td className="py-3 px-4">
+            <div className="text-sm">
+              <div className="font-medium text-gray-900">
+                {sale.customer?.name || "Walk-in Customer"}
+              </div>
+              <div className="text-gray-600 capitalize">
+                {sale.saleType.toLowerCase()}
+              </div>
+            </div>
+          </td>
+        );
+
+      case "type":
+        return (
+          <td className="py-3 px-4">
+            <span
+              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                sale.saleType === "WHOLESALE"
+                  ? "bg-blue-100 text-blue-800"
+                  : "bg-green-100 text-green-800"
+              }`}
+            >
+              {sale.saleType.toLowerCase()}
+            </span>
+          </td>
+        );
+
+      case "amount":
+        return (
+          <td className="py-3 px-4">
+            <div className="text-sm">
+              <div className="font-medium text-gray-900">
+                {formatCurrency(sale.total)}
+              </div>
+              {safeNumber(sale.discount) > 0 && (
+                <div className="text-green-600">
+                  -{formatCurrency(sale.discount)} discount
+                </div>
+              )}
+            </div>
+          </td>
+        );
+
+      case "payment":
+        return (
+          <td className="py-3 px-4">
+            <div className="flex flex-wrap gap-1 text-sm">
+              {sale.payments?.map(
+                (
+                  payment: { method: string; amount: number },
+                  paymentIndex: number
+                ) => (
+                  <div
+                    key={paymentIndex}
+                    className="flex items-center space-x-1"
+                  >
+                    {getPaymentMethodIcon(payment.method.toLowerCase())}
+                    <span className="capitalize text-xs">
+                      {payment.method.toLowerCase()}
+                    </span>
+                  </div>
+                )
+              ) || <span className="text-gray-500 text-xs">No payments</span>}
+            </div>
+          </td>
+        );
+
+      case "status":
+        return (
+          <td className="py-3 px-4">
+            <span
+              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                sale.amountDue === 0
+                  ? "text-green-600 bg-green-100"
+                  : sale.amountDue < sale.total
+                  ? "text-yellow-600 bg-yellow-100"
+                  : "text-red-600 bg-red-100"
+              }`}
+            >
+              {sale.amountDue === 0
+                ? "paid"
+                : sale.amountDue < sale.total
+                ? "partial"
+                : "pending"}
+            </span>
+            {safeNumber(sale.amountDue) > 0 && (
+              <div className="text-xs text-red-600 mt-1">
+                {formatCurrency(sale.amountDue)} remaining
+              </div>
+            )}
+          </td>
+        );
+
+      case "items":
+        return (
+          <td className="py-3 px-4">
+            <span className="text-sm text-gray-600">
+              {sale.items?.length || 0} items
+            </span>
+          </td>
+        );
+
+      case "discount":
+        return (
+          <td className="py-3 px-4">
+            <span className="text-sm text-green-600">
+              {safeNumber(sale.discount) > 0
+                ? formatCurrency(sale.discount)
+                : "-"}
+            </span>
+          </td>
+        );
+
+      case "tax":
+        return (
+          <td className="py-3 px-4">
+            <span className="text-sm text-gray-600">
+              {sale.tax ? formatCurrency(sale.tax) : "-"}
+            </span>
+          </td>
+        );
+
+      case "notes":
+        return (
+          <td className="py-3 px-4">
+            <span className="text-sm text-gray-600 truncate">
+              {sale.notes || "-"}
+            </span>
+          </td>
+        );
+
+      case "action":
+        return (
+          <td className="py-3 px-4">
+            <motion.button
+              onClick={() =>
+                setSelectedTransaction(
+                  selectedTransaction === sale.id ? null : sale.id
+                )
+              }
+              className="text-orange-600 hover:text-orange-700 text-sm font-medium"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Eye className="w-4 h-4" />
+            </motion.button>
+          </td>
+        );
+
+      default:
+        return <td className="py-3 px-4">-</td>;
+    }
+  };
+
+  // Batch operation handlers
+  const handleBatchOperation = async (operationId: string) => {
+    const operation = batchOperations.find((op) => op.id === operationId);
+    if (!operation) return;
+
+    const selectedData = getSelectedData();
+
+    if (operation.requiresConfirmation && operation.confirmationMessage) {
+      const confirmed = window.confirm(
+        operation.confirmationMessage(selectedData)
+      );
+      if (!confirmed) return;
+    }
+
+    const result = await executeOperation(operation, selectedData);
+
+    if (result.success) {
+      showToast({
+        type: "success",
+        title: "Batch Operation Completed",
+        message: result.message,
+      });
+
+      // Clear selection after successful operation
+      clearSelection();
+    } else {
+      showToast({
+        type: "error",
+        title: "Batch Operation Failed",
+        message: result.message,
+      });
+    }
+  };
+
+  const handleToggleVirtualization = () => {
+    setIsVirtualized(!isVirtualized);
+    showToast({
+      type: "info",
+      title: isVirtualized
+        ? "Virtualization Disabled"
+        : "Virtualization Enabled",
+      message: isVirtualized
+        ? "Showing all rows in traditional table view"
+        : "Large dataset optimized with virtualization",
+    });
+  };
+
+  // Enhanced cell rendering for virtualized table
+  const renderVirtualizedCell = (sale: Sale, columnKey: string) => {
+    switch (columnKey) {
+      case "transactionId":
+        return (
+          <span className="font-mono text-sm text-gray-900">
+            {sale.transactionId}
+          </span>
+        );
+
+      case "datetime":
+        return (
+          <div className="text-sm">
+            <div className="font-medium text-gray-900">
+              {new Date(sale.createdAt).toLocaleDateString()}
+            </div>
+            <div className="text-gray-600">
+              {new Date(sale.createdAt).toLocaleTimeString()}
+            </div>
+          </div>
+        );
+
+      case "customer":
+        return (
+          <div className="text-sm">
+            <div className="font-medium text-gray-900">
+              {sale.customer?.name || "Walk-in Customer"}
+            </div>
+            <div className="text-gray-600 capitalize">
+              {sale.saleType.toLowerCase()}
+            </div>
+          </div>
+        );
+
+      case "amount":
+        return (
+          <div className="text-sm">
+            <div className="font-medium text-gray-900">
+              {formatCurrency(sale.total)}
+            </div>
+            {safeNumber(sale.discount) > 0 && (
+              <div className="text-green-600">
+                -{formatCurrency(sale.discount)}
+              </div>
+            )}
+          </div>
+        );
+
+      case "status":
+        return (
+          <span
+            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+              sale.amountDue === 0
+                ? "text-green-600 bg-green-100"
+                : sale.amountDue < sale.total
+                ? "text-yellow-600 bg-yellow-100"
+                : "text-red-600 bg-red-100"
+            }`}
+          >
+            {sale.amountDue === 0
+              ? "paid"
+              : sale.amountDue < sale.total
+              ? "partial"
+              : "pending"}
+          </span>
+        );
+
+      default:
+        return <span className="text-sm text-gray-600">-</span>;
+    }
   };
 
   const getPaymentMethodIcon = (method: string): JSX.Element => {
@@ -96,6 +711,9 @@ const SalesReportPage = () => {
 
   return (
     <ProtectedRoute requiredPermission="VIEW_REPORTS">
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} hideToast={hideToast} />
+
       <motion.div
         className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50"
         initial={{ opacity: 0 }}
@@ -201,22 +819,67 @@ const SalesReportPage = () => {
 
                 <motion.button
                   onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center space-x-2 px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors"
+                  className="flex items-center space-x-2 px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors relative"
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   <Filter className="w-4 h-4" />
                   <span className="text-sm font-medium">Filters</span>
+                  {activeFiltersCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {activeFiltersCount}
+                    </span>
+                  )}
                 </motion.button>
                 <ProtectedElement requiredPermission="VIEW_FINANCIAL_DATA">
-                  <motion.button
-                    className="flex items-center space-x-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Download className="w-4 h-4" />
-                    <span className="text-sm font-medium">Export</span>
-                  </motion.button>
+                  <div className="relative" ref={exportDropdownRef}>
+                    <motion.button
+                      onClick={() => setShowExportDropdown(!showExportDropdown)}
+                      className="flex items-center space-x-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Download className="w-4 h-4" />
+                      <span className="text-sm font-medium">Export</span>
+                    </motion.button>
+
+                    {/* Export Dropdown */}
+                    <AnimatePresence>
+                      {showExportDropdown && (
+                        <motion.div
+                          className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <div className="py-2">
+                            <button
+                              onClick={() => handleExport("csv")}
+                              className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors flex items-center space-x-2"
+                            >
+                              <Download className="w-4 h-4 text-blue-600" />
+                              <span>Export as CSV</span>
+                            </button>
+                            <button
+                              onClick={() => handleExport("excel")}
+                              className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors flex items-center space-x-2"
+                            >
+                              <Download className="w-4 h-4 text-green-600" />
+                              <span>Export as Excel</span>
+                            </button>
+                            <button
+                              onClick={() => handleExport("pdf")}
+                              className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors flex items-center space-x-2"
+                            >
+                              <Download className="w-4 h-4 text-red-600" />
+                              <span>Export as PDF</span>
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </ProtectedElement>
               </motion.div>
             </div>
@@ -247,6 +910,258 @@ const SalesReportPage = () => {
                 >
                   Filter Reports
                 </motion.h3>
+
+                {/* Enhanced Filter Controls Row */}
+                <motion.div
+                  className="flex flex-wrap items-center gap-3 mb-6 p-4 bg-orange-50 rounded-lg border border-orange-200"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.25, duration: 0.3 }}
+                >
+                  {/* Date Presets */}
+                  <div className="relative" ref={datePresetRef}>
+                    <motion.button
+                      onClick={() => setShowDatePresets(!showDatePresets)}
+                      className="flex items-center space-x-2 px-3 py-2 bg-white border border-orange-300 rounded-lg hover:bg-orange-50 transition-colors text-sm"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Clock className="w-4 h-4 text-orange-600" />
+                      <span>Quick Dates</span>
+                      {selectedDatePreset && (
+                        <span className="ml-1 px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs">
+                          {
+                            DatePresetUtils.getAllPresets().find(
+                              (p) => p.value === selectedDatePreset
+                            )?.label
+                          }
+                        </span>
+                      )}
+                    </motion.button>
+
+                    <AnimatePresence>
+                      {showDatePresets && (
+                        <motion.div
+                          className="absolute top-full left-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <div className="p-2">
+                            <div className="text-xs font-medium text-gray-500 px-2 py-1 mb-1">
+                              Quick Date Ranges
+                            </div>
+                            {DatePresetUtils.getAllPresets().map((preset) => (
+                              <motion.button
+                                key={preset.value}
+                                onClick={() => handleDatePresetSelect(preset)}
+                                className={`w-full text-left px-3 py-2 rounded-md text-sm hover:bg-orange-50 transition-colors ${
+                                  selectedDatePreset === preset.value
+                                    ? "bg-orange-100 text-orange-700"
+                                    : "text-gray-700"
+                                }`}
+                                whileHover={{ x: 2 }}
+                              >
+                                <div className="font-medium">
+                                  {preset.label}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {preset.description}
+                                </div>
+                              </motion.button>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Filter Presets */}
+                  <div className="relative" ref={presetManagerRef}>
+                    <motion.button
+                      onClick={() => setShowPresetManager(!showPresetManager)}
+                      className="flex items-center space-x-2 px-3 py-2 bg-white border border-orange-300 rounded-lg hover:bg-orange-50 transition-colors text-sm"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Package className="w-4 h-4 text-orange-600" />
+                      <span>Presets</span>
+                      <span className="text-xs text-gray-500">
+                        ({presets.filter((p) => !p.isDefault).length} saved)
+                      </span>
+                    </motion.button>
+
+                    <AnimatePresence>
+                      {showPresetManager && (
+                        <motion.div
+                          className="absolute top-full left-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <div className="p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="font-medium text-gray-900">
+                                Filter Presets
+                              </h4>
+                              <motion.button
+                                onClick={handleSaveCurrentAsPreset}
+                                className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded hover:bg-orange-200 transition-colors"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                Save Current
+                              </motion.button>
+                            </div>
+
+                            <div className="space-y-1 max-h-64 overflow-y-auto">
+                              {presets.map((preset) => (
+                                <div
+                                  key={preset.id}
+                                  className="flex items-center justify-between p-2 rounded-md hover:bg-gray-50"
+                                >
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-sm text-gray-900 truncate">
+                                      {preset.name}
+                                    </div>
+                                    <div className="text-xs text-gray-500 truncate">
+                                      {preset.description || "No description"}
+                                    </div>
+                                    {preset.tags && (
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {preset.tags.slice(0, 3).map((tag) => (
+                                          <span
+                                            key={tag}
+                                            className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded"
+                                          >
+                                            {tag}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center space-x-1 ml-2">
+                                    <motion.button
+                                      onClick={() => handleApplyPreset(preset)}
+                                      className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
+                                      whileHover={{ scale: 1.05 }}
+                                      whileTap={{ scale: 0.95 }}
+                                    >
+                                      Apply
+                                    </motion.button>
+                                    {!preset.isDefault && (
+                                      <motion.button
+                                        onClick={() => deletePreset(preset.id)}
+                                        className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 transition-colors"
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                      >
+                                        Delete
+                                      </motion.button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Column Settings */}
+                  <div className="relative" ref={columnSettingsRef}>
+                    <motion.button
+                      onClick={() => setShowColumnSettings(!showColumnSettings)}
+                      className="flex items-center space-x-2 px-3 py-2 bg-white border border-orange-300 rounded-lg hover:bg-orange-50 transition-colors text-sm"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Eye className="w-4 h-4 text-orange-600" />
+                      <span>Columns</span>
+                      <span className="text-xs text-gray-500">
+                        ({columnStats.visible}/{columnStats.total})
+                      </span>
+                    </motion.button>
+
+                    <AnimatePresence>
+                      {showColumnSettings && (
+                        <motion.div
+                          className="absolute top-full left-0 mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <div className="p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="font-medium text-gray-900">
+                                Table Columns
+                              </h4>
+                              <motion.button
+                                onClick={resetColumns}
+                                className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200 transition-colors"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                Reset
+                              </motion.button>
+                            </div>
+
+                            <div className="space-y-2 max-h-64 overflow-y-auto">
+                              {columns.map((column) => (
+                                <div
+                                  key={column.key}
+                                  className="flex items-center justify-between p-2 rounded-md hover:bg-gray-50"
+                                >
+                                  <div className="flex items-center space-x-3">
+                                    <input
+                                      type="checkbox"
+                                      checked={column.visible}
+                                      onChange={() => toggleColumn(column.key)}
+                                      disabled={column.required}
+                                      className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 disabled:opacity-50"
+                                    />
+                                    <div>
+                                      <div className="text-sm font-medium text-gray-900">
+                                        {column.label}
+                                        {column.required && (
+                                          <span className="ml-1 text-xs text-red-500">
+                                            *
+                                          </span>
+                                        )}
+                                      </div>
+                                      {column.description && (
+                                        <div className="text-xs text-gray-500">
+                                          {column.description}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                              <div className="text-xs text-gray-500">
+                                Showing {columnStats.visible} of{" "}
+                                {columnStats.total} columns
+                                {columnStats.required > 0 && (
+                                  <span className="block mt-1">
+                                    * Required columns cannot be hidden
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </motion.div>
+
                 <motion.div
                   className="grid md:grid-cols-2 lg:grid-cols-4 gap-4"
                   initial={{ y: 20, opacity: 0 }}
@@ -340,6 +1255,178 @@ const SalesReportPage = () => {
                       <option value="pending">Pending</option>
                     </select>
                   </div>
+                </motion.div>
+
+                {/* Advanced Filters */}
+                <motion.div
+                  className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-200"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.4, duration: 0.4 }}
+                >
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Search
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={localSearchTerm}
+                        onChange={(e) => setLocalSearchTerm(e.target.value)}
+                        placeholder="Search transactions, customers..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent pr-8"
+                      />
+                      {isSearching && (
+                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                          <Loader2 className="w-4 h-4 animate-spin text-orange-500" />
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Search is debounced for better performance
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Min Amount
+                    </label>
+                    <input
+                      type="number"
+                      value={filters.amountMin || ""}
+                      onChange={(e) =>
+                        setFilters({
+                          ...filters,
+                          amountMin: e.target.value
+                            ? Number(e.target.value)
+                            : undefined,
+                        })
+                      }
+                      placeholder="0"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Max Amount
+                    </label>
+                    <input
+                      type="number"
+                      value={filters.amountMax || ""}
+                      onChange={(e) =>
+                        setFilters({
+                          ...filters,
+                          amountMax: e.target.value
+                            ? Number(e.target.value)
+                            : undefined,
+                        })
+                      }
+                      placeholder="No limit"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Sort By
+                    </label>
+                    <select
+                      value={filters.sortBy || "date"}
+                      onChange={(e) =>
+                        setFilters({
+                          ...filters,
+                          sortBy: e.target.value as
+                            | "date"
+                            | "amount"
+                            | "customer"
+                            | "status",
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    >
+                      <option value="date">Date</option>
+                      <option value="amount">Amount</option>
+                      <option value="customer">Customer</option>
+                      <option value="status">Status</option>
+                    </select>
+                  </div>
+                </motion.div>
+
+                {/* Custom Date Range */}
+                {filters.dateRange === "custom" && (
+                  <motion.div
+                    className="grid md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-200"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Start Date
+                      </label>
+                      <input
+                        type="date"
+                        value={filters.startDate}
+                        onChange={(e) =>
+                          setFilters({ ...filters, startDate: e.target.value })
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        End Date
+                      </label>
+                      <input
+                        type="date"
+                        value={filters.endDate}
+                        onChange={(e) =>
+                          setFilters({ ...filters, endDate: e.target.value })
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Filter Actions */}
+                <motion.div
+                  className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.5, duration: 0.4 }}
+                >
+                  <div className="flex items-center space-x-2">
+                    <motion.button
+                      onClick={() =>
+                        setFilters({
+                          ...filters,
+                          sortDirection:
+                            filters.sortDirection === "asc" ? "desc" : "asc",
+                        })
+                      }
+                      className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <TrendingUp className="w-4 h-4" />
+                      <span>
+                        {filters.sortDirection === "asc"
+                          ? "Ascending"
+                          : "Descending"}
+                      </span>
+                    </motion.button>
+                  </div>
+
+                  <motion.button
+                    onClick={handleResetFilters}
+                    className="px-4 py-2 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Reset Filters
+                  </motion.button>
                 </motion.div>
               </motion.div>
             )}
@@ -644,7 +1731,8 @@ const SalesReportPage = () => {
                         const methodTotal = salesData.reduce((sum, sale) => {
                           const methodPayments =
                             sale.payments?.filter(
-                              (payment) => payment.method === method
+                              (payment: { method: string; amount: number }) =>
+                                payment.method === method
                             ) || [];
                           return (
                             sum +
@@ -708,268 +1796,423 @@ const SalesReportPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
+                {/* Batch Operations Toolbar */}
                 <motion.div
-                  className="overflow-x-auto"
-                  initial={{ y: 30, opacity: 0 }}
+                  className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200"
+                  initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.2, duration: 0.5 }}
+                  transition={{ delay: 0.1, duration: 0.3 }}
                 >
-                  <motion.table
-                    className="w-full"
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.3, duration: 0.5 }}
-                  >
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">
-                          Transaction ID
-                        </th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">
-                          Date & Time
-                        </th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">
-                          Customer
-                        </th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">
-                          Type
-                        </th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">
-                          Amount
-                        </th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">
-                          Payment
-                        </th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">
-                          Status
-                        </th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">
-                          Action
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {salesData.map((sale, index) => (
-                        <React.Fragment key={sale.id}>
-                          <motion.tr
-                            className="border-b border-gray-100 hover:bg-gray-50"
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{
-                              delay: 0.4 + index * 0.05,
-                              duration: 0.4,
-                            }}
-                            whileHover={{
-                              backgroundColor: "rgba(249, 250, 251, 1)",
-                              x: 5,
-                            }}
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center space-x-4">
+                      {/* Selection Controls */}
+                      <div className="flex items-center space-x-2">
+                        <motion.button
+                          onClick={hasSelection ? clearSelection : selectAll}
+                          className="text-sm bg-white border border-gray-300 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          {hasSelection ? "Clear" : "Select All"}
+                        </motion.button>
+
+                        {hasSelection && (
+                          <motion.span
+                            className="text-sm text-gray-600 bg-orange-100 px-2 py-1 rounded"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
                           >
-                            <td className="py-3 px-4 font-mono text-sm">
-                              {sale.transactionId}
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="text-sm">
-                                <div className="font-medium text-gray-900">
-                                  {new Date(
-                                    sale.createdAt
-                                  ).toLocaleDateString()}
-                                </div>
-                                <div className="text-gray-600">
-                                  {new Date(
-                                    sale.createdAt
-                                  ).toLocaleTimeString()}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="text-sm">
-                                <div className="font-medium text-gray-900">
-                                  {sale.customer?.name || "Walk-in Customer"}
-                                </div>
-                                <div className="text-gray-600 capitalize">
-                                  {sale.saleType.toLowerCase()}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <span
-                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                  sale.saleType === "WHOLESALE"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : "bg-green-100 text-green-800"
-                                }`}
-                              >
-                                {sale.saleType.toLowerCase()}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="text-sm">
-                                <div className="font-medium text-gray-900">
-                                  {formatCurrency(sale.total)}
-                                </div>
-                                {safeNumber(sale.discount) > 0 && (
-                                  <div className="text-green-600">
-                                    -{formatCurrency(sale.discount)} discount
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="flex flex-wrap gap-1 text-sm">
-                                {sale.payments?.map((payment, paymentIndex) => (
-                                  <div
-                                    key={paymentIndex}
-                                    className="flex items-center space-x-1"
+                            {selectionCount} selected
+                          </motion.span>
+                        )}
+                      </div>
+
+                      {/* Batch Operations */}
+                      {hasSelection && (
+                        <motion.div
+                          className="flex items-center space-x-2"
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <motion.button
+                            onClick={() => handleBatchOperation("export-csv")}
+                            disabled={isBatchExecuting}
+                            className="flex items-center space-x-1 text-sm bg-blue-100 text-blue-700 px-3 py-2 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <Download className="w-4 h-4" />
+                            <span>Export</span>
+                          </motion.button>
+
+                          <motion.button
+                            onClick={() => handleBatchOperation("mark-paid")}
+                            disabled={
+                              isBatchExecuting ||
+                              getSelectedData().every((t) => t.amountDue === 0)
+                            }
+                            className="flex items-center space-x-1 text-sm bg-green-100 text-green-700 px-3 py-2 rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <Check className="w-4 h-4" />
+                            <span>Mark Paid</span>
+                          </motion.button>
+
+                          <motion.button
+                            onClick={() =>
+                              handleBatchOperation("send-reminders")
+                            }
+                            disabled={
+                              isBatchExecuting ||
+                              getSelectedData().every(
+                                (t) => t.amountDue === 0 || !t.customer?.email
+                              )
+                            }
+                            className="flex items-center space-x-1 text-sm bg-purple-100 text-purple-700 px-3 py-2 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <Mail className="w-4 h-4" />
+                            <span>Remind</span>
+                          </motion.button>
+
+                          <motion.button
+                            onClick={() =>
+                              handleBatchOperation("generate-report")
+                            }
+                            disabled={isBatchExecuting}
+                            className="flex items-center space-x-1 text-sm bg-gray-100 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <FileText className="w-4 h-4" />
+                            <span>Report</span>
+                          </motion.button>
+                        </motion.div>
+                      )}
+                    </div>
+
+                    {/* Table Options */}
+                    <div className="flex items-center space-x-2">
+                      <motion.button
+                        onClick={handleToggleVirtualization}
+                        className={`flex items-center space-x-1 text-sm px-3 py-2 rounded-lg transition-colors ${
+                          isVirtualized
+                            ? "bg-orange-100 text-orange-700 hover:bg-orange-200"
+                            : "bg-white border border-gray-300 hover:bg-gray-50"
+                        }`}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <Settings className="w-4 h-4" />
+                        <span>
+                          {isVirtualized ? "Virtual View" : "Standard View"}
+                        </span>
+                      </motion.button>
+
+                      <span className="text-xs text-gray-500">
+                        {salesData.length} transactions
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Batch Operation Status */}
+                  <AnimatePresence>
+                    {isBatchExecuting && (
+                      <motion.div
+                        className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                          <span className="text-sm text-blue-700">
+                            Executing batch operation...
+                          </span>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {batchResult && !isBatchExecuting && (
+                      <motion.div
+                        className={`mt-3 p-3 rounded-lg border ${
+                          batchResult.success
+                            ? "bg-green-50 border-green-200"
+                            : "bg-red-50 border-red-200"
+                        }`}
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            {batchResult.success ? (
+                              <CheckCircle className="w-4 h-4 text-green-600" />
+                            ) : (
+                              <AlertCircle className="w-4 h-4 text-red-600" />
+                            )}
+                            <span
+                              className={`text-sm ${
+                                batchResult.success
+                                  ? "text-green-700"
+                                  : "text-red-700"
+                              }`}
+                            >
+                              {batchResult.message}
+                            </span>
+                          </div>
+                          <motion.button
+                            onClick={clearBatchResult}
+                            className="text-xs text-gray-500 hover:text-gray-700"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            ✕
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+
+                {/* Table Content */}
+                {isVirtualized && salesData.length > 100 ? (
+                  <motion.div
+                    initial={{ y: 30, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2, duration: 0.5 }}
+                  >
+                    <VirtualizedTable
+                      data={salesData}
+                      columns={visibleColumns}
+                      renderCell={renderVirtualizedCell}
+                      onItemClick={(item) => toggleSelection(item.id)}
+                      selectedItems={selectedItems}
+                      loading={isDataLoading}
+                      containerHeight={600}
+                    />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    className="overflow-x-auto"
+                    initial={{ y: 30, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2, duration: 0.5 }}
+                  >
+                    <motion.table
+                      className="w-full"
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.3, duration: 0.5 }}
+                    >
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          {/* Selection Checkbox */}
+                          <th className="text-left py-3 px-4 font-medium text-gray-900 w-12">
+                            <input
+                              type="checkbox"
+                              checked={
+                                hasSelection &&
+                                selectionCount === salesData.length
+                              }
+                              onChange={
+                                hasSelection ? clearSelection : selectAll
+                              }
+                              className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                            />
+                          </th>
+                          {visibleColumns.map((column) => (
+                            <th
+                              key={column.key}
+                              className="text-left py-3 px-4 font-medium text-gray-900"
+                              style={{ width: column.width }}
+                            >
+                              <div className="flex items-center space-x-1">
+                                <span>{column.label}</span>
+                                {column.sortable && (
+                                  <motion.button
+                                    onClick={() => {
+                                      const newDirection =
+                                        filters.sortBy === column.key &&
+                                        filters.sortDirection === "asc"
+                                          ? "desc"
+                                          : "asc";
+                                      setFilters((prev) => ({
+                                        ...prev,
+                                        sortBy: column.key as
+                                          | "date"
+                                          | "amount"
+                                          | "customer"
+                                          | "status",
+                                        sortDirection: newDirection,
+                                      }));
+                                    }}
+                                    className="opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity"
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
                                   >
-                                    {getPaymentMethodIcon(
-                                      payment.method.toLowerCase()
+                                    {filters.sortBy === column.key ? (
+                                      filters.sortDirection === "asc" ? (
+                                        <TrendingUp className="w-3 h-3 text-orange-500" />
+                                      ) : (
+                                        <TrendingDown className="w-3 h-3 text-orange-500" />
+                                      )
+                                    ) : (
+                                      <BarChart3 className="w-3 h-3 text-gray-400" />
                                     )}
-                                    <span className="capitalize text-xs">
-                                      {payment.method.toLowerCase()}
-                                    </span>
-                                  </div>
-                                )) || (
-                                  <span className="text-gray-500 text-xs">
-                                    No payments
-                                  </span>
+                                  </motion.button>
                                 )}
                               </div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <span
-                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                  sale.amountDue === 0
-                                    ? "text-green-600 bg-green-100"
-                                    : sale.amountDue < sale.total
-                                    ? "text-yellow-600 bg-yellow-100"
-                                    : "text-red-600 bg-red-100"
-                                }`}
-                              >
-                                {sale.amountDue === 0
-                                  ? "paid"
-                                  : sale.amountDue < sale.total
-                                  ? "partial"
-                                  : "pending"}
-                              </span>
-                              {safeNumber(sale.amountDue) > 0 && (
-                                <div className="text-xs text-red-600 mt-1">
-                                  {formatCurrency(sale.amountDue)} remaining
-                                </div>
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="group">
+                        {salesData.map((sale, index) => (
+                          <React.Fragment key={sale.id}>
+                            <motion.tr
+                              className={`border-b border-gray-100 hover:bg-gray-50 group cursor-pointer ${
+                                selectedItems.has(sale.id) ? "bg-orange-50" : ""
+                              }`}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{
+                                delay: 0.4 + index * 0.05,
+                                duration: 0.4,
+                              }}
+                              whileHover={{
+                                backgroundColor: selectedItems.has(sale.id)
+                                  ? "rgba(255, 237, 213, 1)"
+                                  : "rgba(249, 250, 251, 1)",
+                                x: 5,
+                              }}
+                              onClick={() => toggleSelection(sale.id)}
+                            >
+                              {/* Selection Checkbox */}
+                              <td className="py-3 px-4">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedItems.has(sale.id)}
+                                  onChange={() => toggleSelection(sale.id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                                />
+                              </td>
+                              {visibleColumns.map((column) =>
+                                renderTableCell(sale, column.key)
                               )}
-                            </td>
-                            <td className="py-3 px-4">
-                              <motion.button
-                                onClick={() =>
-                                  setSelectedTransaction(
-                                    selectedTransaction === sale.id
-                                      ? null
-                                      : sale.id
-                                  )
-                                }
-                                className="text-orange-600 hover:text-orange-700 text-sm font-medium"
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.95 }}
-                              >
-                                <Eye className="w-4 h-4" />
-                              </motion.button>
-                            </td>
-                          </motion.tr>
-                          <AnimatePresence>
-                            {selectedTransaction === sale.id && (
-                              <motion.tr
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.3 }}
-                              >
-                                <td
-                                  colSpan={8}
-                                  className="py-4 px-4 bg-orange-50 border-b"
+                            </motion.tr>
+                            <AnimatePresence>
+                              {selectedTransaction === sale.id && (
+                                <motion.tr
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: "auto" }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  transition={{ duration: 0.3 }}
                                 >
-                                  <motion.div
-                                    className="space-y-2"
-                                    initial={{ y: 10, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: 0.1, duration: 0.3 }}
+                                  <td
+                                    colSpan={visibleColumns.length + 1}
+                                    className="py-4 px-4 bg-orange-50 border-b"
                                   >
-                                    <h4 className="font-medium text-gray-900">
-                                      Transaction Details
-                                    </h4>
-                                    <div className="grid md:grid-cols-2 gap-4">
-                                      <div>
-                                        <h5 className="text-sm font-medium text-gray-700 mb-2">
-                                          Items Purchased
-                                        </h5>
-                                        {sale.items.map((item, index) => (
+                                    <motion.div
+                                      className="space-y-2"
+                                      initial={{ y: 10, opacity: 0 }}
+                                      animate={{ y: 0, opacity: 1 }}
+                                      transition={{ delay: 0.1, duration: 0.3 }}
+                                    >
+                                      <h4 className="font-medium text-gray-900">
+                                        Transaction Details
+                                      </h4>
+                                      <div className="grid md:grid-cols-2 gap-4">
+                                        <div>
+                                          <h5 className="text-sm font-medium text-gray-700 mb-2">
+                                            Items Purchased
+                                          </h5>
+                                          {sale.items.map(
+                                            (
+                                              item: {
+                                                quantity: number;
+                                                totalPrice: number;
+                                                product: { name: string };
+                                              },
+                                              itemIndex: number
+                                            ) => (
+                                              <motion.div
+                                                key={itemIndex}
+                                                className="text-sm text-gray-600"
+                                                initial={{ x: -10, opacity: 0 }}
+                                                animate={{ x: 0, opacity: 1 }}
+                                                transition={{
+                                                  delay: 0.2 + itemIndex * 0.05,
+                                                  duration: 0.3,
+                                                }}
+                                              >
+                                                {item.product.name} x{" "}
+                                                {item.quantity} ={" "}
+                                                {formatCurrency(
+                                                  item.totalPrice
+                                                )}
+                                              </motion.div>
+                                            )
+                                          )}
+                                        </div>
+                                        <div>
+                                          <h5 className="text-sm font-medium text-gray-700 mb-2">
+                                            Payment Summary
+                                          </h5>
                                           <motion.div
-                                            key={index}
-                                            className="text-sm text-gray-600"
-                                            initial={{ x: -10, opacity: 0 }}
+                                            className="text-sm text-gray-600 space-y-1"
+                                            initial={{ x: 10, opacity: 0 }}
                                             animate={{ x: 0, opacity: 1 }}
                                             transition={{
-                                              delay: 0.2 + index * 0.05,
+                                              delay: 0.3,
                                               duration: 0.3,
                                             }}
                                           >
-                                            {item.product.name} x{" "}
-                                            {item.quantity} =
-                                            {formatCurrency(item.totalPrice)}
-                                          </motion.div>
-                                        ))}
-                                      </div>
-                                      <div>
-                                        <h5 className="text-sm font-medium text-gray-700 mb-2">
-                                          Payment Summary
-                                        </h5>
-                                        <motion.div
-                                          className="text-sm text-gray-600 space-y-1"
-                                          initial={{ x: 10, opacity: 0 }}
-                                          animate={{ x: 0, opacity: 1 }}
-                                          transition={{
-                                            delay: 0.3,
-                                            duration: 0.3,
-                                          }}
-                                        >
-                                          <div>
-                                            Subtotal:
-                                            {formatCurrency(sale.subtotal)}
-                                          </div>
-                                          {safeNumber(sale.discount) > 0 && (
                                             <div>
-                                              Discount: -
-                                              {formatCurrency(sale.discount)}
+                                              Subtotal:{" "}
+                                              {formatCurrency(sale.subtotal)}
                                             </div>
-                                          )}
-                                          <div>
-                                            Total:
-                                            {formatCurrency(sale.total)}
-                                          </div>
-                                          <div>
-                                            Amount Paid:
-                                            {formatCurrency(
-                                              safeNumber(sale.total) -
-                                                safeNumber(sale.amountDue)
+                                            {safeNumber(sale.discount) > 0 && (
+                                              <div>
+                                                Discount: -
+                                                {formatCurrency(sale.discount)}
+                                              </div>
                                             )}
-                                          </div>
-                                          {safeNumber(sale.amountDue) > 0 && (
-                                            <div className="text-red-600">
-                                              Balance:
-                                              {formatCurrency(sale.amountDue)}
+                                            <div>
+                                              Total:{" "}
+                                              {formatCurrency(sale.total)}
                                             </div>
-                                          )}
-                                        </motion.div>
+                                            <div>
+                                              Amount Paid:{" "}
+                                              {formatCurrency(
+                                                safeNumber(sale.total) -
+                                                  safeNumber(sale.amountDue)
+                                              )}
+                                            </div>
+                                            {safeNumber(sale.amountDue) > 0 && (
+                                              <div className="text-red-600">
+                                                Balance:{" "}
+                                                {formatCurrency(sale.amountDue)}
+                                              </div>
+                                            )}
+                                          </motion.div>
+                                        </div>
                                       </div>
-                                    </div>
-                                  </motion.div>
-                                </td>
-                              </motion.tr>
-                            )}
-                          </AnimatePresence>
-                        </React.Fragment>
-                      ))}
-                    </tbody>
-                  </motion.table>
-                </motion.div>
+                                    </motion.div>
+                                  </td>
+                                </motion.tr>
+                              )}
+                            </AnimatePresence>
+                          </React.Fragment>
+                        ))}
+                      </tbody>
+                    </motion.table>
+                  </motion.div>
+                )}
 
                 {/* Load More Button */}
                 {hasNextPage && (
@@ -1342,6 +2585,7 @@ const SalesReportPage = () => {
                 transition={{ delay: 1.7, duration: 0.4 }}
               >
                 <motion.button
+                  onClick={() => handleExport("excel")}
                   className="w-full text-left p-3 rounded-lg bg-orange-50 hover:bg-orange-100 transition-colors"
                   whileHover={{ scale: 1.02, x: 5 }}
                   whileTap={{ scale: 0.98 }}
@@ -1354,6 +2598,7 @@ const SalesReportPage = () => {
                   </div>
                 </motion.button>
                 <motion.button
+                  onClick={() => handleExport("pdf")}
                   className="w-full text-left p-3 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
                   whileHover={{ scale: 1.02, x: 5 }}
                   whileTap={{ scale: 0.98 }}
@@ -1366,14 +2611,15 @@ const SalesReportPage = () => {
                   </div>
                 </motion.button>
                 <motion.button
+                  onClick={() => handleExport("csv")}
                   className="w-full text-left p-3 rounded-lg bg-green-50 hover:bg-green-100 transition-colors"
                   whileHover={{ scale: 1.02, x: 5 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <div className="flex items-center space-x-3">
-                    <Users className="w-5 h-5 text-green-600" />
+                    <Download className="w-5 h-5 text-green-600" />
                     <span className="font-medium text-green-700">
-                      Send Customer Statements
+                      Export as CSV
                     </span>
                   </div>
                 </motion.button>
