@@ -28,7 +28,6 @@ export class FilterPresetManager {
           status: 'all',
           startDate: '',
           endDate: '',
-          searchTerm: '',
           amountMin: undefined,
           amountMax: undefined,
           customerId: '',
@@ -50,7 +49,6 @@ export class FilterPresetManager {
           status: 'all',
           startDate: '',
           endDate: '',
-          searchTerm: '',
           amountMin: undefined,
           amountMax: undefined,
           customerId: '',
@@ -72,7 +70,6 @@ export class FilterPresetManager {
           status: 'pending',
           startDate: '',
           endDate: '',
-          searchTerm: '',
           amountMin: undefined,
           amountMax: undefined,
           customerId: '',
@@ -94,7 +91,6 @@ export class FilterPresetManager {
           status: 'all',
           startDate: '',
           endDate: '',
-          searchTerm: '',
           amountMin: 1000,
           amountMax: undefined,
           customerId: '',
@@ -114,7 +110,7 @@ export class FilterPresetManager {
       if (typeof window === 'undefined') {
         return this.getDefaultPresets();
       }
-      
+
       const stored = localStorage.getItem(this.STORAGE_KEY);
       if (!stored) {
         const defaults = this.getDefaultPresets();
@@ -130,7 +126,7 @@ export class FilterPresetManager {
       // Ensure default presets exist
       const defaultPresets = this.getDefaultPresets();
       const merged = this.mergeWithDefaults(presets, defaultPresets);
-      
+
       return merged;
     } catch (error) {
       console.warn('Failed to load filter presets:', error);
@@ -142,7 +138,7 @@ export class FilterPresetManager {
     try {
       // Limit number of presets
       const limited = presets.slice(0, this.MAX_PRESETS);
-      
+
       // Only access localStorage on client side
       if (typeof window !== 'undefined') {
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(limited));
@@ -161,7 +157,7 @@ export class FilterPresetManager {
 
     const presets = this.loadPresets();
     const updated = [newPreset, ...presets.filter(p => !p.isDefault)];
-    
+
     this.savePresets(updated);
     return newPreset;
   }
@@ -169,12 +165,12 @@ export class FilterPresetManager {
   static updatePreset(id: string, updates: Partial<FilterPreset>): FilterPreset | null {
     const presets = this.loadPresets();
     const index = presets.findIndex(p => p.id === id);
-    
+
     if (index === -1) return null;
 
     const updated = { ...presets[index], ...updates };
     presets[index] = updated;
-    
+
     this.savePresets(presets);
     return updated;
   }
@@ -182,7 +178,7 @@ export class FilterPresetManager {
   static deletePreset(id: string): boolean {
     const presets = this.loadPresets();
     const preset = presets.find(p => p.id === id);
-    
+
     // Don't delete default presets
     if (preset?.isDefault) return false;
 
@@ -194,7 +190,7 @@ export class FilterPresetManager {
   static duplicatePreset(id: string, newName?: string): FilterPreset | null {
     const presets = this.loadPresets();
     const original = presets.find(p => p.id === id);
-    
+
     if (!original) return null;
 
     return this.savePreset({
@@ -218,7 +214,7 @@ export class FilterPresetManager {
 
   static getPresetsByTag(tag: string): FilterPreset[] {
     const presets = this.loadPresets();
-    return presets.filter(preset => 
+    return presets.filter(preset =>
       preset.tags?.includes(tag.toLowerCase())
     );
   }
