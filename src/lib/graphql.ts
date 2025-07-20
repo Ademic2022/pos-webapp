@@ -145,6 +145,39 @@ export const GET_CUSTOMERS = `
   }
 `;
 
+// Customer filter dropdown query (optimized for search)
+export const SEARCH_CUSTOMERS_FOR_FILTER = `
+  query SearchCustomersForFilter(
+    $first: Int = 20,
+    $after: String,
+    $name_Icontains: String,
+    $status: CustomerStatusEnum
+  ) {
+    customers(
+      first: $first,
+      after: $after,
+      name_Icontains: $name_Icontains,
+      status: $status
+    ) {
+      edges {
+        node {
+          id
+          name
+          phone
+          type
+          status
+        }
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+    }
+  }
+`;
+
 export const GET_CUSTOMER = `
   query GetCustomer($id: ID!) {
     customer(id: $id) {
@@ -483,16 +516,77 @@ export const SALE_BY_ID_QUERY = `
 `;
 
 export const SALES_STATS_QUERY = `
-  query SalesStats($dateFrom: Date, $dateTo: Date) {
-    salesStats(dateFrom: $dateFrom, dateTo: $dateTo) {
+  query SalesStats(
+    $dateFrom: Date,
+    $dateTo: Date,
+    $createdAtDate: Date,
+    $createdAtMonth: Int,
+    $createdAtYear: Int,
+    $createdAtGte: DateTime,
+    $createdAtLte: DateTime,
+    $customer: ID,
+    $saleType: SaleTypeEnum,
+    $transactionId: String,
+    $transactionIdIcontains: String,
+    $paymentMethod: PaymentMethodEnum,
+    $totalGte: Decimal,
+    $totalLte: Decimal,
+    $totalGt: Decimal,
+    $totalLt: Decimal,
+    $subtotalGte: Decimal,
+    $subtotalLte: Decimal,
+    $amountDueGt: Decimal,
+    $amountDueGte: Decimal
+  ) {
+    salesStats(
+      dateFrom: $dateFrom,
+      dateTo: $dateTo,
+      createdAtDate: $createdAtDate,
+      createdAtMonth: $createdAtMonth,
+      createdAtYear: $createdAtYear,
+      createdAtGte: $createdAtGte,
+      createdAtLte: $createdAtLte,
+      customer: $customer,
+      saleType: $saleType,
+      transactionId: $transactionId,
+      transactionIdIcontains: $transactionIdIcontains,
+      paymentMethod: $paymentMethod,
+      totalGte: $totalGte,
+      totalLte: $totalLte,
+      totalGt: $totalGt,
+      totalLt: $totalLt,
+      subtotalGte: $subtotalGte,
+      subtotalLte: $subtotalLte,
+      amountDueGt: $amountDueGt,
+      amountDueGte: $amountDueGte
+    ) {
       totalSales
       totalTransactions
       averageSaleValue
       retailSales
       wholesaleSales
       cashSales
+      transferSales
       creditSales
+      partPaymentSales
+      customerCreditApplied {
+        value
+        count
+      }
+      customerCreditEarned {
+        value
+        count
+      }
+      customerDebtIncurred {
+        value
+        count
+      }
       totalDiscounts
+      dateRangeFrom
+      dateRangeTo
+      filteredByCustomer
+      filteredBySaleType
+      filteredByPaymentMethod
     }
   }
 `;

@@ -1,15 +1,19 @@
 /**
  * Custom hook for reports page data management
  * Provides live sales data with advanced filtering capabilities
+ * Uses Django sales_stats query for comprehensive statistics
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { salesService, Sale } from '@/services/salesService';
-import { ReportFilters } from '@/interfaces/interface';
+import { Sale } from '@/services/salesService';
+import { reportsService } from '@/services/reportsService';
+import { ReportFilters, SalesStats } from '@/interfaces/interface';
+import { decodeGraphQLId } from '@/utils/graphqlUtils';
 
 interface UseReportsDataResult {
   // Data
   sales: Sale[];
+  statistics: SalesStats | null;
   summary: {
     totalSales: number;
     totalPaid: number;
@@ -20,26 +24,31 @@ interface UseReportsDataResult {
     retailRevenue: number;
     averageTransaction: number;
   };
-  
+
   // Loading states
   isLoading: boolean;
+  isLoadingTransactions: boolean;
   error: string | null;
-  
+
   // Pagination
   hasNextPage: boolean;
   loadMore: () => Promise<void>;
-  
+
   // Actions
   refetch: () => Promise<void>;
+  fetchTransactions: () => Promise<void>;
   applyFilters: (filters: ReportFilters) => Promise<void>;
 }
 
 export function useReportsData(): UseReportsDataResult {
   const [sales, setSales] = useState<Sale[]>([]);
+  const [statistics, setStatistics] = useState<SalesStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [cursor, setCursor] = useState<string | null>(null);
+  const [transactionsFetched, setTransactionsFetched] = useState(false);
   const [currentFilters, setCurrentFilters] = useState<ReportFilters>({
     dateRange: "month",
     customerType: "all",
@@ -47,153 +56,94 @@ export function useReportsData(): UseReportsDataResult {
     status: "all",
     startDate: "",
     endDate: "",
+    amountMin: undefined,
+    amountMax: undefined,
+    customerId: "",
+    sortBy: "date",
+    sortDirection: "desc",
   });
 
-  // Convert report filters to API parameters
-  const convertFiltersToParams = useCallback((filters: ReportFilters) => {
-    const params: {
-      first?: number;
-      after?: string;
-      saleType?: string;
-      customer?: string;
-      transactionId_Icontains?: string;
-      total_Gte?: number;
-      total_Lte?: number;
-      createdAt_Gte?: string;
-      createdAt_Lte?: string;
-      amountDue_Gt?: number;
-      amountDue_Gte?: number;
-      amountDue_Lte?: number;
-      discount_Gt?: number;
-      discount_Gte?: number;
-      discount_Lte?: number;
-      subtotal_Gte?: number;
-      subtotal_Lte?: number;
-    } = {
-      first: 50, // Load more data for reports
-    };
-
-    // Date filtering
-    if (filters.dateRange && filters.dateRange !== 'custom') {
-      const now = new Date();
-      let dateFrom: Date;
-      
-      switch (filters.dateRange) {
-        case 'today':
-          dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-          break;
-        case 'week':
-          dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          break;
-        case 'month':
-          dateFrom = new Date(now.getFullYear(), now.getMonth(), 1);
-          break;
-        case 'year':
-          dateFrom = new Date(now.getFullYear(), 0, 1);
-          break;
-        default:
-          dateFrom = new Date(now.getFullYear(), now.getMonth(), 1); // default to month
-          break;
-      }
-      
-      params.createdAt_Gte = dateFrom.toISOString();
-    } else if (filters.dateRange === 'custom') {
-      if (filters.startDate) {
-        params.createdAt_Gte = new Date(filters.startDate).toISOString();
-      }
-      if (filters.endDate) {
-        params.createdAt_Lte = new Date(filters.endDate).toISOString();
-      }
-    }
-
-    // Customer type filtering
-    if (filters.customerType !== 'all') {
-      params.saleType = filters.customerType.toUpperCase();
-    }
-
-    // Status filtering (outstanding debt)
-    if (filters.status === 'pending') {
-      params.amountDue_Gt = 0;
-    } else if (filters.status === 'paid') {
-      params.amountDue_Gte = 0;
-      params.amountDue_Lte = 0;
-    }
-
-    // Advanced filters
-    if (filters.searchTerm) {
-      params.transactionId_Icontains = filters.searchTerm;
-    }
-    if (filters.amountMin !== undefined && filters.amountMin !== null && filters.amountMin !== 0) {
-      params.total_Gte = filters.amountMin;
-    }
-    if (filters.amountMax !== undefined && filters.amountMax !== null && filters.amountMax !== 0) {
-      params.total_Lte = filters.amountMax;
-    }
-    if (filters.customerId) {
-      params.customer = filters.customerId;
-    }
-    // Note: Sorting will be handled client-side since backend doesn't support orderBy
-
-    return params;
-  }, []);
-
-  // Fetch sales data
-  const fetchSales = useCallback(async (resetData = true, afterCursor?: string) => {
+  // Fetch statistics only (for overview tab)
+  const fetchStatistics = useCallback(async () => {
     try {
-      if (resetData) {
-        setIsLoading(true);
-        setError(null);
-      }
+      setIsLoading(true);
+      setError(null);
 
-      const params = convertFiltersToParams(currentFilters);
-      if (afterCursor) {
-        params.after = afterCursor;
-      }
+      const response = await reportsService.getSalesStats(currentFilters);
 
-      const response = await salesService.getSales(params);
-
-      if (response.success && response.data) {
-        const newSales = response.data.edges.map(edge => edge.node);
-        
-        if (resetData) {
-          setSales(newSales);
-        } else {
-          setSales(prev => [...prev, ...newSales]);
-        }
-        
-        setHasNextPage(response.data.pageInfo.hasNextPage);
-        setCursor(response.data.pageInfo.endCursor);
+      if (response.success && response.statistics) {
+        setStatistics(response.statistics);
       } else {
-        throw new Error(response.errors?.join(', ') || 'Failed to fetch sales data');
+        throw new Error(response.errors?.join(', ') || 'Failed to fetch statistics');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       setError(errorMessage);
-      console.error('Sales data fetch error:', err);
+      console.error('Statistics fetch error:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [currentFilters, convertFiltersToParams]);
+  }, [currentFilters]);
 
-  // Calculate summary statistics and apply client-side filtering/sorting
+  // Fetch transactions (for transactions tab)
+  const fetchTransactions = useCallback(async (resetData = true, afterCursor?: string) => {
+    try {
+      if (resetData) {
+        setIsLoadingTransactions(true);
+        setError(null);
+      }
+
+      const pagination = {
+        first: 50,
+        after: afterCursor,
+      };
+
+      const response = await reportsService.getSalesTransactions(currentFilters, pagination);
+
+      if (response.success && response.sales) {
+        if (resetData) {
+          setSales(response.sales);
+          setTransactionsFetched(true);
+        } else {
+          setSales(prev => [...prev, ...response.sales!]);
+        }
+
+        setHasNextPage(response.hasNextPage || false);
+        setCursor(response.cursor || null);
+      } else {
+        throw new Error(response.errors?.join(', ') || 'Failed to fetch transactions');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setError(errorMessage);
+      console.error('Transactions fetch error:', err);
+    } finally {
+      setIsLoadingTransactions(false);
+    }
+  }, [currentFilters]);
+
+  // Apply client-side filtering/sorting for local sales data
   const { filteredSales, summary } = useMemo(() => {
     let filteredSales = [...sales];
 
-    // Apply client-side search filter (in addition to server-side filter)
-    if (currentFilters.searchTerm) {
-      const searchTerm = currentFilters.searchTerm.toLowerCase();
-      filteredSales = filteredSales.filter(sale => 
-        sale.transactionId.toLowerCase().includes(searchTerm) ||
-        sale.customer?.name?.toLowerCase().includes(searchTerm) ||
-        sale.customer?.phone?.includes(searchTerm)
-      );
+    // Apply client-side customer filter (in addition to server-side filter)
+    if (currentFilters.customerId && currentFilters.customerId !== '') {
+      if (currentFilters.customerId === 'walk-in') {
+        filteredSales = filteredSales.filter(sale => !sale.customer?.id);
+      } else {
+        // Compare with decoded customer ID
+        const decodedFilterId = decodeGraphQLId(currentFilters.customerId);
+        filteredSales = filteredSales.filter(sale =>
+          sale.customer?.id && decodeGraphQLId(sale.customer.id) === decodedFilterId
+        );
+      }
     }
 
     // Apply client-side sorting
     if (currentFilters.sortBy) {
       filteredSales.sort((a, b) => {
         let comparison = 0;
-        
+
         switch (currentFilters.sortBy) {
           case 'date':
             comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
@@ -210,71 +160,96 @@ export function useReportsData(): UseReportsDataResult {
             comparison = statusA.localeCompare(statusB);
             break;
         }
-        
+
         return currentFilters.sortDirection === 'asc' ? comparison : -comparison;
       });
     }
 
-    // Calculate summary from filtered sales
-    const totalSales = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
-    const totalPaid = filteredSales.reduce((sum, sale) => sum + (sale.total - sale.amountDue), 0);
-    const totalOutstanding = filteredSales.reduce((sum, sale) => sum + sale.amountDue, 0);
-    const totalTransactions = filteredSales.length;
-    const totalDiscounts = filteredSales.reduce((sum, sale) => sum + (sale.discount || 0), 0);
+    // Use statistics from server if available, otherwise calculate from filtered sales
+    let summary;
+    if (statistics) {
+      summary = {
+        totalSales: statistics.totalSales,
+        totalPaid: statistics.totalSales - statistics.customerDebtIncurred.value,
+        totalOutstanding: statistics.customerDebtIncurred.value,
+        totalTransactions: statistics.totalTransactions,
+        totalDiscounts: statistics.totalDiscounts,
+        wholesaleRevenue: statistics.wholesaleSales,
+        retailRevenue: statistics.retailSales,
+        averageTransaction: statistics.averageSaleValue,
+      };
+    } else {
+      // Fallback calculation from client data
+      const totalSales = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
+      const totalPaid = filteredSales.reduce((sum, sale) => sum + (sale.total - sale.amountDue), 0);
+      const totalOutstanding = filteredSales.reduce((sum, sale) => sum + sale.amountDue, 0);
+      const totalTransactions = filteredSales.length;
+      const totalDiscounts = filteredSales.reduce((sum, sale) => sum + (sale.discount || 0), 0);
 
-    const wholesaleRevenue = filteredSales
-      .filter(sale => sale.saleType === 'WHOLESALE')
-      .reduce((sum, sale) => sum + sale.total, 0);
+      const wholesaleRevenue = filteredSales
+        .filter(sale => sale.saleType === 'WHOLESALE')
+        .reduce((sum, sale) => sum + sale.total, 0);
 
-    const retailRevenue = filteredSales
-      .filter(sale => sale.saleType === 'RETAIL')
-      .reduce((sum, sale) => sum + sale.total, 0);
+      const retailRevenue = filteredSales
+        .filter(sale => sale.saleType === 'RETAIL')
+        .reduce((sum, sale) => sum + sale.total, 0);
 
-    const summary = {
-      totalSales,
-      totalPaid,
-      totalOutstanding,
-      totalTransactions,
-      totalDiscounts,
-      wholesaleRevenue,
-      retailRevenue,
-      averageTransaction: totalSales / totalTransactions || 0,
-    };
+      summary = {
+        totalSales,
+        totalPaid,
+        totalOutstanding,
+        totalTransactions,
+        totalDiscounts,
+        wholesaleRevenue,
+        retailRevenue,
+        averageTransaction: totalSales / totalTransactions || 0,
+      };
+    }
 
     return { filteredSales, summary };
-  }, [sales, currentFilters]);
+  }, [sales, statistics, currentFilters]);
 
   // Apply filters
   const applyFilters = useCallback(async (filters: ReportFilters) => {
     setCurrentFilters(filters);
-    // fetchSales will be called automatically due to dependency
+    // Reset transactions fetched state when filters change
+    setTransactionsFetched(false);
+    setSales([]);
+    // fetchStatistics will be called automatically due to dependency
   }, []);
 
-  // Load more data (pagination)
+  // Load more data (pagination for transactions)
   const loadMore = useCallback(async () => {
-    if (hasNextPage && cursor && !isLoading) {
-      await fetchSales(false, cursor);
+    if (hasNextPage && cursor && !isLoadingTransactions) {
+      await fetchTransactions(false, cursor);
     }
-  }, [hasNextPage, cursor, isLoading, fetchSales]);
+  }, [hasNextPage, cursor, isLoadingTransactions, fetchTransactions]);
 
-  // Refetch data
+  // Refetch statistics data
   const refetch = useCallback(async () => {
-    await fetchSales(true);
-  }, [fetchSales]);
+    await fetchStatistics();
+    // Also refetch transactions if they were previously fetched
+    if (transactionsFetched) {
+      await fetchTransactions(true);
+    }
+  }, [fetchStatistics, fetchTransactions, transactionsFetched]);
 
-  // Initial data fetch and refetch when filters change
+  // Initial statistics fetch and refetch when filters change
   useEffect(() => {
-    fetchSales(true);
-  }, [fetchSales]);
+    fetchStatistics();
+  }, [fetchStatistics]);
 
   return {
     sales: filteredSales,
+    statistics,
     summary,
     isLoading,
+    isLoadingTransactions,
     error,
     hasNextPage,
     loadMore,
     refetch,
+    fetchTransactions: () => fetchTransactions(true),
     applyFilters,
   };
 }

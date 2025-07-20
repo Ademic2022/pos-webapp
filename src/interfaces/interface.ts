@@ -2,45 +2,69 @@ import { PermissionType } from "../types/types";
 
 // Core Business Interfaces
 export interface SalesData {
-    id: string;
-    date: string;
-    time: string;
-    customer: string;
-    customerType: "wholesale" | "retail";
-    items: Array<{
-      name: string;
-      quantity: number;
-      price: number;
-      total: number;
-    }>;
-    subtotal: number;
-    discount: number;
+  id: string;
+  date: string;
+  time: string;
+  customer: string;
+  customerType: "wholesale" | "retail";
+  items: Array<{
+    name: string;
+    quantity: number;
+    price: number;
     total: number;
-    paymentMethod: "cash" | "credit" | "transfer" | "part_payment";
-    amountPaid: number;
-    balance: number;
-    status: "paid" | "partial" | "pending";
-    // For part payments, track the payment method used for the partial amount
-    partPaymentMethod?: "cash" | "transfer";
+  }>;
+  subtotal: number;
+  discount: number;
+  total: number;
+  paymentMethod: "cash" | "credit" | "transfer" | "part_payment";
+  amountPaid: number;
+  balance: number;
+  status: "paid" | "partial" | "pending";
+  // For part payments, track the payment method used for the partial amount
+  partPaymentMethod?: "cash" | "transfer";
 }
-  
-export interface ReportFilters {
-    dateRange: "today" | "week" | "month" | "year" | "custom";
-    customerType: "all" | "wholesale" | "retail";
-    paymentMethod: "all" | "cash" | "credit" | "transfer" | "part_payment";
-    status: "all" | "paid" | "partial" | "pending";
-    startDate: string;
-    endDate: string;
-    // Advanced filters
-    searchTerm?: string;
-    amountMin?: number;
-    amountMax?: number;
-    customerId?: string;
-    sortBy?: "date" | "amount" | "customer" | "status";
-    sortDirection?: "asc" | "desc";
-  }
 
-export interface Customer {
+export interface ReportFilters {
+  dateRange: "today" | "week" | "month" | "year" | "custom";
+  customerType: "all" | "wholesale" | "retail";
+  paymentMethod: "all" | "cash" | "credit" | "transfer" | "part_payment";
+  status: "all" | "paid" | "partial" | "pending";
+  startDate: string;
+  endDate: string;
+  // Advanced filters
+  amountMin?: number;
+  amountMax?: number;
+  customerId?: string;
+  sortBy?: "date" | "amount" | "customer" | "status";
+  sortDirection?: "asc" | "desc";
+}
+
+export interface ValueCountPair {
+  value: number;
+  count: number;
+}
+
+export interface SalesStats {
+  totalSales: number;
+  totalTransactions: number;
+  averageSaleValue: number;
+  totalDiscounts: number;
+  wholesaleSales: number;
+  retailSales: number;
+  cashSales: number;
+  transferSales: number;
+  creditSales: number;
+  partPaymentSales: number;
+  customerCreditApplied: ValueCountPair;
+  customerCreditEarned: ValueCountPair;
+  customerDebtIncurred: ValueCountPair;
+  dateRangeFrom?: string;
+  dateRangeTo?: string;
+  filteredBySaleType?: string;
+  filteredByPaymentMethod?: string;
+  filteredByCustomerType?: string;
+  filteredByAmountRange?: string;
+}export interface Customer {
   id: string;
   name: string;
   phone: string;
@@ -55,18 +79,18 @@ export interface Customer {
   status: "active" | "inactive" | "blocked";
   notes?: string;
 }
-  
+
 export interface Product {
-    id: string;
-    name: string;
-    price: number;
-    stock: number;
-    unit: string;
-  }
-  
+  id: string;
+  name: string;
+  price: number;
+  stock: number;
+  unit: string;
+}
+
 export interface CartItem extends Product {
-    quantity: number;
-  }
+  quantity: number;
+}
 
 export interface CustomerTransaction {
   id: string;
@@ -502,3 +526,60 @@ export interface ReturnReceiptData {
 }
 
 // Note: PermissionType is defined in ../types/types.ts to avoid circular imports
+
+export interface ExtendedSale {
+  id: string;
+  saleType?: 'RETAIL' | 'WHOLESALE';
+  paymentMethod?: 'CASH' | 'TRANSFER' | 'CREDIT' | 'PART_PAYMENT';
+  creditApplied?: number;
+  creditEarned?: number;
+  tax?: number;
+  transactionId?: string;
+  date?: string;
+  createdAt?: string;
+  notes?: string;
+  subtotal: number;
+  discount: number;
+  total: number;
+  amountDue: number;
+  customer?: {
+    name: string;
+    phone?: string;
+  };
+  items: Array<{
+    quantity: number;
+    totalPrice: number;
+    unitPrice?: number;
+    product: { name: string; sku?: string };
+  }>;
+}
+
+// Sale interface for better type safety
+export interface Sale {
+  id: string;
+  transactionId: string;
+  createdAt: string;
+  total: number;
+  subtotal: number;
+  discount: number;
+  tax?: number;
+  amountDue: number;
+  saleType: "WHOLESALE" | "RETAIL";
+  notes?: string;
+  customer?: {
+    id: string;
+    name: string;
+    email?: string;
+  };
+  payments?: Array<{
+    method: string;
+    amount: number;
+  }>;
+  items: Array<{
+    quantity: number;
+    totalPrice: number;
+    product: {
+      name: string;
+    };
+  }>;
+}

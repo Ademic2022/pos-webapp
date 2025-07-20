@@ -32,7 +32,7 @@ import {
   Settings,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ReportFilters } from "@/interfaces/interface";
+import { ReportFilters, ExtendedSale, Sale } from "@/interfaces/interface";
 import { StatsCard } from "@/components/cards/statCard";
 import { usePageLoading } from "@/hooks/usePageLoading";
 import { useReportsData } from "@/hooks/useReportsData";
@@ -40,8 +40,8 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ProtectedElement from "@/components/auth/ProtectedElement";
 import { formatCurrency, safeNumber } from "@/utils/formatters";
 import { ReportsExporter } from "@/utils/exportUtils";
+import { CustomerDropdown } from "@/components/CustomerDropdown";
 import {
-  useDebounce,
   useLocalStorage,
   useClickOutside,
 } from "@/hooks/useUtilityHooks";
@@ -55,35 +55,7 @@ import {
 } from "@/components/VirtualizedTable";
 import { useBatchOperations } from "@/utils/batchOperations";
 
-// Sale interface for better type safety
-interface Sale {
-  id: string;
-  transactionId: string;
-  createdAt: string;
-  total: number;
-  subtotal: number;
-  discount: number;
-  tax?: number;
-  amountDue: number;
-  saleType: "WHOLESALE" | "RETAIL";
-  notes?: string;
-  customer?: {
-    id: string;
-    name: string;
-    email?: string;
-  };
-  payments?: Array<{
-    method: string;
-    amount: number;
-  }>;
-  items: Array<{
-    quantity: number;
-    totalPrice: number;
-    product: {
-      name: string;
-    };
-  }>;
-}
+
 
 const SalesReportPage = () => {
   const router = useRouter();
@@ -96,12 +68,15 @@ const SalesReportPage = () => {
   // Live data hook
   const {
     sales: salesData,
+    statistics,
     summary,
     isLoading: isDataLoading,
+    isLoadingTransactions,
     error: dataError,
     hasNextPage,
     loadMore,
     refetch,
+    fetchTransactions,
     applyFilters,
   } = useReportsData();
 
@@ -162,7 +137,6 @@ const SalesReportPage = () => {
       startDate: "",
       endDate: "",
       // Advanced filters
-      searchTerm: "",
       amountMin: undefined,
       amountMax: undefined,
       customerId: "",
@@ -170,14 +144,6 @@ const SalesReportPage = () => {
       sortDirection: "desc",
     }
   );
-
-  // Separate local search state to avoid circular dependency
-  const [localSearchTerm, setLocalSearchTerm] = useState(
-    filters.searchTerm || ""
-  );
-
-  // Debounced search term to avoid too many API calls
-  const debouncedSearchTerm = useDebounce(localSearchTerm, 500);
 
   // Click outside refs for dropdowns
   const exportDropdownRef = useClickOutside<HTMLDivElement>(() => {
@@ -199,6 +165,16 @@ const SalesReportPage = () => {
   // Toast notifications
   const { toasts, showToast, hideToast } = useToast();
 
+  // Handle tab switching with lazy loading
+  const handleTabChange = useCallback(async (tab: "overview" | "transactions" | "customers") => {
+    setActiveTab(tab);
+
+    // Fetch transactions when switching to transactions tab
+    if (tab === "transactions" && salesData.length === 0) {
+      await fetchTransactions();
+    }
+  }, [salesData.length, fetchTransactions]);
+
   // Reset filters with confirmation
   const handleResetFilters = () => {
     const defaultFilters: ReportFilters = {
@@ -208,7 +184,6 @@ const SalesReportPage = () => {
       status: "all",
       startDate: "",
       endDate: "",
-      searchTerm: "",
       amountMin: undefined,
       amountMax: undefined,
       customerId: "",
@@ -217,34 +192,12 @@ const SalesReportPage = () => {
     };
 
     setFilters(defaultFilters);
-    setLocalSearchTerm(""); // Also reset local search term
     showToast({
       type: "info",
       title: "Filters Reset",
       message: "All filters have been reset to default values",
     });
   };
-
-  // Update filters when debounced search term changes (without causing circular dependency)
-  useEffect(() => {
-    setFilters((prev) => {
-      if (prev.searchTerm !== debouncedSearchTerm) {
-        return { ...prev, searchTerm: debouncedSearchTerm };
-      }
-      return prev;
-    });
-  }, [debouncedSearchTerm, setFilters]);
-
-  // Sync local search term when filters are loaded from localStorage (initial load only)
-  useEffect(() => {
-    if (filters.searchTerm !== localSearchTerm) {
-      setLocalSearchTerm(filters.searchTerm || "");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.searchTerm]); // Only when filters.searchTerm changes from external source
-
-  // Loading state for search
-  const isSearching = localSearchTerm !== debouncedSearchTerm;
 
   // Create a debounced applyFilters to prevent too many API calls
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -271,7 +224,7 @@ const SalesReportPage = () => {
     if (filters.customerType !== "all") count++;
     if (filters.paymentMethod !== "all") count++;
     if (filters.status !== "all") count++;
-    if (filters.searchTerm) count++;
+    if (filters.customerId) count++;
     if (filters.amountMin) count++;
     if (filters.amountMax) count++;
     if (filters.sortBy !== "date" || filters.sortDirection !== "desc") count++;
@@ -361,7 +314,6 @@ const SalesReportPage = () => {
   // Filter preset handlers
   const handleApplyPreset = (preset: FilterPreset) => {
     setFilters(preset.filters);
-    setLocalSearchTerm(preset.filters.searchTerm || ""); // Sync local search term
     setShowPresetManager(false);
 
     showToast({
@@ -437,11 +389,10 @@ const SalesReportPage = () => {
         return (
           <td className="py-3 px-4">
             <span
-              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                sale.saleType === "WHOLESALE"
-                  ? "bg-blue-100 text-blue-800"
-                  : "bg-green-100 text-green-800"
-              }`}
+              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${sale.saleType === "WHOLESALE"
+                ? "bg-blue-100 text-blue-800"
+                : "bg-green-100 text-green-800"
+                }`}
             >
               {sale.saleType.toLowerCase()}
             </span>
@@ -492,19 +443,18 @@ const SalesReportPage = () => {
         return (
           <td className="py-3 px-4">
             <span
-              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                sale.amountDue === 0
-                  ? "text-green-600 bg-green-100"
-                  : sale.amountDue < sale.total
+              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${sale.amountDue === 0
+                ? "text-green-600 bg-green-100"
+                : sale.amountDue < sale.total
                   ? "text-yellow-600 bg-yellow-100"
                   : "text-red-600 bg-red-100"
-              }`}
+                }`}
             >
               {sale.amountDue === 0
                 ? "paid"
                 : sale.amountDue < sale.total
-                ? "partial"
-                : "pending"}
+                  ? "partial"
+                  : "pending"}
             </span>
             {safeNumber(sale.amountDue) > 0 && (
               <div className="text-xs text-red-600 mt-1">
@@ -673,19 +623,18 @@ const SalesReportPage = () => {
       case "status":
         return (
           <span
-            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-              sale.amountDue === 0
-                ? "text-green-600 bg-green-100"
-                : sale.amountDue < sale.total
+            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${sale.amountDue === 0
+              ? "text-green-600 bg-green-100"
+              : sale.amountDue < sale.total
                 ? "text-yellow-600 bg-yellow-100"
                 : "text-red-600 bg-red-100"
-            }`}
+              }`}
           >
             {sale.amountDue === 0
               ? "paid"
               : sale.amountDue < sale.total
-              ? "partial"
-              : "pending"}
+                ? "partial"
+                : "pending"}
           </span>
         );
 
@@ -780,11 +729,10 @@ const SalesReportPage = () => {
                 <motion.button
                   onClick={handleRefresh}
                   disabled={isDataLoading || isRefreshing}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    isDataLoading || isRefreshing
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "bg-blue-100 text-blue-700 hover:bg-blue-200 hover:scale-105"
-                  }`}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isDataLoading || isRefreshing
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-blue-100 text-blue-700 hover:bg-blue-200 hover:scale-105"
+                    }`}
                   whileHover={
                     !isDataLoading && !isRefreshing ? { scale: 1.05 } : {}
                   }
@@ -793,9 +741,8 @@ const SalesReportPage = () => {
                   }
                 >
                   <RefreshCw
-                    className={`w-4 h-4 ${
-                      isDataLoading || isRefreshing ? "animate-spin" : ""
-                    }`}
+                    className={`w-4 h-4 ${isDataLoading || isRefreshing ? "animate-spin" : ""
+                      }`}
                   />
                   <span>
                     {isDataLoading || isRefreshing
@@ -956,11 +903,10 @@ const SalesReportPage = () => {
                               <motion.button
                                 key={preset.value}
                                 onClick={() => handleDatePresetSelect(preset)}
-                                className={`w-full text-left px-3 py-2 rounded-md text-sm hover:bg-orange-50 transition-colors ${
-                                  selectedDatePreset === preset.value
-                                    ? "bg-orange-100 text-orange-700"
-                                    : "text-gray-700"
-                                }`}
+                                className={`w-full text-left px-3 py-2 rounded-md text-sm hover:bg-orange-50 transition-colors ${selectedDatePreset === preset.value
+                                  ? "bg-orange-100 text-orange-700"
+                                  : "text-gray-700"
+                                  }`}
                                 whileHover={{ x: 2 }}
                               >
                                 <div className="font-medium">
@@ -1266,24 +1212,21 @@ const SalesReportPage = () => {
                 >
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Search
+                      Filter by Customer
                     </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={localSearchTerm}
-                        onChange={(e) => setLocalSearchTerm(e.target.value)}
-                        placeholder="Search transactions, customers..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent pr-8"
-                      />
-                      {isSearching && (
-                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                          <Loader2 className="w-4 h-4 animate-spin text-orange-500" />
-                        </div>
-                      )}
-                    </div>
+                    <CustomerDropdown
+                      value={filters.customerId || ""}
+                      onChange={(customerId) => {
+                        setFilters({
+                          ...filters,
+                          customerId: customerId || undefined,
+                        });
+                      }}
+                      placeholder="All Customers"
+                      className="w-full"
+                    />
                     <p className="text-xs text-gray-500 mt-1">
-                      Search is debounced for better performance
+                      Search and select a specific customer to filter transactions
                     </p>
                   </div>
 
@@ -1503,9 +1446,9 @@ const SalesReportPage = () => {
                 change={{
                   value: isDataLoading
                     ? "..."
-                    : `${
-                        salesData.filter((sale) => sale.amountDue > 0).length
-                      } customers`,
+                    : statistics && statistics.customerDebtIncurred.count > 0
+                      ? `${statistics.customerDebtIncurred.count} debt transactions`
+                      : `${salesData.filter((sale) => sale.amountDue > 0).length} customers`,
                   icon: TrendingDown,
                   textColor: "text-red-600",
                 }}
@@ -1559,36 +1502,39 @@ const SalesReportPage = () => {
             >
               <nav className="flex space-x-8 px-6">
                 <motion.button
-                  onClick={() => setActiveTab("overview")}
-                  className={`py-4 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === "overview"
-                      ? "border-orange-500 text-orange-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
+                  onClick={() => handleTabChange("overview")}
+                  className={`py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "overview"
+                    ? "border-orange-500 text-orange-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                    }`}
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   Overview
                 </motion.button>
                 <motion.button
-                  onClick={() => setActiveTab("transactions")}
-                  className={`py-4 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === "transactions"
-                      ? "border-orange-500 text-orange-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
+                  onClick={() => handleTabChange("transactions")}
+                  className={`py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "transactions"
+                    ? "border-orange-500 text-orange-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                    }`}
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.95 }}
+                  disabled={isLoadingTransactions}
                 >
-                  Transactions
+                  <span className="flex items-center space-x-2">
+                    <span>Transactions</span>
+                    {isLoadingTransactions && (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    )}
+                  </span>
                 </motion.button>
                 <motion.button
-                  onClick={() => setActiveTab("customers")}
-                  className={`py-4 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === "customers"
-                      ? "border-orange-500 text-orange-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
+                  onClick={() => handleTabChange("customers")}
+                  className={`py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === "customers"
+                    ? "border-orange-500 text-orange-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                    }`}
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -1605,185 +1551,258 @@ const SalesReportPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
+                {/* Sales Breakdown & Payment Methods */}
                 <motion.div
-                  className="grid lg:grid-cols-2 gap-8"
+                  className="grid lg:grid-cols-2 gap-8 mb-8"
                   initial={{ y: 30, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.2, duration: 0.5 }}
+                  transition={{ delay: 0.7, duration: 0.5 }}
                 >
-                  {/* Sales Breakdown */}
+                  {/* Sales Type Breakdown */}
                   <motion.div
+                    className="bg-white rounded-xl p-6 border border-gray-200"
                     initial={{ x: -30, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.3, duration: 0.5 }}
+                    transition={{ delay: 0.8, duration: 0.4 }}
                   >
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                      <BarChart3 className="w-5 h-5 mr-2 text-blue-600" />
                       Sales Breakdown
                     </h3>
-                    <motion.div
-                      className="space-y-4"
-                      initial={{ y: 20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.4, duration: 0.5 }}
-                    >
+
+                    <div className="space-y-4">
                       <motion.div
-                        className="flex items-center justify-between p-4 bg-orange-50 rounded-lg"
+                        className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg"
                         initial={{ x: -20, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
-                        transition={{ delay: 0.5, duration: 0.4 }}
+                        transition={{ delay: 0.9, duration: 0.4 }}
                         whileHover={{ scale: 1.02, x: 5 }}
                       >
                         <div className="flex items-center space-x-3">
-                          <Package className="w-5 h-5 text-orange-600" />
-                          <span className="font-medium text-gray-900">
-                            Wholesale Sales
-                          </span>
+                          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                          <span className="font-medium text-gray-900">Wholesale Sales</span>
                         </div>
                         <div className="text-right">
                           <div className="font-bold text-gray-900">
-                            {formatCurrency(summary.wholesaleRevenue)}
+                            {isDataLoading ? "..." : formatCurrency(statistics?.wholesaleSales || summary.wholesaleRevenue)}
                           </div>
                           <div className="text-sm text-gray-600">
-                            {safeNumber(summary.totalSales) > 0
-                              ? (
-                                  (safeNumber(summary.wholesaleRevenue) /
-                                    safeNumber(summary.totalSales)) *
-                                  100
-                                ).toFixed(1)
-                              : "0.0"}
-                            % of total
+                            {isDataLoading ? "..." : (
+                              statistics?.totalSales || summary.totalSales) > 0
+                              ? ((statistics?.wholesaleSales || summary.wholesaleRevenue) /
+                                (statistics?.totalSales || summary.totalSales) * 100).toFixed(1)
+                              : "0.0"}% of total
                           </div>
                         </div>
                       </motion.div>
 
                       <motion.div
-                        className="flex items-center justify-between p-4 bg-amber-50 rounded-lg"
+                        className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg"
                         initial={{ x: -20, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
-                        transition={{ delay: 0.6, duration: 0.4 }}
+                        transition={{ delay: 1.0, duration: 0.4 }}
                         whileHover={{ scale: 1.02, x: 5 }}
                       >
                         <div className="flex items-center space-x-3">
-                          <Droplets className="w-5 h-5 text-amber-600" />
-                          <span className="font-medium text-gray-900">
-                            Retail Sales
-                          </span>
+                          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                          <span className="font-medium text-gray-900">Retail Sales</span>
                         </div>
                         <div className="text-right">
                           <div className="font-bold text-gray-900">
-                            {formatCurrency(summary.retailRevenue)}
+                            {isDataLoading ? "..." : formatCurrency(statistics?.retailSales || summary.retailRevenue)}
                           </div>
                           <div className="text-sm text-gray-600">
-                            {safeNumber(summary.totalSales) > 0
-                              ? (
-                                  (safeNumber(summary.retailRevenue) /
-                                    safeNumber(summary.totalSales)) *
-                                  100
-                                ).toFixed(1)
-                              : "0.0"}
-                            % of total
+                            {isDataLoading ? "..." : (
+                              statistics?.totalSales || summary.totalSales) > 0
+                              ? ((statistics?.retailSales || summary.retailRevenue) /
+                                (statistics?.totalSales || summary.totalSales) * 100).toFixed(1)
+                              : "0.0"}% of total
                           </div>
                         </div>
                       </motion.div>
-
-                      <motion.div
-                        className="flex items-center justify-between p-4 bg-green-50 rounded-lg"
-                        initial={{ x: -20, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        transition={{ delay: 0.7, duration: 0.4 }}
-                        whileHover={{ scale: 1.02, x: 5 }}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <CheckCircle className="w-5 h-5 text-green-600" />
-                          <span className="font-medium text-gray-900">
-                            Total Discounts Given
-                          </span>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-gray-900">
-                            {formatCurrency(summary.totalDiscounts)}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            Customer savings
-                          </div>
-                        </div>
-                      </motion.div>
-                    </motion.div>
+                    </div>
                   </motion.div>
 
                   {/* Payment Methods */}
                   <motion.div
+                    className="bg-white rounded-xl p-6 border border-gray-200"
                     initial={{ x: 30, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.3, duration: 0.5 }}
+                    transition={{ delay: 0.8, duration: 0.4 }}
                   >
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                      <CreditCard className="w-5 h-5 mr-2 text-green-600" />
                       Payment Methods
                     </h3>
-                    <motion.div
-                      className="space-y-3"
-                      initial={{ y: 20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.4, duration: 0.5 }}
-                    >
-                      {["CASH", "TRANSFER", "CREDIT"].map((method, index) => {
-                        // Calculate totals for this payment method from all payments
-                        const methodTotal = salesData.reduce((sum, sale) => {
-                          const methodPayments =
-                            sale.payments?.filter(
-                              (payment: { method: string; amount: number }) =>
-                                payment.method === method
-                            ) || [];
-                          return (
-                            sum +
-                            methodPayments.reduce(
-                              (paymentSum, payment) =>
-                                paymentSum + safeNumber(payment.amount),
-                              0
-                            )
-                          );
-                        }, 0);
 
-                        const percentage =
-                          safeNumber(summary.totalSales) > 0
-                            ? (
-                                (safeNumber(methodTotal) /
-                                  safeNumber(summary.totalSales)) *
-                                100
-                              ).toFixed(1)
-                            : "0.0";
+                    <div className="space-y-4">
+                      {statistics && [
+                        { method: "Cash", amount: statistics.cashSales, color: "green", icon: DollarSign },
+                        { method: "Transfer", amount: statistics.transferSales, color: "blue", icon: CreditCard },
+                        { method: "Credit", amount: statistics.creditSales, color: "purple", icon: Clock },
+                        { method: "Part Payment", amount: statistics.partPaymentSales, color: "orange", icon: AlertCircle },
+                      ].filter(payment => payment.amount > 0).map((payment, index) => (
+                        <motion.div
+                          key={payment.method}
+                          className={`flex items-center justify-between p-4 bg-gradient-to-r from-${payment.color}-50 to-${payment.color}-100 rounded-lg`}
+                          initial={{ x: -20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: 0.9 + index * 0.1, duration: 0.4 }}
+                          whileHover={{ scale: 1.02, x: 5 }}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <payment.icon className={`w-4 h-4 text-${payment.color}-600`} />
+                            <span className="font-medium text-gray-900">{payment.method}</span>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-gray-900">
+                              {formatCurrency(payment.amount)}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {statistics.totalSales > 0
+                                ? (payment.amount / statistics.totalSales * 100).toFixed(1)
+                                : "0.0"}%
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
 
-                        return (
-                          <motion.div
-                            key={method}
-                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                            initial={{ x: -20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{
-                              delay: 0.5 + index * 0.1,
-                              duration: 0.4,
-                            }}
-                            whileHover={{ scale: 1.02, x: 5 }}
-                          >
-                            <div className="flex items-center space-x-3">
-                              {getPaymentMethodIcon(method.toLowerCase())}
-                              <span className="font-medium text-gray-900 capitalize">
-                                {method.toLowerCase()}
-                              </span>
-                            </div>
-                            <div className="text-right">
-                              <div className="font-medium text-gray-900">
-                                {formatCurrency(methodTotal)}
-                              </div>
-                              <div className="text-sm text-gray-600">
-                                {percentage}%
-                              </div>
-                            </div>
-                          </motion.div>
-                        );
-                      })}
-                    </motion.div>
+                      {!statistics && (
+                        <div className="text-center py-8 text-gray-500">
+                          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                          <p>Loading payment method breakdown...</p>
+                        </div>
+                      )}
+                    </div>
                   </motion.div>
+                </motion.div>
+
+                {/* Customer Credit Summary (if statistics available) */}
+                {statistics && (statistics.customerCreditApplied.value > 0 || statistics.customerCreditEarned.value > 0 || statistics.customerDebtIncurred.value > 0) && (
+                  <motion.div
+                    className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-200 mb-8"
+                    initial={{ y: 30, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 1.1, duration: 0.5 }}
+                  >
+                    <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                      <Users className="w-5 h-5 mr-2 text-indigo-600" />
+                      Customer Credit Activity
+                    </h3>
+
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <motion.div
+                        className="bg-white rounded-lg p-4"
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: 1.2, duration: 0.4 }}
+                        whileHover={{ scale: 1.05 }}
+                      >
+                        <div className="text-sm text-gray-600 mb-1">Credit Applied</div>
+                        <div className="text-xl font-bold text-green-600">
+                          {formatCurrency(statistics.customerCreditApplied.value)}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {statistics.customerCreditApplied.count} applications
+                        </div>
+                      </motion.div>
+
+                      <motion.div
+                        className="bg-white rounded-lg p-4"
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: 1.3, duration: 0.4 }}
+                        whileHover={{ scale: 1.05 }}
+                      >
+                        <div className="text-sm text-gray-600 mb-1">Credit Earned</div>
+                        <div className="text-xl font-bold text-blue-600">
+                          {formatCurrency(statistics.customerCreditEarned.value)}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {statistics.customerCreditEarned.count} earnings
+                        </div>
+                      </motion.div>
+
+                      <motion.div
+                        className="bg-white rounded-lg p-4"
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: 1.4, duration: 0.4 }}
+                        whileHover={{ scale: 1.05 }}
+                      >
+                        <div className="text-sm text-gray-600 mb-1">New Debt</div>
+                        <div className="text-xl font-bold text-orange-600">
+                          {formatCurrency(statistics.customerDebtIncurred.value)}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {statistics.customerDebtIncurred.count} transactions
+                        </div>
+                      </motion.div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Additional Insights */}
+                <motion.div
+                  className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-6 border border-amber-200"
+                  initial={{ y: 30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 1.5, duration: 0.5 }}
+                >
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <TrendingUp className="w-5 h-5 mr-2 text-amber-600" />
+                    Quick Insights
+                  </h3>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-3 text-sm">
+                      <div className="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <span className="text-gray-700">Total Transactions:</span>
+                        <span className="font-semibold text-gray-900">
+                          {statistics?.totalTransactions || summary.totalTransactions}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <span className="text-gray-700">Average per Transaction:</span>
+                        <span className="font-semibold text-gray-900">
+                          {formatCurrency(statistics?.averageSaleValue || summary.averageTransaction)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <span className="text-gray-700">Total Discounts:</span>
+                        <span className="font-semibold text-gray-900">
+                          {formatCurrency(statistics?.totalDiscounts || summary.totalDiscounts)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 text-sm">
+                      {statistics?.dateRangeFrom && statistics?.dateRangeTo && (
+                        <div className="p-3 bg-white rounded-lg">
+                          <div className="text-gray-700 mb-1">Date Range:</div>
+                          <div className="font-semibold text-gray-900">
+                            {new Date(statistics.dateRangeFrom).toLocaleDateString()} - {new Date(statistics.dateRangeTo).toLocaleDateString()}
+                          </div>
+                        </div>
+                      )}
+                      {statistics?.filteredBySaleType && (
+                        <div className="p-3 bg-white rounded-lg">
+                          <div className="text-gray-700 mb-1">Filtered by:</div>
+                          <div className="font-semibold text-gray-900 capitalize">
+                            {statistics.filteredBySaleType.toLowerCase()} sales
+                          </div>
+                        </div>
+                      )}
+                      {statistics?.filteredByPaymentMethod && (
+                        <div className="p-3 bg-white rounded-lg">
+                          <div className="text-gray-700 mb-1">Payment Method:</div>
+                          <div className="font-semibold text-gray-900 capitalize">
+                            {statistics.filteredByPaymentMethod.toLowerCase()}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </motion.div>
               </motion.div>
             )}
@@ -1796,471 +1815,647 @@ const SalesReportPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                {/* Batch Operations Toolbar */}
-                <motion.div
-                  className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200"
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.1, duration: 0.3 }}
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center space-x-4">
-                      {/* Selection Controls */}
-                      <div className="flex items-center space-x-2">
-                        <motion.button
-                          onClick={hasSelection ? clearSelection : selectAll}
-                          className="text-sm bg-white border border-gray-300 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          {hasSelection ? "Clear" : "Select All"}
-                        </motion.button>
-
-                        {hasSelection && (
-                          <motion.span
-                            className="text-sm text-gray-600 bg-orange-100 px-2 py-1 rounded"
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                          >
-                            {selectionCount} selected
-                          </motion.span>
-                        )}
-                      </div>
-
-                      {/* Batch Operations */}
-                      {hasSelection && (
-                        <motion.div
-                          className="flex items-center space-x-2"
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <motion.button
-                            onClick={() => handleBatchOperation("export-csv")}
-                            disabled={isBatchExecuting}
-                            className="flex items-center space-x-1 text-sm bg-blue-100 text-blue-700 px-3 py-2 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            <Download className="w-4 h-4" />
-                            <span>Export</span>
-                          </motion.button>
-
-                          <motion.button
-                            onClick={() => handleBatchOperation("mark-paid")}
-                            disabled={
-                              isBatchExecuting ||
-                              getSelectedData().every((t) => t.amountDue === 0)
-                            }
-                            className="flex items-center space-x-1 text-sm bg-green-100 text-green-700 px-3 py-2 rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            <Check className="w-4 h-4" />
-                            <span>Mark Paid</span>
-                          </motion.button>
-
-                          <motion.button
-                            onClick={() =>
-                              handleBatchOperation("send-reminders")
-                            }
-                            disabled={
-                              isBatchExecuting ||
-                              getSelectedData().every(
-                                (t) => t.amountDue === 0 || !t.customer?.email
-                              )
-                            }
-                            className="flex items-center space-x-1 text-sm bg-purple-100 text-purple-700 px-3 py-2 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            <Mail className="w-4 h-4" />
-                            <span>Remind</span>
-                          </motion.button>
-
-                          <motion.button
-                            onClick={() =>
-                              handleBatchOperation("generate-report")
-                            }
-                            disabled={isBatchExecuting}
-                            className="flex items-center space-x-1 text-sm bg-gray-100 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            <FileText className="w-4 h-4" />
-                            <span>Report</span>
-                          </motion.button>
-                        </motion.div>
-                      )}
-                    </div>
-
-                    {/* Table Options */}
-                    <div className="flex items-center space-x-2">
-                      <motion.button
-                        onClick={handleToggleVirtualization}
-                        className={`flex items-center space-x-1 text-sm px-3 py-2 rounded-lg transition-colors ${
-                          isVirtualized
-                            ? "bg-orange-100 text-orange-700 hover:bg-orange-200"
-                            : "bg-white border border-gray-300 hover:bg-gray-50"
-                        }`}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <Settings className="w-4 h-4" />
-                        <span>
-                          {isVirtualized ? "Virtual View" : "Standard View"}
-                        </span>
-                      </motion.button>
-
-                      <span className="text-xs text-gray-500">
-                        {salesData.length} transactions
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Batch Operation Status */}
-                  <AnimatePresence>
-                    {isBatchExecuting && (
-                      <motion.div
-                        className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                          <span className="text-sm text-blue-700">
-                            Executing batch operation...
-                          </span>
-                        </div>
-                      </motion.div>
-                    )}
-
-                    {batchResult && !isBatchExecuting && (
-                      <motion.div
-                        className={`mt-3 p-3 rounded-lg border ${
-                          batchResult.success
-                            ? "bg-green-50 border-green-200"
-                            : "bg-red-50 border-red-200"
-                        }`}
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            {batchResult.success ? (
-                              <CheckCircle className="w-4 h-4 text-green-600" />
-                            ) : (
-                              <AlertCircle className="w-4 h-4 text-red-600" />
-                            )}
-                            <span
-                              className={`text-sm ${
-                                batchResult.success
-                                  ? "text-green-700"
-                                  : "text-red-700"
-                              }`}
-                            >
-                              {batchResult.message}
-                            </span>
-                          </div>
-                          <motion.button
-                            onClick={clearBatchResult}
-                            className="text-xs text-gray-500 hover:text-gray-700"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                          >
-                            ✕
-                          </motion.button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-
-                {/* Table Content */}
-                {isVirtualized && salesData.length > 100 ? (
+                {/* Show loading state when fetching transactions */}
+                {isLoadingTransactions && salesData.length === 0 && (
                   <motion.div
-                    initial={{ y: 30, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.2, duration: 0.5 }}
+                    className="flex items-center justify-center py-12"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
                   >
-                    <VirtualizedTable
-                      data={salesData}
-                      columns={visibleColumns}
-                      renderCell={renderVirtualizedCell}
-                      onItemClick={(item) => toggleSelection(item.id)}
-                      selectedItems={selectedItems}
-                      loading={isDataLoading}
-                      containerHeight={600}
-                    />
+                    <div className="text-center">
+                      <RefreshCw className="w-8 h-8 text-orange-600 animate-spin mx-auto mb-4" />
+                      <p className="text-lg font-medium text-gray-900 mb-2">Loading Transactions</p>
+                      <p className="text-sm text-gray-600">Fetching transaction data...</p>
+                    </div>
                   </motion.div>
-                ) : (
+                )}
+
+                {/* Show empty state when no transactions and not loading */}
+                {!isLoadingTransactions && salesData.length === 0 && (
                   <motion.div
-                    className="overflow-x-auto"
-                    initial={{ y: 30, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.2, duration: 0.5 }}
+                    className="flex items-center justify-center py-12"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
                   >
-                    <motion.table
-                      className="w-full"
+                    <div className="text-center">
+                      <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-lg font-medium text-gray-900 mb-2">No Transactions Found</p>
+                      <p className="text-sm text-gray-600 mb-4">Click &quot;Load Transactions&quot; to fetch data or adjust your filters</p>
+                      <motion.button
+                        onClick={() => fetchTransactions()}
+                        className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        Load Transactions
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Show transactions content when loaded */}
+                {(!isLoadingTransactions || salesData.length > 0) && salesData.length > 0 && (
+                  <>
+                    {/* Batch Operations Toolbar */}
+                    <motion.div
+                      className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200"
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.3, duration: 0.5 }}
+                      transition={{ delay: 0.1, duration: 0.3 }}
                     >
-                      <thead>
-                        <tr className="border-b border-gray-200">
-                          {/* Selection Checkbox */}
-                          <th className="text-left py-3 px-4 font-medium text-gray-900 w-12">
-                            <input
-                              type="checkbox"
-                              checked={
-                                hasSelection &&
-                                selectionCount === salesData.length
-                              }
-                              onChange={
-                                hasSelection ? clearSelection : selectAll
-                              }
-                              className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                            />
-                          </th>
-                          {visibleColumns.map((column) => (
-                            <th
-                              key={column.key}
-                              className="text-left py-3 px-4 font-medium text-gray-900"
-                              style={{ width: column.width }}
+                      <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center space-x-4">
+                          {/* Selection Controls */}
+                          <div className="flex items-center space-x-2">
+                            <motion.button
+                              onClick={hasSelection ? clearSelection : selectAll}
+                              className="text-sm bg-white border border-gray-300 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
                             >
-                              <div className="flex items-center space-x-1">
-                                <span>{column.label}</span>
-                                {column.sortable && (
-                                  <motion.button
-                                    onClick={() => {
-                                      const newDirection =
-                                        filters.sortBy === column.key &&
-                                        filters.sortDirection === "asc"
-                                          ? "desc"
-                                          : "asc";
-                                      setFilters((prev) => ({
-                                        ...prev,
-                                        sortBy: column.key as
-                                          | "date"
-                                          | "amount"
-                                          | "customer"
-                                          | "status",
-                                        sortDirection: newDirection,
-                                      }));
-                                    }}
-                                    className="opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity"
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                  >
-                                    {filters.sortBy === column.key ? (
-                                      filters.sortDirection === "asc" ? (
-                                        <TrendingUp className="w-3 h-3 text-orange-500" />
-                                      ) : (
-                                        <TrendingDown className="w-3 h-3 text-orange-500" />
-                                      )
-                                    ) : (
-                                      <BarChart3 className="w-3 h-3 text-gray-400" />
-                                    )}
-                                  </motion.button>
-                                )}
-                              </div>
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="group">
-                        {salesData.map((sale, index) => (
-                          <React.Fragment key={sale.id}>
-                            <motion.tr
-                              className={`border-b border-gray-100 hover:bg-gray-50 group cursor-pointer ${
-                                selectedItems.has(sale.id) ? "bg-orange-50" : ""
-                              }`}
+                              {hasSelection ? "Clear" : "Select All"}
+                            </motion.button>
+
+                            {hasSelection && (
+                              <motion.span
+                                className="text-sm text-gray-600 bg-orange-100 px-2 py-1 rounded"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                              >
+                                {selectionCount} selected
+                              </motion.span>
+                            )}
+                          </div>
+
+                          {/* Batch Operations */}
+                          {hasSelection && (
+                            <motion.div
+                              className="flex items-center space-x-2"
                               initial={{ opacity: 0, x: -20 }}
                               animate={{ opacity: 1, x: 0 }}
-                              transition={{
-                                delay: 0.4 + index * 0.05,
-                                duration: 0.4,
-                              }}
-                              whileHover={{
-                                backgroundColor: selectedItems.has(sale.id)
-                                  ? "rgba(255, 237, 213, 1)"
-                                  : "rgba(249, 250, 251, 1)",
-                                x: 5,
-                              }}
-                              onClick={() => toggleSelection(sale.id)}
+                              transition={{ duration: 0.3 }}
                             >
+                              <motion.button
+                                onClick={() => handleBatchOperation("export-csv")}
+                                disabled={isBatchExecuting}
+                                className="flex items-center space-x-1 text-sm bg-blue-100 text-blue-700 px-3 py-2 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                              >
+                                <Download className="w-4 h-4" />
+                                <span>Export</span>
+                              </motion.button>
+
+                              <motion.button
+                                onClick={() => handleBatchOperation("mark-paid")}
+                                disabled={
+                                  isBatchExecuting ||
+                                  getSelectedData().every((t) => t.amountDue === 0)
+                                }
+                                className="flex items-center space-x-1 text-sm bg-green-100 text-green-700 px-3 py-2 rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                              >
+                                <Check className="w-4 h-4" />
+                                <span>Mark Paid</span>
+                              </motion.button>
+
+                              <motion.button
+                                onClick={() =>
+                                  handleBatchOperation("send-reminders")
+                                }
+                                disabled={
+                                  isBatchExecuting ||
+                                  getSelectedData().every(
+                                    (t) => t.amountDue === 0 || !t.customer?.email
+                                  )
+                                }
+                                className="flex items-center space-x-1 text-sm bg-purple-100 text-purple-700 px-3 py-2 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                              >
+                                <Mail className="w-4 h-4" />
+                                <span>Remind</span>
+                              </motion.button>
+
+                              <motion.button
+                                onClick={() =>
+                                  handleBatchOperation("generate-report")
+                                }
+                                disabled={isBatchExecuting}
+                                className="flex items-center space-x-1 text-sm bg-gray-100 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                              >
+                                <FileText className="w-4 h-4" />
+                                <span>Report</span>
+                              </motion.button>
+                            </motion.div>
+                          )}
+                        </div>
+
+                        {/* Table Options */}
+                        <div className="flex items-center space-x-2">
+                          <motion.button
+                            onClick={handleToggleVirtualization}
+                            className={`flex items-center space-x-1 text-sm px-3 py-2 rounded-lg transition-colors ${isVirtualized
+                              ? "bg-orange-100 text-orange-700 hover:bg-orange-200"
+                              : "bg-white border border-gray-300 hover:bg-gray-50"
+                              }`}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <Settings className="w-4 h-4" />
+                            <span>
+                              {isVirtualized ? "Virtual View" : "Standard View"}
+                            </span>
+                          </motion.button>
+
+                          <span className="text-xs text-gray-500">
+                            {salesData.length} transactions
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Batch Operation Status */}
+                      <AnimatePresence>
+                        {isBatchExecuting && (
+                          <motion.div
+                            className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                          >
+                            <div className="flex items-center space-x-2">
+                              <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                              <span className="text-sm text-blue-700">
+                                Executing batch operation...
+                              </span>
+                            </div>
+                          </motion.div>
+                        )}
+
+                        {batchResult && !isBatchExecuting && (
+                          <motion.div
+                            className={`mt-3 p-3 rounded-lg border ${batchResult.success
+                              ? "bg-green-50 border-green-200"
+                              : "bg-red-50 border-red-200"
+                              }`}
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                {batchResult.success ? (
+                                  <CheckCircle className="w-4 h-4 text-green-600" />
+                                ) : (
+                                  <AlertCircle className="w-4 h-4 text-red-600" />
+                                )}
+                                <span
+                                  className={`text-sm ${batchResult.success
+                                    ? "text-green-700"
+                                    : "text-red-700"
+                                    }`}
+                                >
+                                  {batchResult.message}
+                                </span>
+                              </div>
+                              <motion.button
+                                onClick={clearBatchResult}
+                                className="text-xs text-gray-500 hover:text-gray-700"
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                              >
+                                ✕
+                              </motion.button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+
+                    {/* Table Content */}
+                    {isVirtualized && salesData.length > 100 ? (
+                      <motion.div
+                        initial={{ y: 30, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.2, duration: 0.5 }}
+                      >
+                        <VirtualizedTable
+                          data={salesData}
+                          columns={visibleColumns}
+                          renderCell={renderVirtualizedCell}
+                          onItemClick={(item) => toggleSelection(item.id)}
+                          selectedItems={selectedItems}
+                          loading={isDataLoading}
+                          containerHeight={600}
+                        />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        className="overflow-x-auto"
+                        initial={{ y: 30, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.2, duration: 0.5 }}
+                      >
+                        <motion.table
+                          className="w-full"
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ delay: 0.3, duration: 0.5 }}
+                        >
+                          <thead>
+                            <tr className="border-b border-gray-200">
                               {/* Selection Checkbox */}
-                              <td className="py-3 px-4">
+                              <th className="text-left py-3 px-4 font-medium text-gray-900 w-12">
                                 <input
                                   type="checkbox"
-                                  checked={selectedItems.has(sale.id)}
-                                  onChange={() => toggleSelection(sale.id)}
-                                  onClick={(e) => e.stopPropagation()}
+                                  checked={
+                                    hasSelection &&
+                                    selectionCount === salesData.length
+                                  }
+                                  onChange={
+                                    hasSelection ? clearSelection : selectAll
+                                  }
                                   className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
                                 />
-                              </td>
-                              {visibleColumns.map((column) =>
-                                renderTableCell(sale, column.key)
-                              )}
-                            </motion.tr>
-                            <AnimatePresence>
-                              {selectedTransaction === sale.id && (
-                                <motion.tr
-                                  initial={{ opacity: 0, height: 0 }}
-                                  animate={{ opacity: 1, height: "auto" }}
-                                  exit={{ opacity: 0, height: 0 }}
-                                  transition={{ duration: 0.3 }}
+                              </th>
+                              {visibleColumns.map((column) => (
+                                <th
+                                  key={column.key}
+                                  className="text-left py-3 px-4 font-medium text-gray-900"
+                                  style={{ width: column.width }}
                                 >
-                                  <td
-                                    colSpan={visibleColumns.length + 1}
-                                    className="py-4 px-4 bg-orange-50 border-b"
-                                  >
-                                    <motion.div
-                                      className="space-y-2"
-                                      initial={{ y: 10, opacity: 0 }}
-                                      animate={{ y: 0, opacity: 1 }}
-                                      transition={{ delay: 0.1, duration: 0.3 }}
+                                  <div className="flex items-center space-x-1">
+                                    <span>{column.label}</span>
+                                    {column.sortable && (
+                                      <motion.button
+                                        onClick={() => {
+                                          const newDirection =
+                                            filters.sortBy === column.key &&
+                                              filters.sortDirection === "asc"
+                                              ? "desc"
+                                              : "asc";
+                                          setFilters((prev) => ({
+                                            ...prev,
+                                            sortBy: column.key as
+                                              | "date"
+                                              | "amount"
+                                              | "customer"
+                                              | "status",
+                                            sortDirection: newDirection,
+                                          }));
+                                        }}
+                                        className="opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity"
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
+                                      >
+                                        {filters.sortBy === column.key ? (
+                                          filters.sortDirection === "asc" ? (
+                                            <TrendingUp className="w-3 h-3 text-orange-500" />
+                                          ) : (
+                                            <TrendingDown className="w-3 h-3 text-orange-500" />
+                                          )
+                                        ) : (
+                                          <BarChart3 className="w-3 h-3 text-gray-400" />
+                                        )}
+                                      </motion.button>
+                                    )}
+                                  </div>
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="group">
+                            {salesData.map((sale, index) => (
+                              <React.Fragment key={sale.id}>
+                                <motion.tr
+                                  className={`border-b border-gray-100 hover:bg-gray-50 group cursor-pointer ${selectedItems.has(sale.id) ? "bg-orange-50" : ""
+                                    }`}
+                                  initial={{ opacity: 0, x: -20 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{
+                                    delay: 0.4 + index * 0.05,
+                                    duration: 0.4,
+                                  }}
+                                  whileHover={{
+                                    backgroundColor: selectedItems.has(sale.id)
+                                      ? "rgba(255, 237, 213, 1)"
+                                      : "rgba(249, 250, 251, 1)",
+                                    x: 5,
+                                  }}
+                                  onClick={() => toggleSelection(sale.id)}
+                                >
+                                  {/* Selection Checkbox */}
+                                  <td className="py-3 px-4">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedItems.has(sale.id)}
+                                      onChange={() => toggleSelection(sale.id)}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                                    />
+                                  </td>
+                                  {visibleColumns.map((column) =>
+                                    renderTableCell(sale, column.key)
+                                  )}
+                                </motion.tr>
+                                <AnimatePresence>
+                                  {selectedTransaction === sale.id && (
+                                    <motion.tr
+                                      initial={{ opacity: 0, height: 0 }}
+                                      animate={{ opacity: 1, height: "auto" }}
+                                      exit={{ opacity: 0, height: 0 }}
+                                      transition={{ duration: 0.3 }}
                                     >
-                                      <h4 className="font-medium text-gray-900">
-                                        Transaction Details
-                                      </h4>
-                                      <div className="grid md:grid-cols-2 gap-4">
-                                        <div>
-                                          <h5 className="text-sm font-medium text-gray-700 mb-2">
-                                            Items Purchased
-                                          </h5>
-                                          {sale.items.map(
-                                            (
-                                              item: {
-                                                quantity: number;
-                                                totalPrice: number;
-                                                product: { name: string };
-                                              },
-                                              itemIndex: number
-                                            ) => (
+                                      <td
+                                        colSpan={visibleColumns.length + 1}
+                                        className="py-4 px-4 bg-orange-50 border-b"
+                                      >
+                                        <motion.div
+                                          className="space-y-4"
+                                          initial={{ y: 10, opacity: 0 }}
+                                          animate={{ y: 0, opacity: 1 }}
+                                          transition={{ delay: 0.1, duration: 0.3 }}
+                                        >
+                                          <div className="flex items-center justify-between">
+                                            <h4 className="font-medium text-gray-900">
+                                              Transaction Details
+                                            </h4>
+                                            <div className="flex items-center space-x-2">
+                                              <span className={`text-xs px-2 py-1 rounded-full ${((sale as ExtendedSale).saleType || '').toUpperCase() === 'WHOLESALE'
+                                                  ? 'bg-blue-100 text-blue-700'
+                                                  : 'bg-green-100 text-green-700'
+                                                }`}>
+                                                {((sale as ExtendedSale).saleType || 'retail').toLowerCase()}
+                                              </span>
+                                              <span className={`text-xs px-2 py-1 rounded-full ${((sale as ExtendedSale).paymentMethod || '').toUpperCase() === 'CASH' ? 'bg-green-100 text-green-700' :
+                                                  ((sale as ExtendedSale).paymentMethod || '').toUpperCase() === 'TRANSFER' ? 'bg-blue-100 text-blue-700' :
+                                                    ((sale as ExtendedSale).paymentMethod || '').toUpperCase() === 'CREDIT' ? 'bg-purple-100 text-purple-700' :
+                                                      'bg-orange-100 text-orange-700'
+                                                }`}>
+                                                {((sale as ExtendedSale).paymentMethod || 'cash').toLowerCase()}
+                                              </span>
+                                            </div>
+                                          </div>
+
+                                          <div className="grid lg:grid-cols-3 gap-6">
+                                            {/* Items Purchased */}
+                                            <div className="space-y-3">
+                                              <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                                <Package className="w-4 h-4 mr-1.5" />
+                                                Items Purchased ({sale.items.length})
+                                              </h5>
+                                              <div className="space-y-2 max-h-32 overflow-y-auto">
+                                                {sale.items.map(
+                                                  (
+                                                    item: {
+                                                      quantity: number;
+                                                      totalPrice: number;
+                                                      unitPrice?: number;
+                                                      product: { name: string; sku?: string };
+                                                    },
+                                                    itemIndex: number
+                                                  ) => (
+                                                    <motion.div
+                                                      key={itemIndex}
+                                                      className="bg-gray-50 rounded-lg p-3 text-sm"
+                                                      initial={{ x: -10, opacity: 0 }}
+                                                      animate={{ x: 0, opacity: 1 }}
+                                                      transition={{
+                                                        delay: 0.2 + itemIndex * 0.05,
+                                                        duration: 0.3,
+                                                      }}
+                                                    >
+                                                      <div className="font-medium text-gray-900 mb-1">
+                                                        {item.product.name}
+                                                      </div>
+                                                      <div className="flex justify-between text-gray-600">
+                                                        <span>Qty: {item.quantity}</span>
+                                                        <span>{formatCurrency(item.totalPrice)}</span>
+                                                      </div>
+                                                      {item.unitPrice && (
+                                                        <div className="text-xs text-gray-500 mt-1">
+                                                          Unit Price: {formatCurrency(item.unitPrice)}
+                                                        </div>
+                                                      )}
+                                                    </motion.div>
+                                                  )
+                                                )}
+                                              </div>
+                                            </div>
+
+                                            {/* Payment Summary */}
+                                            <div>
+                                              <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                                <DollarSign className="w-4 h-4 mr-1.5" />
+                                                Payment Summary
+                                              </h5>
                                               <motion.div
-                                                key={itemIndex}
-                                                className="text-sm text-gray-600"
-                                                initial={{ x: -10, opacity: 0 }}
+                                                className="bg-gray-50 rounded-lg p-3 space-y-2"
+                                                initial={{ x: 10, opacity: 0 }}
                                                 animate={{ x: 0, opacity: 1 }}
                                                 transition={{
-                                                  delay: 0.2 + itemIndex * 0.05,
+                                                  delay: 0.3,
                                                   duration: 0.3,
                                                 }}
                                               >
-                                                {item.product.name} x{" "}
-                                                {item.quantity} ={" "}
-                                                {formatCurrency(
-                                                  item.totalPrice
+                                                <div className="flex justify-between text-sm">
+                                                  <span className="text-gray-600">Subtotal:</span>
+                                                  <span className="font-medium text-gray-900">
+                                                    {formatCurrency(sale.subtotal)}
+                                                  </span>
+                                                </div>
+
+                                                {safeNumber(sale.discount) > 0 && (
+                                                  <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-600">Discount:</span>
+                                                    <span className="text-red-600 font-medium">
+                                                      -{formatCurrency(sale.discount)}
+                                                    </span>
+                                                  </div>
+                                                )}
+
+                                                {safeNumber((sale as ExtendedSale).tax || 0) > 0 && (
+                                                  <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-600">Tax:</span>
+                                                    <span className="font-medium text-gray-900">
+                                                      {formatCurrency((sale as ExtendedSale).tax || 0)}
+                                                    </span>
+                                                  </div>
+                                                )}
+
+                                                <div className="border-t border-gray-200 pt-2">
+                                                  <div className="flex justify-between text-sm font-semibold">
+                                                    <span className="text-gray-900">Total:</span>
+                                                    <span className="text-gray-900">
+                                                      {formatCurrency(sale.total)}
+                                                    </span>
+                                                  </div>
+                                                </div>
+
+                                                <div className="flex justify-between text-sm">
+                                                  <span className="text-gray-600">Amount Paid:</span>
+                                                  <span className="font-medium text-green-600">
+                                                    {formatCurrency(
+                                                      safeNumber(sale.total) - safeNumber(sale.amountDue)
+                                                    )}
+                                                  </span>
+                                                </div>
+
+                                                {safeNumber(sale.amountDue) > 0 && (
+                                                  <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-600">Balance Due:</span>
+                                                    <span className="text-red-600 font-medium">
+                                                      {formatCurrency(sale.amountDue)}
+                                                    </span>
+                                                  </div>
                                                 )}
                                               </motion.div>
-                                            )
-                                          )}
-                                        </div>
-                                        <div>
-                                          <h5 className="text-sm font-medium text-gray-700 mb-2">
-                                            Payment Summary
-                                          </h5>
-                                          <motion.div
-                                            className="text-sm text-gray-600 space-y-1"
-                                            initial={{ x: 10, opacity: 0 }}
-                                            animate={{ x: 0, opacity: 1 }}
-                                            transition={{
-                                              delay: 0.3,
-                                              duration: 0.3,
-                                            }}
-                                          >
-                                            <div>
-                                              Subtotal:{" "}
-                                              {formatCurrency(sale.subtotal)}
                                             </div>
-                                            {safeNumber(sale.discount) > 0 && (
-                                              <div>
-                                                Discount: -
-                                                {formatCurrency(sale.discount)}
-                                              </div>
-                                            )}
-                                            <div>
-                                              Total:{" "}
-                                              {formatCurrency(sale.total)}
-                                            </div>
-                                            <div>
-                                              Amount Paid:{" "}
-                                              {formatCurrency(
-                                                safeNumber(sale.total) -
-                                                  safeNumber(sale.amountDue)
-                                              )}
-                                            </div>
-                                            {safeNumber(sale.amountDue) > 0 && (
-                                              <div className="text-red-600">
-                                                Balance:{" "}
-                                                {formatCurrency(sale.amountDue)}
-                                              </div>
-                                            )}
-                                          </motion.div>
-                                        </div>
-                                      </div>
-                                    </motion.div>
-                                  </td>
-                                </motion.tr>
-                              )}
-                            </AnimatePresence>
-                          </React.Fragment>
-                        ))}
-                      </tbody>
-                    </motion.table>
-                  </motion.div>
-                )}
 
-                {/* Load More Button */}
-                {hasNextPage && (
-                  <motion.div
-                    className="flex justify-center mt-6"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2, duration: 0.4 }}
-                  >
-                    <motion.button
-                      onClick={loadMore}
-                      disabled={isDataLoading}
-                      className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                        isDataLoading
-                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                          : "bg-orange-100 text-orange-700 hover:bg-orange-200 hover:scale-105"
-                      }`}
-                      whileHover={!isDataLoading ? { scale: 1.05 } : {}}
-                      whileTap={!isDataLoading ? { scale: 0.95 } : {}}
+                                            {/* Customer & Credit Information */}
+                                            <div>
+                                              <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                                <Users className="w-4 h-4 mr-1.5" />
+                                                Customer & Credit
+                                              </h5>
+                                              <motion.div
+                                                className="bg-gray-50 rounded-lg p-3 space-y-2"
+                                                initial={{ x: 10, opacity: 0 }}
+                                                animate={{ x: 0, opacity: 1 }}
+                                                transition={{
+                                                  delay: 0.4,
+                                                  duration: 0.3,
+                                                }}
+                                              >
+                                                <div className="text-sm">
+                                                  <span className="text-gray-600">Customer:</span>
+                                                  <div className="font-medium text-gray-900 mt-1">
+                                                    {sale.customer?.name || "Walk-in Customer"}
+                                                  </div>
+                                                  {sale.customer?.phone && (
+                                                    <div className="text-xs text-gray-500 mt-1">
+                                                      {sale.customer.phone}
+                                                    </div>
+                                                  )}
+                                                </div>
+
+                                                {/* Credit Applied */}
+                                                {safeNumber((sale as ExtendedSale).creditApplied || 0) > 0 && (
+                                                  <div className="pt-2 border-t border-gray-200">
+                                                    <div className="flex justify-between text-sm">
+                                                      <span className="text-gray-600 flex items-center">
+                                                        <CreditCard className="w-3 h-3 mr-1" />
+                                                        Credit Applied:
+                                                      </span>
+                                                      <span className="text-green-600 font-medium">
+                                                        -{formatCurrency((sale as ExtendedSale).creditApplied || 0)}
+                                                      </span>
+                                                    </div>
+                                                  </div>
+                                                )}
+
+                                                {/* Credit Earned */}
+                                                {safeNumber((sale as ExtendedSale).creditEarned || 0) > 0 && (
+                                                  <div className={`${safeNumber((sale as ExtendedSale).creditApplied || 0) > 0 ? '' : 'pt-2 border-t border-gray-200'}`}>
+                                                    <div className="flex justify-between text-sm">
+                                                      <span className="text-gray-600 flex items-center">
+                                                        <TrendingUp className="w-3 h-3 mr-1" />
+                                                        Credit Earned:
+                                                      </span>
+                                                      <span className="text-blue-600 font-medium">
+                                                        +{formatCurrency((sale as ExtendedSale).creditEarned || 0)}
+                                                      </span>
+                                                    </div>
+                                                  </div>
+                                                )}
+
+                                                {/* Transaction Info */}
+                                                <div className="pt-2 border-t border-gray-200 space-y-1">
+                                                  <div className="flex justify-between text-xs text-gray-500">
+                                                    <span>Transaction ID:</span>
+                                                    <span className="font-mono">{(sale as ExtendedSale).transactionId || sale.id}</span>
+                                                  </div>
+                                                  <div className="flex justify-between text-xs text-gray-500">
+                                                    <span>Date:</span>
+                                                    <span>{new Date((sale as ExtendedSale).date || (sale as ExtendedSale).createdAt || new Date()).toLocaleString()}</span>
+                                                  </div>
+                                                  {(sale as ExtendedSale).notes && (
+                                                    <div className="pt-1">
+                                                      <span className="text-xs text-gray-500">Notes:</span>
+                                                      <div className="text-xs text-gray-700 mt-1 italic">
+                                                        &quot;{(sale as ExtendedSale).notes}&quot;
+                                                      </div>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </motion.div>
+                                            </div>
+                                          </div>
+                                        </motion.div>
+                                      </td>
+                                    </motion.tr>
+                                  )}
+                                </AnimatePresence>
+                              </React.Fragment>
+                            ))}
+                          </tbody>
+                        </motion.table>
+                      </motion.div>
+                    )}
+
+                    {/* Load More Button */}
+                    {hasNextPage && (
+                      <motion.div
+                        className="flex justify-center mt-6"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2, duration: 0.4 }}
+                      >
+                        <motion.button
+                          onClick={loadMore}
+                          disabled={isDataLoading}
+                          className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${isDataLoading
+                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            : "bg-orange-100 text-orange-700 hover:bg-orange-200 hover:scale-105"
+                            }`}
+                          whileHover={!isDataLoading ? { scale: 1.05 } : {}}
+                          whileTap={!isDataLoading ? { scale: 0.95 } : {}}
+                        >
+                          {isDataLoading ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Package className="w-4 h-4" />
+                          )}
+                          <span>
+                            {isDataLoading
+                              ? "Loading..."
+                              : "Load More Transactions"}
+                          </span>
+                        </motion.button>
+                      </motion.div>
+                    )}
+
+                    {/* Total transactions indicator */}
+                    <motion.div
+                      className="text-center mt-4 text-sm text-gray-600"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.3, duration: 0.4 }}
                     >
-                      {isDataLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Package className="w-4 h-4" />
+                      Showing {salesData.length} transactions
+                      {!hasNextPage && salesData.length > 0 && (
+                        <span className="text-green-600 ml-2">
+                          • All transactions loaded
+                        </span>
                       )}
-                      <span>
-                        {isDataLoading
-                          ? "Loading..."
-                          : "Load More Transactions"}
-                      </span>
-                    </motion.button>
-                  </motion.div>
+                    </motion.div>
+                  </>
                 )}
-
-                {/* Total transactions indicator */}
-                <motion.div
-                  className="text-center mt-4 text-sm text-gray-600"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3, duration: 0.4 }}
-                >
-                  Showing {salesData.length} transactions
-                  {!hasNextPage && salesData.length > 0 && (
-                    <span className="text-green-600 ml-2">
-                      • All transactions loaded
-                    </span>
-                  )}
-                </motion.div>
               </motion.div>
             )}
 
@@ -2411,7 +2606,7 @@ const SalesReportPage = () => {
                                 Paid:
                                 {formatCurrency(
                                   safeNumber(sale.total) -
-                                    safeNumber(sale.amountDue)
+                                  safeNumber(sale.amountDue)
                                 )}{" "}
                                 / {formatCurrency(sale.total)}
                               </div>
@@ -2421,19 +2616,19 @@ const SalesReportPage = () => {
 
                       {salesData.filter((sale) => sale.amountDue > 0).length ===
                         0 && (
-                        <motion.div
-                          className="text-center py-8 text-gray-500"
-                          initial={{ scale: 0.8, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          transition={{ delay: 0.5, duration: 0.5 }}
-                        >
-                          <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-500" />
-                          <p>No outstanding debts!</p>
-                          <p className="text-sm">
-                            All customers are up to date with payments
-                          </p>
-                        </motion.div>
-                      )}
+                          <motion.div
+                            className="text-center py-8 text-gray-500"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.5, duration: 0.5 }}
+                          >
+                            <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-500" />
+                            <p>No outstanding debts!</p>
+                            <p className="text-sm">
+                              All customers are up to date with payments
+                            </p>
+                          </motion.div>
+                        )}
                     </motion.div>
                   </motion.div>
                 </motion.div>
