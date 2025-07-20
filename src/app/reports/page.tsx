@@ -351,15 +351,17 @@ const SalesReportPage = () => {
 
   // Helper function to render table cell content
   const renderTableCell = (sale: Sale, columnKey: string) => {
+    const key = `${sale.id}-${columnKey}`;
+
     switch (columnKey) {
       case "transactionId":
         return (
-          <td className="py-3 px-4 font-mono text-sm">{sale.transactionId}</td>
+          <td key={key} className="py-3 px-4 font-mono text-sm">{sale.transactionId}</td>
         );
 
       case "datetime":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <div className="text-sm">
               <div className="font-medium text-gray-900">
                 {new Date(sale.createdAt).toLocaleDateString()}
@@ -373,7 +375,7 @@ const SalesReportPage = () => {
 
       case "customer":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <div className="text-sm">
               <div className="font-medium text-gray-900">
                 {sale.customer?.name || "Walk-in Customer"}
@@ -387,7 +389,7 @@ const SalesReportPage = () => {
 
       case "type":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <span
               className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${sale.saleType === "WHOLESALE"
                 ? "bg-blue-100 text-blue-800"
@@ -401,7 +403,7 @@ const SalesReportPage = () => {
 
       case "amount":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <div className="text-sm">
               <div className="font-medium text-gray-900">
                 {formatCurrency(sale.total)}
@@ -417,7 +419,7 @@ const SalesReportPage = () => {
 
       case "payment":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <div className="flex flex-wrap gap-1 text-sm">
               {sale.payments?.map(
                 (
@@ -441,7 +443,7 @@ const SalesReportPage = () => {
 
       case "status":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <span
               className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${sale.amountDue === 0
                 ? "text-green-600 bg-green-100"
@@ -466,7 +468,7 @@ const SalesReportPage = () => {
 
       case "items":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <span className="text-sm text-gray-600">
               {sale.items?.length || 0} items
             </span>
@@ -475,7 +477,7 @@ const SalesReportPage = () => {
 
       case "discount":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <span className="text-sm text-green-600">
               {safeNumber(sale.discount) > 0
                 ? formatCurrency(sale.discount)
@@ -486,7 +488,7 @@ const SalesReportPage = () => {
 
       case "tax":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <span className="text-sm text-gray-600">
               {sale.tax ? formatCurrency(sale.tax) : "-"}
             </span>
@@ -495,7 +497,7 @@ const SalesReportPage = () => {
 
       case "notes":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <span className="text-sm text-gray-600 truncate">
               {sale.notes || "-"}
             </span>
@@ -504,7 +506,7 @@ const SalesReportPage = () => {
 
       case "action":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <motion.button
               onClick={() =>
                 setSelectedTransaction(
@@ -521,7 +523,7 @@ const SalesReportPage = () => {
         );
 
       default:
-        return <td className="py-3 px-4">-</td>;
+        return <td key={key} className="py-3 px-4">-</td>;
     }
   };
 
@@ -2187,15 +2189,15 @@ const SalesReportPage = () => {
                                             </h4>
                                             <div className="flex items-center space-x-2">
                                               <span className={`text-xs px-2 py-1 rounded-full ${((sale as ExtendedSale).saleType || '').toUpperCase() === 'WHOLESALE'
-                                                  ? 'bg-blue-100 text-blue-700'
-                                                  : 'bg-green-100 text-green-700'
+                                                ? 'bg-blue-100 text-blue-700'
+                                                : 'bg-green-100 text-green-700'
                                                 }`}>
                                                 {((sale as ExtendedSale).saleType || 'retail').toLowerCase()}
                                               </span>
                                               <span className={`text-xs px-2 py-1 rounded-full ${((sale as ExtendedSale).paymentMethod || '').toUpperCase() === 'CASH' ? 'bg-green-100 text-green-700' :
-                                                  ((sale as ExtendedSale).paymentMethod || '').toUpperCase() === 'TRANSFER' ? 'bg-blue-100 text-blue-700' :
-                                                    ((sale as ExtendedSale).paymentMethod || '').toUpperCase() === 'CREDIT' ? 'bg-purple-100 text-purple-700' :
-                                                      'bg-orange-100 text-orange-700'
+                                                ((sale as ExtendedSale).paymentMethod || '').toUpperCase() === 'TRANSFER' ? 'bg-blue-100 text-blue-700' :
+                                                  ((sale as ExtendedSale).paymentMethod || '').toUpperCase() === 'CREDIT' ? 'bg-purple-100 text-purple-700' :
+                                                    'bg-orange-100 text-orange-700'
                                                 }`}>
                                                 {((sale as ExtendedSale).paymentMethod || 'cash').toLowerCase()}
                                               </span>

@@ -32,6 +32,7 @@ export interface ReportFilters {
   startDate: string;
   endDate: string;
   // Advanced filters
+  searchTerm?: string;
   amountMin?: number;
   amountMax?: number;
   customerId?: string;
@@ -42,6 +43,44 @@ export interface ReportFilters {
 export interface ValueCountPair {
   value: number;
   count: number;
+}
+
+// Customer Credit types
+export type TransactionType = "CREDIT_USED" | "CREDIT_EARNED" | "DEBT_INCURRED";
+
+// Customer Credit interfaces
+export interface CustomerCredit {
+  id: string;
+  customer: {
+    id: string;
+    name: string;
+    phone?: string;
+    type?: "wholesale" | "retail";
+  };
+  amount: number;
+  transactionType: "CREDIT_USED" | "CREDIT_EARNED" | "DEBT_INCURRED";
+  balanceAfter: number;
+  createdAt: string;
+  description?: string;
+  sale?: {
+    id: string;
+    transactionId: string;
+  };
+}
+
+export interface CustomerCreditEdge {
+  node: CustomerCredit;
+}
+
+export interface CustomerCreditConnection {
+  edges: CustomerCreditEdge[];
+  pageInfo: {
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string;
+    endCursor: string;
+  };
+  totalCount?: number;
 }
 
 export interface SalesStats {

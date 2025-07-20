@@ -633,6 +633,56 @@ export const CUSTOMER_CREDIT_BALANCE_QUERY = `
   }
 `;
 
+// Customer credits query with filtering
+export const CUSTOMER_CREDITS_QUERY = `
+  query CustomerCredits(
+    $transactionType: TransactionTypeEnum,
+    $customerId: ID,
+    $dateFrom: DateTime,
+    $dateTo: DateTime,
+    $first: Int,
+    $after: String,
+    $orderBy: String
+  ) {
+    customerCredits(
+      transactionType: $transactionType,
+      customer: $customerId,
+      createdAt_Gte: $dateFrom,
+      createdAt_Lte: $dateTo,
+      first: $first,
+      after: $after,
+      orderBy: $orderBy
+    ) {
+      edges {
+        node {
+          id
+          customer {
+            id
+            name
+            phone
+            type
+          }
+          amount
+          transactionType
+          balanceAfter
+          createdAt
+          description
+          sale {
+            id
+            transactionId
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+    }
+  }
+`;
+
 // Sales mutations
 export const CREATE_SALE_MUTATION = `
   mutation CreateSale($input: CreateSaleInput!) {

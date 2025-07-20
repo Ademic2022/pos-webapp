@@ -6,9 +6,9 @@
  */
 
 import { enhancedGraphqlClient } from '@/lib/enhancedGraphqlClient';
-import { SALES_STATS_QUERY, SALES_QUERY } from '@/lib/graphql';
+import { SALES_STATS_QUERY, SALES_QUERY, CUSTOMER_CREDITS_QUERY } from '@/lib/graphql';
 import { Sale } from '@/services/salesService';
-import { SalesStats, ReportFilters } from '@/interfaces/interface';
+import { SalesStats, ReportFilters, CustomerCreditConnection } from '@/interfaces/interface';
 import { decodeGraphQLId, encodeGraphQLId } from '@/utils/graphqlUtils';
 
 // Define GraphQL connection types
@@ -360,5 +360,60 @@ export const reportsService = {
 
 
         return params;
+    },
+
+    /**
+     * Fetch customer credits data with filtering
+     */
+    async getCustomerCredits(params: {
+        transactionType?: 'CREDIT_USED' | 'CREDIT_EARNED' | 'DEBT_INCURRED';
+        customerId?: string;
+        dateFrom?: string;
+        dateTo?: string;
+        first?: number;
+        after?: string;
+    }) {
+        try {
+            const variables = {
+                transactionType: params.transactionType,
+                customerId: params.customerId ? encodeGraphQLId('CustomerType', params.customerId) : null,
+                dateFrom: params.dateFrom ? `${params.dateFrom}T00:00:00Z` : null,
+                dateTo: params.dateTo ? `${params.dateTo}T23:59:59Z` : null,
+                first: params.first || 50,
+                after: params.after,
+                orderBy: '-created_at',
+            };
+
+            // Clean up null/undefined values
+            const cleanVariables = Object.fromEntries(
+                Object.entries(variables).filter(([value]) => value !== null && value !== undefined)
+            );
+
+            const response = await enhancedGraphqlClient.request(
+                CUSTOMER_CREDITS_QUERY,
+                cleanVariables
+            ) as { customerCredits: CustomerCreditConnection };
+
+            return {
+                success: true,
+                data: response.customerCredits,
+            };
+        } catch (error) {
+            console.error('Error fetching customer credits:', error);
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to fetch customer credits',
+                data: {
+                    edges: [],
+                    pageInfo: {
+                        hasNextPage: false,
+                        hasPreviousPage: false,
+                        startCursor: '',
+                        endCursor: '',
+                    },
+                    totalCount: 0,
+                },
+            };
+        }
     },
 };
