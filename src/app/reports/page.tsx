@@ -20,7 +20,6 @@ import {
   Users,
   Clock,
   Eye,
-  Droplets,
   CreditCard,
   AlertCircle,
   CheckCircle,
@@ -70,13 +69,17 @@ const SalesReportPage = () => {
     sales: salesData,
     statistics,
     summary,
+    topCustomers,
+    outstandingDebts,
     isLoading: isDataLoading,
     isLoadingTransactions,
+    isLoadingCustomerAnalysis,
     error: dataError,
     hasNextPage,
     loadMore,
     refetch,
     fetchTransactions,
+    fetchCustomerAnalysis,
     applyFilters,
   } = useReportsData();
 
@@ -130,7 +133,7 @@ const SalesReportPage = () => {
   const [filters, setFilters] = useLocalStorage<ReportFilters>(
     "reportsFilters",
     {
-      dateRange: "month",
+      dateRange: "today",
       customerType: "all",
       paymentMethod: "all",
       status: "all",
@@ -169,16 +172,22 @@ const SalesReportPage = () => {
   const handleTabChange = useCallback(async (tab: "overview" | "transactions" | "customers") => {
     setActiveTab(tab);
 
-    // Fetch transactions when switching to transactions tab
-    if (tab === "transactions" && salesData.length === 0) {
+    // Fetch data for the selected tab with current filters
+    if (tab === "transactions") {
       await fetchTransactions();
     }
-  }, [salesData.length, fetchTransactions]);
+
+    if (tab === "customers") {
+      await fetchCustomerAnalysis();
+    }
+
+    // Note: Overview tab data (statistics) is automatically updated via useEffect when filters change
+  }, [fetchTransactions, fetchCustomerAnalysis]);
 
   // Reset filters with confirmation
   const handleResetFilters = () => {
     const defaultFilters: ReportFilters = {
-      dateRange: "month",
+      dateRange: "today",
       customerType: "all",
       paymentMethod: "all",
       status: "all",
@@ -210,17 +219,18 @@ const SalesReportPage = () => {
       }
 
       // Set new timeout
-      timeoutRef.current = setTimeout(() => {
-        applyFilters(filters);
+      timeoutRef.current = setTimeout(async () => {
+        await applyFilters(filters);
+
+        // Note: Tab-specific data will be refreshed when switching tabs
+        // or when the useEffect dependencies trigger
       }, 300);
     },
     [applyFilters]
-  );
-
-  // Count active filters for badge
+  );  // Count active filters for badge
   const activeFiltersCount = useMemo(() => {
     let count = 0;
-    if (filters.dateRange !== "month") count++;
+    if (filters.dateRange !== "today") count++;
     if (filters.customerType !== "all") count++;
     if (filters.paymentMethod !== "all") count++;
     if (filters.status !== "all") count++;
@@ -233,6 +243,7 @@ const SalesReportPage = () => {
 
   // Handle filter changes with debouncing
   useEffect(() => {
+    // Apply filters for all tabs to keep data in sync
     debouncedApplyFilters(filters);
   }, [filters, debouncedApplyFilters]);
 
@@ -295,12 +306,26 @@ const SalesReportPage = () => {
 
   // Date preset handlers
   const handleDatePresetSelect = (preset: DatePreset) => {
-    setFilters((prev) => ({
-      ...prev,
-      dateRange: "custom",
-      startDate: DatePresetUtils.formatDateForInput(preset.startDate),
-      endDate: DatePresetUtils.formatDateForInput(preset.endDate),
-    }));
+    // For single-day presets (today, yesterday), use the specific dateRange value
+    // For multi-day presets, use custom with start/end dates
+    const isSingleDayPreset = preset.value === 'today' || preset.value === 'yesterday';
+
+    if (isSingleDayPreset) {
+      setFilters((prev) => ({
+        ...prev,
+        dateRange: preset.value as 'today' | 'yesterday',
+        startDate: DatePresetUtils.formatDateForInput(preset.startDate),
+        endDate: DatePresetUtils.formatDateForInput(preset.endDate),
+      }));
+    } else {
+      setFilters((prev) => ({
+        ...prev,
+        dateRange: "custom",
+        startDate: DatePresetUtils.formatDateForInput(preset.startDate),
+        endDate: DatePresetUtils.formatDateForInput(preset.endDate),
+      }));
+    }
+
     setSelectedDatePreset(preset.value);
     setShowDatePresets(false);
 
@@ -343,23 +368,24 @@ const SalesReportPage = () => {
       showToast({
         type: "error",
         title: "Save Failed",
-        message: "Failed to save filter preset",
+        message: error instanceof Error ? error.message : "Failed to save filter preset",
       });
-      console.log(error);
     }
   };
 
   // Helper function to render table cell content
   const renderTableCell = (sale: Sale, columnKey: string) => {
+    const key = `${sale.id}-${columnKey}`;
+
     switch (columnKey) {
       case "transactionId":
         return (
-          <td className="py-3 px-4 font-mono text-sm">{sale.transactionId}</td>
+          <td key={key} className="py-3 px-4 font-mono text-sm">{sale.transactionId}</td>
         );
 
       case "datetime":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <div className="text-sm">
               <div className="font-medium text-gray-900">
                 {new Date(sale.createdAt).toLocaleDateString()}
@@ -373,7 +399,7 @@ const SalesReportPage = () => {
 
       case "customer":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <div className="text-sm">
               <div className="font-medium text-gray-900">
                 {sale.customer?.name || "Walk-in Customer"}
@@ -387,7 +413,7 @@ const SalesReportPage = () => {
 
       case "type":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <span
               className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${sale.saleType === "WHOLESALE"
                 ? "bg-blue-100 text-blue-800"
@@ -401,7 +427,7 @@ const SalesReportPage = () => {
 
       case "amount":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <div className="text-sm">
               <div className="font-medium text-gray-900">
                 {formatCurrency(sale.total)}
@@ -417,7 +443,7 @@ const SalesReportPage = () => {
 
       case "payment":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <div className="flex flex-wrap gap-1 text-sm">
               {sale.payments?.map(
                 (
@@ -441,7 +467,7 @@ const SalesReportPage = () => {
 
       case "status":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <span
               className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${sale.amountDue === 0
                 ? "text-green-600 bg-green-100"
@@ -466,7 +492,7 @@ const SalesReportPage = () => {
 
       case "items":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <span className="text-sm text-gray-600">
               {sale.items?.length || 0} items
             </span>
@@ -475,7 +501,7 @@ const SalesReportPage = () => {
 
       case "discount":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <span className="text-sm text-green-600">
               {safeNumber(sale.discount) > 0
                 ? formatCurrency(sale.discount)
@@ -486,7 +512,7 @@ const SalesReportPage = () => {
 
       case "tax":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <span className="text-sm text-gray-600">
               {sale.tax ? formatCurrency(sale.tax) : "-"}
             </span>
@@ -495,7 +521,7 @@ const SalesReportPage = () => {
 
       case "notes":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <span className="text-sm text-gray-600 truncate">
               {sale.notes || "-"}
             </span>
@@ -504,7 +530,7 @@ const SalesReportPage = () => {
 
       case "action":
         return (
-          <td className="py-3 px-4">
+          <td key={key} className="py-3 px-4">
             <motion.button
               onClick={() =>
                 setSelectedTransaction(
@@ -521,7 +547,7 @@ const SalesReportPage = () => {
         );
 
       default:
-        return <td className="py-3 px-4">-</td>;
+        return <td key={key} className="py-3 px-4">-</td>;
     }
   };
 
@@ -1130,6 +1156,7 @@ const SalesReportPage = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     >
                       <option value="today">Today</option>
+                      <option value="yesterday">Yesterday</option>
                       <option value="week">This Week</option>
                       <option value="month">This Month</option>
                       <option value="year">This Year</option>
@@ -1636,36 +1663,53 @@ const SalesReportPage = () => {
                     </h3>
 
                     <div className="space-y-4">
-                      {statistics && [
-                        { method: "Cash", amount: statistics.cashSales, color: "green", icon: DollarSign },
-                        { method: "Transfer", amount: statistics.transferSales, color: "blue", icon: CreditCard },
-                        { method: "Credit", amount: statistics.creditSales, color: "purple", icon: Clock },
-                        { method: "Part Payment", amount: statistics.partPaymentSales, color: "orange", icon: AlertCircle },
-                      ].filter(payment => payment.amount > 0).map((payment, index) => (
-                        <motion.div
-                          key={payment.method}
-                          className={`flex items-center justify-between p-4 bg-gradient-to-r from-${payment.color}-50 to-${payment.color}-100 rounded-lg`}
-                          initial={{ x: -20, opacity: 0 }}
-                          animate={{ x: 0, opacity: 1 }}
-                          transition={{ delay: 0.9 + index * 0.1, duration: 0.4 }}
-                          whileHover={{ scale: 1.02, x: 5 }}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <payment.icon className={`w-4 h-4 text-${payment.color}-600`} />
-                            <span className="font-medium text-gray-900">{payment.method}</span>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-bold text-gray-900">
-                              {formatCurrency(payment.amount)}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              {statistics.totalSales > 0
-                                ? (payment.amount / statistics.totalSales * 100).toFixed(1)
-                                : "0.0"}%
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))}
+                      {statistics && (() => {
+                        const paymentMethods = [
+                          { method: "Cash", amount: statistics.cashSales, color: "green", icon: DollarSign },
+                          { method: "Transfer", amount: statistics.transferSales, color: "blue", icon: CreditCard },
+                          { method: "Credit", amount: statistics.creditSales, color: "purple", icon: Clock },
+                          { method: "Part Payment", amount: statistics.partPaymentSales, color: "orange", icon: AlertCircle },
+                        ].filter(payment => payment.amount > 0);
+
+                        return paymentMethods.length > 0 ? (
+                          paymentMethods.map((payment, index) => (
+                            <motion.div
+                              key={payment.method}
+                              className={`flex items-center justify-between p-4 bg-gradient-to-r from-${payment.color}-50 to-${payment.color}-100 rounded-lg`}
+                              initial={{ x: -20, opacity: 0 }}
+                              animate={{ x: 0, opacity: 1 }}
+                              transition={{ delay: 0.9 + index * 0.1, duration: 0.4 }}
+                              whileHover={{ scale: 1.02, x: 5 }}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <payment.icon className={`w-4 h-4 text-${payment.color}-600`} />
+                                <span className="font-medium text-gray-900">{payment.method}</span>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-bold text-gray-900">
+                                  {formatCurrency(payment.amount)}
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                  {statistics.totalSales > 0
+                                    ? (payment.amount / statistics.totalSales * 100).toFixed(1)
+                                    : "0.0"}%
+                                </div>
+                              </div>
+                            </motion.div>
+                          ))
+                        ) : (
+                          <motion.div
+                            className="text-center py-8 text-gray-500"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.9, duration: 0.5 }}
+                          >
+                            <CreditCard className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                            <p className="font-medium">No Payment Data</p>
+                            <p className="text-sm">No payment transactions found for this period</p>
+                          </motion.div>
+                        );
+                      })()}
 
                       {!statistics && (
                         <div className="text-center py-8 text-gray-500">
@@ -1831,7 +1875,7 @@ const SalesReportPage = () => {
                   </motion.div>
                 )}
 
-                {/* Show empty state when no transactions and not loading */}
+                {/* Show empty state when no transactions and not loading and transactions have been fetched */}
                 {!isLoadingTransactions && salesData.length === 0 && (
                   <motion.div
                     className="flex items-center justify-center py-12"
@@ -1842,21 +1886,21 @@ const SalesReportPage = () => {
                     <div className="text-center">
                       <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                       <p className="text-lg font-medium text-gray-900 mb-2">No Transactions Found</p>
-                      <p className="text-sm text-gray-600 mb-4">Click &quot;Load Transactions&quot; to fetch data or adjust your filters</p>
+                      <p className="text-sm text-gray-600 mb-4">No transactions match the current filters</p>
                       <motion.button
                         onClick={() => fetchTransactions()}
                         className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        Load Transactions
+                        Refresh Transactions
                       </motion.button>
                     </div>
                   </motion.div>
                 )}
 
-                {/* Show transactions content when loaded */}
-                {(!isLoadingTransactions || salesData.length > 0) && salesData.length > 0 && (
+                {/* Show transactions content when we have data */}
+                {salesData.length > 0 && (
                   <>
                     {/* Batch Operations Toolbar */}
                     <motion.div
@@ -2187,15 +2231,15 @@ const SalesReportPage = () => {
                                             </h4>
                                             <div className="flex items-center space-x-2">
                                               <span className={`text-xs px-2 py-1 rounded-full ${((sale as ExtendedSale).saleType || '').toUpperCase() === 'WHOLESALE'
-                                                  ? 'bg-blue-100 text-blue-700'
-                                                  : 'bg-green-100 text-green-700'
+                                                ? 'bg-blue-100 text-blue-700'
+                                                : 'bg-green-100 text-green-700'
                                                 }`}>
                                                 {((sale as ExtendedSale).saleType || 'retail').toLowerCase()}
                                               </span>
                                               <span className={`text-xs px-2 py-1 rounded-full ${((sale as ExtendedSale).paymentMethod || '').toUpperCase() === 'CASH' ? 'bg-green-100 text-green-700' :
-                                                  ((sale as ExtendedSale).paymentMethod || '').toUpperCase() === 'TRANSFER' ? 'bg-blue-100 text-blue-700' :
-                                                    ((sale as ExtendedSale).paymentMethod || '').toUpperCase() === 'CREDIT' ? 'bg-purple-100 text-purple-700' :
-                                                      'bg-orange-100 text-orange-700'
+                                                ((sale as ExtendedSale).paymentMethod || '').toUpperCase() === 'TRANSFER' ? 'bg-blue-100 text-blue-700' :
+                                                  ((sale as ExtendedSale).paymentMethod || '').toUpperCase() === 'CREDIT' ? 'bg-purple-100 text-purple-700' :
+                                                    'bg-orange-100 text-orange-700'
                                                 }`}>
                                                 {((sale as ExtendedSale).paymentMethod || 'cash').toLowerCase()}
                                               </span>
@@ -2488,74 +2532,67 @@ const SalesReportPage = () => {
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 0.4, duration: 0.5 }}
                     >
-                      {/* Group sales by customer and calculate top customers */}
-                      {(() => {
-                        const customerMap = new Map();
-
-                        salesData.forEach((sale) => {
-                          const customerKey = sale.customer?.id || "walk-in";
-                          const customerName =
-                            sale.customer?.name || "Walk-in Customer";
-
-                          if (!customerMap.has(customerKey)) {
-                            customerMap.set(customerKey, {
-                              name: customerName,
-                              revenue: 0,
-                              transactions: 0,
-                              type: sale.saleType.toLowerCase(),
-                            });
-                          }
-
-                          const customer = customerMap.get(customerKey);
-                          customer.revenue += sale.total;
-                          customer.transactions += 1;
-                        });
-
-                        return Array.from(customerMap.values())
-                          .sort((a, b) => b.revenue - a.revenue)
-                          .slice(0, 5)
-                          .map((customer, index) => (
-                            <motion.div
-                              key={customer.name}
-                              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                              initial={{ x: -20, opacity: 0 }}
-                              animate={{ x: 0, opacity: 1 }}
-                              transition={{
-                                delay: 0.5 + index * 0.1,
-                                duration: 0.4,
-                              }}
-                              whileHover={{ scale: 1.02, x: 5 }}
-                            >
-                              <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                                  <span className="text-sm font-medium text-orange-700">
-                                    #{index + 1}
-                                  </span>
+                      {isLoadingCustomerAnalysis ? (
+                        <div className="text-center py-8 text-gray-500">
+                          <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2" />
+                          <p>Loading top customers...</p>
+                        </div>
+                      ) : topCustomers.length > 0 ? (
+                        topCustomers.map((customer, index) => (
+                          <motion.div
+                            key={customer.id}
+                            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                            initial={{ x: -20, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{
+                              delay: 0.5 + index * 0.1,
+                              duration: 0.4,
+                            }}
+                            whileHover={{ scale: 1.02, x: 5 }}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                <span className="text-sm font-medium text-orange-700">
+                                  #{index + 1}
+                                </span>
+                              </div>
+                              <div>
+                                <div className="font-medium text-gray-900">
+                                  {customer.name}
                                 </div>
-                                <div>
-                                  <div className="font-medium text-gray-900">
-                                    {customer.name}
-                                  </div>
-                                  <div className="text-sm text-gray-600 capitalize">
-                                    {customer.type} customer
-                                  </div>
+                                <div className="text-sm text-gray-600 capitalize">
+                                  {customer.saleType} customer
                                 </div>
                               </div>
-                              <div className="text-right">
-                                <div className="font-bold text-gray-900">
-                                  {formatCurrency(customer.revenue)}
-                                </div>
-                                <div className="text-sm text-gray-600">
-                                  {customer.transactions} transactions
-                                </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold text-gray-900">
+                                {formatCurrency(customer.revenue)}
                               </div>
-                            </motion.div>
-                          ));
-                      })()}
+                              <div className="text-sm text-gray-600">
+                                {customer.transactions} transactions
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))
+                      ) : (
+                        <motion.div
+                          className="text-center py-8 text-gray-500"
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ delay: 0.5, duration: 0.5 }}
+                        >
+                          <Users className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                          <p>No customer data available</p>
+                          <p className="text-sm">
+                            Adjust your filters or load transaction data
+                          </p>
+                        </motion.div>
+                      )}
                     </motion.div>
                   </motion.div>
 
-                  {/* Customer Debt Analysis */}
+                  {/* Outstanding Debts */}
                   <motion.div
                     initial={{ x: 30, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
@@ -2570,65 +2607,65 @@ const SalesReportPage = () => {
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 0.4, duration: 0.5 }}
                     >
-                      {salesData
-                        .filter((sale) => sale.amountDue > 0)
-                        .sort((a, b) => b.amountDue - a.amountDue)
-                        .map((sale, index) => (
-                          <motion.div
-                            key={sale.id}
-                            className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200"
-                            initial={{ x: 20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{
-                              delay: 0.5 + index * 0.1,
-                              duration: 0.4,
-                            }}
-                            whileHover={{ scale: 1.02, x: -5 }}
-                          >
-                            <div>
-                              <div className="font-medium text-gray-900">
-                                {sale.customer?.name || "Walk-in Customer"}
+                      {isLoadingCustomerAnalysis ? (
+                        <div className="text-center py-8 text-gray-500">
+                          <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2" />
+                          <p>Loading outstanding debts...</p>
+                        </div>
+                      ) : outstandingDebts && outstandingDebts.edges.length > 0 ? (
+                        outstandingDebts.edges
+                          .filter(edge => edge.node.transactionType === 'DEBT_INCURRED')
+                          .slice(0, 10) // Show top 10 debts
+                          .map((edge, index) => (
+                            <motion.div
+                              key={edge.node.id}
+                              className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200"
+                              initial={{ x: 20, opacity: 0 }}
+                              animate={{ x: 0, opacity: 1 }}
+                              transition={{
+                                delay: 0.5 + index * 0.1,
+                                duration: 0.4,
+                              }}
+                              whileHover={{ scale: 1.02, x: -5 }}
+                            >
+                              <div>
+                                <div className="font-medium text-gray-900">
+                                  {edge.node.customer.name}
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                  {edge.node.customer.phone && `${edge.node.customer.phone} • `}
+                                  {edge.node.customer.type && `${edge.node.customer.type} customer`}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {new Date(edge.node.createdAt).toLocaleDateString()}{" "}
+                                  at{" "}
+                                  {new Date(edge.node.createdAt).toLocaleTimeString()}
+                                </div>
                               </div>
-                              <div className="text-sm text-gray-600">
-                                Transaction: {sale.transactionId}
+                              <div className="text-right">
+                                <div className="font-bold text-red-600">
+                                  {formatCurrency(edge.node.amount)}
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                  Outstanding Debt
+                                </div>
                               </div>
-                              <div className="text-xs text-gray-500">
-                                {new Date(sale.createdAt).toLocaleDateString()}{" "}
-                                at{" "}
-                                {new Date(sale.createdAt).toLocaleTimeString()}
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="font-bold text-red-600">
-                                {formatCurrency(sale.amountDue)}
-                              </div>
-                              <div className="text-sm text-gray-600">
-                                Paid:
-                                {formatCurrency(
-                                  safeNumber(sale.total) -
-                                  safeNumber(sale.amountDue)
-                                )}{" "}
-                                / {formatCurrency(sale.total)}
-                              </div>
-                            </div>
-                          </motion.div>
-                        ))}
-
-                      {salesData.filter((sale) => sale.amountDue > 0).length ===
-                        0 && (
-                          <motion.div
-                            className="text-center py-8 text-gray-500"
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ delay: 0.5, duration: 0.5 }}
-                          >
-                            <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-500" />
-                            <p>No outstanding debts!</p>
-                            <p className="text-sm">
-                              All customers are up to date with payments
-                            </p>
-                          </motion.div>
-                        )}
+                            </motion.div>
+                          ))
+                      ) : (
+                        <motion.div
+                          className="text-center py-8 text-gray-500"
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ delay: 0.5, duration: 0.5 }}
+                        >
+                          <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-500" />
+                          <p>No outstanding debts!</p>
+                          <p className="text-sm">
+                            All customers are up to date with payments
+                          </p>
+                        </motion.div>
+                      )}
                     </motion.div>
                   </motion.div>
                 </motion.div>
@@ -2665,18 +2702,10 @@ const SalesReportPage = () => {
                         <Users className="w-6 h-6 text-blue-600" />
                         <div>
                           <div className="text-lg font-bold text-blue-900">
-                            {
-                              Array.from(
-                                new Set(
-                                  salesData.map(
-                                    (sale) => sale.customer?.id || "walk-in"
-                                  )
-                                )
-                              ).length
-                            }
+                            {isLoadingCustomerAnalysis ? "..." : topCustomers.length}
                           </div>
                           <div className="text-sm text-blue-700">
-                            Total Customers
+                            Top Customers
                           </div>
                         </div>
                       </div>
@@ -2693,18 +2722,9 @@ const SalesReportPage = () => {
                         <Package className="w-6 h-6 text-green-600" />
                         <div>
                           <div className="text-lg font-bold text-green-900">
-                            {
-                              Array.from(
-                                new Set(
-                                  salesData
-                                    .filter(
-                                      (sale) => sale.saleType === "WHOLESALE"
-                                    )
-                                    .map(
-                                      (sale) => sale.customer?.id || "walk-in"
-                                    )
-                                )
-                              ).length
+                            {isLoadingCustomerAnalysis
+                              ? "..."
+                              : topCustomers.filter(c => c.saleType === 'wholesale').length
                             }
                           </div>
                           <div className="text-sm text-green-700">
@@ -2715,32 +2735,25 @@ const SalesReportPage = () => {
                     </motion.div>
 
                     <motion.div
-                      className="bg-yellow-50 rounded-lg p-4"
+                      className="bg-red-50 rounded-lg p-4"
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ delay: 1.1, duration: 0.4 }}
                       whileHover={{ scale: 1.05, y: -5 }}
                     >
                       <div className="flex items-center space-x-3">
-                        <Droplets className="w-6 h-6 text-yellow-600" />
+                        <AlertCircle className="w-6 h-6 text-red-600" />
                         <div>
-                          <div className="text-lg font-bold text-yellow-900">
-                            {
-                              Array.from(
-                                new Set(
-                                  salesData
-                                    .filter(
-                                      (sale) => sale.saleType === "RETAIL"
-                                    )
-                                    .map(
-                                      (sale) => sale.customer?.id || "walk-in"
-                                    )
-                                )
-                              ).length
+                          <div className="text-lg font-bold text-red-900">
+                            {isLoadingCustomerAnalysis
+                              ? "..."
+                              : outstandingDebts
+                                ? outstandingDebts.edges.filter(edge => edge.node.transactionType === 'DEBT_INCURRED').length
+                                : 0
                             }
                           </div>
-                          <div className="text-sm text-yellow-700">
-                            Retail Customers
+                          <div className="text-sm text-red-700">
+                            Outstanding Debts
                           </div>
                         </div>
                       </div>

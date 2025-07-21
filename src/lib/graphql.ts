@@ -633,6 +633,56 @@ export const CUSTOMER_CREDIT_BALANCE_QUERY = `
   }
 `;
 
+// Customer credits query with filtering
+export const CUSTOMER_CREDITS_QUERY = `
+  query CustomerCredits(
+    $transactionType: TransactionTypeEnum,
+    $customerId: ID,
+    $dateFrom: DateTime,
+    $dateTo: DateTime,
+    $first: Int,
+    $after: String,
+    $orderBy: String
+  ) {
+    customerCredits(
+      transactionType: $transactionType,
+      customer: $customerId,
+      createdAt_Gte: $dateFrom,
+      createdAt_Lte: $dateTo,
+      first: $first,
+      after: $after,
+      orderBy: $orderBy
+    ) {
+      edges {
+        node {
+          id
+          customer {
+            id
+            name
+            phone
+            type
+          }
+          amount
+          transactionType
+          balanceAfter
+          createdAt
+          description
+          sale {
+            id
+            transactionId
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+    }
+  }
+`;
+
 // Sales mutations
 export const CREATE_SALE_MUTATION = `
   mutation CreateSale($input: CreateSaleInput!) {
@@ -718,6 +768,58 @@ export const QUICK_DASHBOARD_METRICS = `
       stockUtilizationPercentage
       createdAt
       supplier
+    }
+  }
+`;
+
+// Top Customers query for Customer Analysis
+export const TOP_CUSTOMERS_QUERY = `
+  query TopCustomers(
+    $first: Int = 5,
+    $saleType: SaleTypeEnum,
+    $customer: ID,
+    $createdAt_Gte: DateTime,
+    $createdAt_Lte: DateTime,
+    $total_Gte: Decimal,
+    $total_Lte: Decimal,
+    $amountDue_Gt: Decimal,
+    $discount_Gt: Decimal,
+    $amountDue_Gte: Decimal,
+    $amountDue_Lte: Decimal,
+    $discount_Gte: Decimal,
+    $discount_Lte: Decimal,
+    $subtotal_Gte: Decimal,
+    $subtotal_Lte: Decimal
+  ) {
+    sales(
+      orderBy: "-total",
+      first: $first,
+      saleType: $saleType,
+      customer: $customer,
+      createdAt_Gte: $createdAt_Gte,
+      createdAt_Lte: $createdAt_Lte,
+      total_Gte: $total_Gte,
+      total_Lte: $total_Lte,
+      amountDue_Gt: $amountDue_Gt,
+      discount_Gt: $discount_Gt,
+      amountDue_Gte: $amountDue_Gte,
+      amountDue_Lte: $amountDue_Lte,
+      discount_Gte: $discount_Gte,
+      discount_Lte: $discount_Lte,
+      subtotal_Gte: $subtotal_Gte,
+      subtotal_Lte: $subtotal_Lte
+    ) {
+      edges {
+        node {
+          total
+          subtotal
+          saleType
+          customer {
+            id
+            name
+          }
+        }
+      }
     }
   }
 `;
