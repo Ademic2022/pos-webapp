@@ -4,10 +4,10 @@
  * Uses Django sales_stats query for comprehensive statistics
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Sale } from '@/services/salesService';
 import { reportsService } from '@/services/reportsService';
-import { ReportFilters, SalesStats } from '@/interfaces/interface';
+import { ReportFilters, SalesStats, CustomerCreditConnection } from '@/interfaces/interface';
 import { decodeGraphQLId } from '@/utils/graphqlUtils';
 
 interface UseReportsDataResult {
@@ -25,9 +25,21 @@ interface UseReportsDataResult {
     averageTransaction: number;
   };
 
+  // Customer Analysis Data
+  topCustomers: Array<{
+    name: string;
+    id: string;
+    revenue: number;
+    transactions: number;
+    saleType: string;
+  }>;
+  outstandingDebts: CustomerCreditConnection | null;
+
   // Loading states
   isLoading: boolean;
   isLoadingTransactions: boolean;
+  isLoadingCustomerAnalysis: boolean;
+  transactionsFetched: boolean;
   error: string | null;
 
   // Pagination
@@ -37,6 +49,7 @@ interface UseReportsDataResult {
   // Actions
   refetch: () => Promise<void>;
   fetchTransactions: () => Promise<void>;
+  fetchCustomerAnalysis: () => Promise<void>;
   applyFilters: (filters: ReportFilters) => Promise<void>;
 }
 
@@ -49,6 +62,22 @@ export function useReportsData(): UseReportsDataResult {
   const [hasNextPage, setHasNextPage] = useState(false);
   const [cursor, setCursor] = useState<string | null>(null);
   const [transactionsFetched, setTransactionsFetched] = useState(false);
+
+  // Customer Analysis State
+  const [topCustomers, setTopCustomers] = useState<Array<{
+    name: string;
+    id: string;
+    revenue: number;
+    transactions: number;
+    saleType: string;
+  }>>([]);
+  const [outstandingDebts, setOutstandingDebts] = useState<CustomerCreditConnection | null>(null);
+  const [isLoadingCustomerAnalysis, setIsLoadingCustomerAnalysis] = useState(false);
+
+  // Use refs to prevent duplicate calls without affecting useCallback dependencies
+  const isLoadingTransactionsRef = useRef(false);
+  const isLoadingCustomerAnalysisRef = useRef(false);
+
   const [currentFilters, setCurrentFilters] = useState<ReportFilters>({
     dateRange: "month",
     customerType: "all",
@@ -87,8 +116,14 @@ export function useReportsData(): UseReportsDataResult {
 
   // Fetch transactions (for transactions tab)
   const fetchTransactions = useCallback(async (resetData = true, afterCursor?: string) => {
+    // Prevent duplicate calls when already loading (use ref for stable check)
+    if (resetData && isLoadingTransactionsRef.current) {
+      return;
+    }
+
     try {
       if (resetData) {
+        isLoadingTransactionsRef.current = true;
         setIsLoadingTransactions(true);
         setError(null);
       }
@@ -118,6 +153,7 @@ export function useReportsData(): UseReportsDataResult {
       setError(errorMessage);
       console.error('Transactions fetch error:', err);
     } finally {
+      isLoadingTransactionsRef.current = false;
       setIsLoadingTransactions(false);
     }
   }, [currentFilters]);
@@ -137,9 +173,7 @@ export function useReportsData(): UseReportsDataResult {
           sale.customer?.id && decodeGraphQLId(sale.customer.id) === decodedFilterId
         );
       }
-    }
-
-    // Apply client-side sorting
+    }    // Apply client-side sorting
     if (currentFilters.sortBy) {
       filteredSales.sort((a, b) => {
         let comparison = 0;
@@ -206,24 +240,61 @@ export function useReportsData(): UseReportsDataResult {
       };
     }
 
+    console.log('Filtered sales:', filteredSales.length, 'transactions');
+    console.log('=== END USEMEMO FILTERING DEBUG ===');
+
     return { filteredSales, summary };
   }, [sales, statistics, currentFilters]);
 
   // Apply filters
   const applyFilters = useCallback(async (filters: ReportFilters) => {
     setCurrentFilters(filters);
-    // Reset transactions fetched state when filters change
+
+    // Reset all tab data states when filters change to ensure fresh data
     setTransactionsFetched(false);
     setSales([]);
-    // fetchStatistics will be called automatically due to dependency
-  }, []);
+    setCursor(null);
+    setHasNextPage(false);
 
-  // Load more data (pagination for transactions)
+    // Reset customer analysis data
+    setTopCustomers([]);
+    setOutstandingDebts(null);
+  }, []);  // Load more data (pagination for transactions)
   const loadMore = useCallback(async () => {
-    if (hasNextPage && cursor && !isLoadingTransactions) {
+    if (hasNextPage && cursor && !isLoadingTransactionsRef.current) {
       await fetchTransactions(false, cursor);
     }
-  }, [hasNextPage, cursor, isLoadingTransactions, fetchTransactions]);
+  }, [hasNextPage, cursor, fetchTransactions]);
+
+  // Fetch customer analysis data
+  const fetchCustomerAnalysis = useCallback(async () => {
+    // Prevent duplicate calls when already loading (use ref for stable check)
+    if (isLoadingCustomerAnalysisRef.current) {
+      return;
+    }
+
+    try {
+      isLoadingCustomerAnalysisRef.current = true;
+      setIsLoadingCustomerAnalysis(true);
+      setError(null);
+
+      const response = await reportsService.getCustomerAnalysis(currentFilters);
+
+      if (response.success) {
+        setTopCustomers(response.topCustomers || []);
+        setOutstandingDebts(response.outstandingDebts || null);
+      } else {
+        throw new Error(response.errors?.join(', ') || 'Failed to fetch customer analysis');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setError(errorMessage);
+      console.error('Customer analysis fetch error:', err);
+    } finally {
+      isLoadingCustomerAnalysisRef.current = false;
+      setIsLoadingCustomerAnalysis(false);
+    }
+  }, [currentFilters]);
 
   // Refetch statistics data
   const refetch = useCallback(async () => {
@@ -243,13 +314,18 @@ export function useReportsData(): UseReportsDataResult {
     sales: filteredSales,
     statistics,
     summary,
+    topCustomers,
+    outstandingDebts,
     isLoading,
     isLoadingTransactions,
+    isLoadingCustomerAnalysis,
+    transactionsFetched,
     error,
     hasNextPage,
     loadMore,
     refetch,
     fetchTransactions: () => fetchTransactions(true),
+    fetchCustomerAnalysis,
     applyFilters,
   };
 }

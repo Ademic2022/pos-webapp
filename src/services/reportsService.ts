@@ -6,7 +6,7 @@
  */
 
 import { enhancedGraphqlClient } from '@/lib/enhancedGraphqlClient';
-import { SALES_STATS_QUERY, SALES_QUERY, CUSTOMER_CREDITS_QUERY } from '@/lib/graphql';
+import { SALES_STATS_QUERY, SALES_QUERY, CUSTOMER_CREDITS_QUERY, TOP_CUSTOMERS_QUERY } from '@/lib/graphql';
 import { Sale } from '@/services/salesService';
 import { SalesStats, ReportFilters, CustomerCreditConnection } from '@/interfaces/interface';
 import { decodeGraphQLId, encodeGraphQLId } from '@/utils/graphqlUtils';
@@ -66,6 +66,16 @@ export interface ReportsResponse {
 
 // Service Implementation
 export const reportsService = {
+    /**
+     * Helper function to format dates safely without timezone issues
+     */
+    formatDateSafely(date: Date): string {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    },
+
     /**
      * Get sales statistics only (without individual transactions)
      * This is the primary method for the overview tab
@@ -139,8 +149,6 @@ export const reportsService = {
     }> {
         try {
             const salesParams = this.convertFiltersToSalesParams(filters, pagination);
-            console.log('Sales Params:', salesParams);
-
 
             const salesResponse = await enhancedGraphqlClient.request<{ sales: SalesConnection }>(
                 SALES_QUERY,
@@ -236,10 +244,18 @@ export const reportsService = {
         if (filters.dateRange && filters.dateRange !== 'custom') {
             const now = new Date();
             let dateFrom: Date;
+            let dateTo: Date | null = null;
 
             switch (filters.dateRange) {
                 case 'today':
                     dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    dateTo = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    break;
+                case 'yesterday':
+                    const yesterday = new Date(now);
+                    yesterday.setDate(now.getDate() - 1);
+                    dateFrom = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+                    dateTo = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
                     break;
                 case 'week':
                     dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -255,7 +271,11 @@ export const reportsService = {
                     break;
             }
 
-            params.dateFrom = dateFrom.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+            // Format dates manually to avoid timezone issues
+            params.dateFrom = this.formatDateSafely(dateFrom);
+            if (dateTo) {
+                params.dateTo = this.formatDateSafely(dateTo);
+            }
         } else if (filters.dateRange === 'custom') {
             if (filters.startDate) {
                 params.dateFrom = filters.startDate;
@@ -319,11 +339,11 @@ export const reportsService = {
 
         // Convert date params for DateTime fields in sales query
         if (params.dateFrom) {
-            params.createdAtGte = new Date(params.dateFrom as string).toISOString();
+            params.createdAt_Gte = `${params.dateFrom}T00:00:00Z`;
             delete params.dateFrom;
         }
         if (params.dateTo) {
-            params.createdAtLte = new Date(params.dateTo as string).toISOString();
+            params.createdAt_Lte = `${params.dateTo}T23:59:59Z`;
             delete params.dateTo;
         }
 
@@ -358,7 +378,6 @@ export const reportsService = {
         // Remove payment method from sales query as it's handled in stats
         delete params.paymentMethod;
 
-
         return params;
     },
 
@@ -376,17 +395,17 @@ export const reportsService = {
         try {
             const variables = {
                 transactionType: params.transactionType,
-                customerId: params.customerId ? encodeGraphQLId('CustomerType', params.customerId) : null,
+                customerId: params.customerId, // Match the GraphQL query parameter name
                 dateFrom: params.dateFrom ? `${params.dateFrom}T00:00:00Z` : null,
                 dateTo: params.dateTo ? `${params.dateTo}T23:59:59Z` : null,
-                first: params.first || 50,
+                first: params.first || 10,
                 after: params.after,
                 orderBy: '-created_at',
             };
 
             // Clean up null/undefined values
             const cleanVariables = Object.fromEntries(
-                Object.entries(variables).filter(([value]) => value !== null && value !== undefined)
+                Object.entries(variables).filter(([, value]) => value !== null && value !== undefined)
             );
 
             const response = await enhancedGraphqlClient.request(
@@ -413,6 +432,114 @@ export const reportsService = {
                     },
                     totalCount: 0,
                 },
+            };
+        }
+    },
+
+    /**
+     * Get customer analysis data including top customers and outstanding debts
+     * Combines TOP_CUSTOMERS_QUERY and CUSTOMER_CREDITS_QUERY data
+     */
+    async getCustomerAnalysis(filters: ReportFilters): Promise<{
+        success: boolean;
+        topCustomers?: Array<{
+            name: string;
+            id: string;
+            revenue: number;
+            transactions: number;
+            saleType: string;
+        }>;
+        outstandingDebts?: CustomerCreditConnection;
+        errors?: string[];
+    }> {
+        try {
+            // Convert filters for both queries
+            const topCustomersParams = this.convertFiltersToSalesParams(filters, { first: 5 });
+
+            // Convert filters to customer credits params using the same logic as stats conversion
+            const baseParams = this.convertFiltersToStatsParams(filters);
+            const creditsParams = {
+                transactionType: 'DEBT_INCURRED' as const,
+                customerId: filters.customerId, // Keep as customerId to match getCustomerCredits function
+                dateFrom: baseParams.dateFrom as string,
+                dateTo: baseParams.dateTo as string,
+                first: 50,
+            };
+
+            // Fetch both top customers and outstanding debts in parallel
+            const [topCustomersResponse, creditsResponse] = await Promise.all([
+                enhancedGraphqlClient.request<{
+                    sales: {
+                        edges: Array<{
+                            node: {
+                                total: number;
+                                subtotal: number;
+                                saleType: string;
+                                customer: {
+                                    id: string;
+                                    name: string;
+                                } | null;
+                            };
+                        }>;
+                    };
+                }>(TOP_CUSTOMERS_QUERY, topCustomersParams),
+                this.getCustomerCredits(creditsParams)
+            ]);
+
+            // Process top customers - group by customer and calculate totals
+            const customerMap = new Map<string, {
+                name: string;
+                id: string;
+                revenue: number;
+                transactions: number;
+                saleType: string;
+            }>();
+
+            topCustomersResponse.sales.edges.forEach(edge => {
+                const sale = edge.node;
+                const customerKey = sale.customer?.id || 'walk-in';
+                const customerName = sale.customer?.name || 'Walk-in Customer';
+
+                if (!customerMap.has(customerKey)) {
+                    customerMap.set(customerKey, {
+                        name: customerName,
+                        id: customerKey,
+                        revenue: 0,
+                        transactions: 0,
+                        saleType: sale.saleType.toLowerCase(),
+                    });
+                }
+
+                const customer = customerMap.get(customerKey)!;
+                customer.revenue += sale.total;
+                customer.transactions += 1;
+            });
+
+            // Convert to array and sort by revenue
+            const topCustomers = Array.from(customerMap.values())
+                .sort((a, b) => b.revenue - a.revenue)
+                .slice(0, 5);
+
+            return {
+                success: true,
+                topCustomers,
+                outstandingDebts: creditsResponse.success ? creditsResponse.data : {
+                    edges: [],
+                    pageInfo: {
+                        hasNextPage: false,
+                        hasPreviousPage: false,
+                        startCursor: '',
+                        endCursor: '',
+                    },
+                    totalCount: 0,
+                },
+            };
+
+        } catch (error) {
+            console.error('Error fetching customer analysis data:', error);
+            return {
+                success: false,
+                errors: [error instanceof Error ? error.message : 'Failed to fetch customer analysis data'],
             };
         }
     },

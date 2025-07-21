@@ -25,7 +25,7 @@ export interface SalesData {
 }
 
 export interface ReportFilters {
-  dateRange: "today" | "week" | "month" | "year" | "custom";
+  dateRange: "today" | "yesterday" | "week" | "month" | "year" | "custom";
   customerType: "all" | "wholesale" | "retail";
   paymentMethod: "all" | "cash" | "credit" | "transfer" | "part_payment";
   status: "all" | "paid" | "partial" | "pending";

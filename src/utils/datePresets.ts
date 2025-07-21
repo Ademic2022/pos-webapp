@@ -8,12 +8,22 @@ export interface DatePreset {
 }
 
 export class DatePresetUtils {
+  /**
+   * Helper function to format dates safely without timezone issues
+   */
+  private static formatDateSafely(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   static getToday(): DatePreset {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const endOfDay = new Date(today);
     endOfDay.setHours(23, 59, 59, 999);
-    
+
     return {
       label: "Today",
       value: "today",
@@ -29,7 +39,7 @@ export class DatePresetUtils {
     yesterday.setHours(0, 0, 0, 0);
     const endOfDay = new Date(yesterday);
     endOfDay.setHours(23, 59, 59, 999);
-    
+
     return {
       label: "Yesterday",
       value: "yesterday",
@@ -44,7 +54,7 @@ export class DatePresetUtils {
     const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
     lastWeek.setHours(0, 0, 0, 0);
     today.setHours(23, 59, 59, 999);
-    
+
     return {
       label: "Last 7 Days",
       value: "last7days",
@@ -59,7 +69,7 @@ export class DatePresetUtils {
     const lastMonth = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
     lastMonth.setHours(0, 0, 0, 0);
     today.setHours(23, 59, 59, 999);
-    
+
     return {
       label: "Last 30 Days",
       value: "last30days",
@@ -76,11 +86,11 @@ export class DatePresetUtils {
     const difference = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Monday as start of week
     startOfWeek.setDate(today.getDate() - difference);
     startOfWeek.setHours(0, 0, 0, 0);
-    
+
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
     endOfWeek.setHours(23, 59, 59, 999);
-    
+
     return {
       label: "This Week",
       value: "thisweek",
@@ -94,10 +104,10 @@ export class DatePresetUtils {
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     startOfMonth.setHours(0, 0, 0, 0);
-    
+
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     endOfMonth.setHours(23, 59, 59, 999);
-    
+
     return {
       label: "This Month",
       value: "thismonth",
@@ -112,10 +122,10 @@ export class DatePresetUtils {
     const quarter = Math.floor(today.getMonth() / 3);
     const startOfQuarter = new Date(today.getFullYear(), quarter * 3, 1);
     startOfQuarter.setHours(0, 0, 0, 0);
-    
+
     const endOfQuarter = new Date(today.getFullYear(), quarter * 3 + 3, 0);
     endOfQuarter.setHours(23, 59, 59, 999);
-    
+
     return {
       label: "This Quarter",
       value: "thisquarter",
@@ -129,10 +139,10 @@ export class DatePresetUtils {
     const today = new Date();
     const startOfYear = new Date(today.getFullYear(), 0, 1);
     startOfYear.setHours(0, 0, 0, 0);
-    
+
     const endOfYear = new Date(today.getFullYear(), 11, 31);
     endOfYear.setHours(23, 59, 59, 999);
-    
+
     return {
       label: "This Year",
       value: "thisyear",
@@ -161,17 +171,17 @@ export class DatePresetUtils {
   }
 
   static formatDateForInput(date: Date): string {
-    return date.toISOString().split('T')[0];
+    return this.formatDateSafely(date);
   }
 
   static formatDateRange(startDate: Date, endDate: Date): string {
     const start = startDate.toLocaleDateString();
     const end = endDate.toLocaleDateString();
-    
+
     if (start === end) {
       return start;
     }
-    
+
     return `${start} - ${end}`;
   }
 }
